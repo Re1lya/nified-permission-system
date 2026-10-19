@@ -41,6 +41,9 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" clean test
 - RBAC0 权限并集计算，多个角色的权限自动合并去重
 - BCrypt 密码保存和登录接口
 - JWT Bearer Token 登录、注销和令牌校验
+- 数据库持久化登录会话，注销状态在共享数据库的应用实例间生效
+- 重置密码、停用或删除账号时撤销该账号的全部会话；重新启用后需重新登录
+- 停用业务系统后，该系统权限从有效权限中排除
 - 受保护示例接口的后端权限校验
 - MySQL 建表脚本和生产环境配置模板
 
@@ -58,6 +61,8 @@ third-party
 └── clonefactory  CloneFactory 注解处理器源码
 docs
 ├── database-mysql.sql
+├── migrations      已有 MySQL 环境的增量脚本
+├── reference-improvements.md
 └── rbac-api.md
 ```
 
@@ -102,7 +107,9 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" spring-boot:run
 
 4. 调用受保护接口：`GET /api/demo/expenses`
 
-   用户拥有 `expense:list` 权限时返回 `200`，权限被回收时返回 `403`，令牌注销后返回 `401`。
+   用户拥有 `expense:list` 权限时返回 `200`，权限被回收或业务系统被停用时返回 `403`，令牌失效后返回 `401`。
+
+目前用户、角色、业务系统和权限的管理 API 用于本地演示，尚未增加管理员身份认证和管理范围校验。当前受到登录及权限保护的示例接口是 `/api/demo/expenses`；完整管理端鉴权是下一步工作。
 
 完整的 Postman 请求顺序和接口清单见 [docs/rbac-api.md](docs/rbac-api.md)。
 
@@ -115,13 +122,17 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" clean test
 mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" clean package
 ```
 
-集成测试覆盖了 RBAC0 多角色权限合并、权限回收、密码登录和令牌注销。
+集成测试覆盖 RBAC0 权限合并，以及通过 MockMvc 发起的 Controller → Service → 数据库调用：密码重置撤销全部旧会话、停用再启用不恢复旧令牌、删除账号、独立验证器共享注销状态、停用系统、权限回收、非法令牌、事务回滚，以及登录和密码重置的两种并发顺序。测试使用独立 H2 数据库，不启动监听端口；尚未完成真实 MySQL 多实例部署验证。
+
+参考 RBAC-admin 后的改进说明、验收方式和后续优先级见 [docs/reference-improvements.md](docs/reference-improvements.md)。
 
 RBAC0 模型、数据表、业务流程和验收范围见 [docs/rbac0-design.md](docs/rbac0-design.md)；两台服务器的 MySQL、应用包和环境变量部署步骤见 [docs/deployment-two-servers.md](docs/deployment-two-servers.md)。
 
 ## MySQL 部署
 
 执行 [docs/database-mysql.sql](docs/database-mysql.sql) 创建生产数据库表，使用 `prod` 配置启动：
+
+已有旧版数据库应先执行增量脚本 [docs/migrations/20261019-login-sessions.sql](docs/migrations/20261019-login-sessions.sql)，再统一升级应用实例。旧令牌没有数据库会话，升级后用户需重新登录。增量脚本需在部署时手动执行，应用不会自动修改生产表结构。
 
 ```powershell
 $env:DB_URL = 'jdbc:mysql://数据库地址:3306/unified_permission?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai'
@@ -132,4 +143,4 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" "-Dspring-boot.run.profiles=prod"
 
 生产配置位于 `src/main/resources/application-prod.yml`，密码通过环境变量提供，不写入源码。
 
-JWT 密钥通过 `PERMISSION_JWT_SECRET` 环境变量配置，令牌默认 2 小时过期。部署到多台应用服务器时，所有实例必须使用相同的 JWT 密钥；注销黑名单当前保存在单机内存中，后续可替换为 Redis 以实现跨实例注销。
+JWT 密钥通过 `PERMISSION_JWT_SECRET` 环境变量配置，令牌默认 2 小时过期。多个应用实例必须使用相同的 JWT 密钥和同一数据库。`sys_login_session` 只保存随机会话标识、用户和时间，不保存明文 JWT 或密码。注销删除当前会话；改密码、停用或删除账号删除该账号全部会话。校验同时要求 JWT 有效、数据库会话存在且账号启用。本地 H2 重启后账号和会话都会清空；MySQL 数据持久化时会话及注销结果可保留。

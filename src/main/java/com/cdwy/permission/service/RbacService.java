@@ -86,27 +86,33 @@ public class RbacService {
 
     @Transactional
     public UserResponse updateUser(Long userId, UpdateUserRequest request) {
-        UserAccount user = getUser(userId);
+        UserAccount user = getUserForUpdate(userId);
         CloneFactory.copyNotNull(user, request);
+        if (!user.isEnabled()) {
+            jwtTokenService.revokeAll(userId);
+        }
         return toUserResponse(userRepository.save(user));
     }
 
     @Transactional
     public void deleteUser(Long userId) {
-        getUser(userId);
+        getUserForUpdate(userId);
+        jwtTokenService.revokeAll(userId);
         userRoleRepository.deleteAllByUser_Id(userId);
         userRepository.deleteById(userId);
     }
 
     @Transactional
     public void setPassword(Long userId, SetPasswordRequest request) {
-        UserAccount user = getUser(userId);
+        UserAccount user = getUserForUpdate(userId);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
+        jwtTokenService.revokeAll(userId);
     }
 
+    @Transactional
     public LoginResponse login(LoginRequest request) {
-        UserAccount user = userRepository.findByUsername(request.username())
+        UserAccount user = userRepository.findByUsernameForUpdate(request.username())
                 .filter(UserAccount::isEnabled)
                 .filter(account -> account.getPasswordHash() != null)
                 .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
@@ -271,6 +277,7 @@ public class RbacService {
                 .filter(Role::isEnabled)
                 .forEach(role -> rolePermissionRepository.findAllByRole_Id(role.getId()).stream()
                         .map(RolePermission::getPermission)
+                        .filter(permission -> permission.getSystem().isEnabled())
                         .forEach(permission -> permissionsByCode.putIfAbsent(
                                 permission.getCode(), toPermissionResponse(permission))));
         return List.copyOf(permissionsByCode.values());
@@ -285,6 +292,17 @@ public class RbacService {
         if (!hasPermission(userId, permissionCode)) {
             throw new ForbiddenException("用户没有权限: " + permissionCode);
         }
+    }
+
+    public Long requirePermission(String authorizationHeader, String permissionCode) {
+        Long userId = jwtTokenService.requireUserId(authorizationHeader);
+        assertPermission(userId, permissionCode);
+        return userId;
+    }
+
+    private UserAccount getUserForUpdate(Long userId) {
+        return userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("用户不存在: " + userId));
     }
 
     private UserAccount getUser(Long userId) {

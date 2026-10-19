@@ -1,30 +1,38 @@
 package com.cdwy.permission.service;
 
+import com.cdwy.permission.entity.LoginSession;
+import com.cdwy.permission.entity.UserAccount;
 import com.cdwy.permission.exception.AuthenticationFailedException;
+import com.cdwy.permission.repository.LoginSessionRepository;
+import com.cdwy.permission.repository.UserAccountRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class JwtTokenService {
 
     private final SecretKey signingKey;
     private final long expirationSeconds;
-    private final ConcurrentMap<String, Instant> revokedTokens = new ConcurrentHashMap<>();
+    private final UserAccountRepository userRepository;
+    private final LoginSessionRepository sessionRepository;
 
     public JwtTokenService(
             @Value("${permission.jwt.secret}") String secret,
-            @Value("${permission.jwt.expiration-seconds:7200}") long expirationSeconds) {
+            @Value("${permission.jwt.expiration-seconds:7200}") long expirationSeconds,
+            UserAccountRepository userRepository,
+            LoginSessionRepository sessionRepository) {
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (secretBytes.length < 32) {
             throw new IllegalArgumentException("permission.jwt.secret 至少需要 32 个字节");
@@ -34,71 +42,106 @@ public class JwtTokenService {
         }
         this.signingKey = Keys.hmacShaKeyFor(secretBytes);
         this.expirationSeconds = expirationSeconds;
+        this.userRepository = userRepository;
+        this.sessionRepository = sessionRepository;
     }
 
+    @Transactional
     public String issue(Long userId) {
-        Instant issuedAt = Instant.now();
+        // The same row is locked by login, password reset, disable and delete.
+        UserAccount user = userRepository.findByIdForUpdate(userId)
+                .filter(UserAccount::isEnabled)
+                .orElseThrow(JwtTokenService::invalidToken);
+        Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
         Instant expiresAt = issuedAt.plusSeconds(expirationSeconds);
-        return Jwts.builder()
-                .id(UUID.randomUUID().toString())
+        String tokenId = UUID.randomUUID().toString();
+        String token = Jwts.builder()
+                .id(tokenId)
                 .subject(userId.toString())
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
                 .signWith(signingKey)
                 .compact();
+        sessionRepository.save(new LoginSession(tokenId, user, issuedAt, expiresAt));
+        return token;
     }
 
     public Long requireUserId(String authorizationHeader) {
         Claims claims = parse(extractToken(authorizationHeader));
-        String tokenId = claims.getId();
-        Instant revokedUntil = tokenId == null ? null : revokedTokens.get(tokenId);
-        if (revokedUntil != null) {
-            if (revokedUntil.isAfter(Instant.now())) {
-                throw new AuthenticationFailedException();
-            }
-            revokedTokens.remove(tokenId, revokedUntil);
+        Long userId = subject(claims);
+        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
+                .orElseThrow(JwtTokenService::invalidToken);
+        if (!session.getUser().isEnabled()
+                || !session.getExpiresAt().isAfter(Instant.now())
+                || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())
+                || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {
+            throw invalidToken();
         }
-        try {
-            return Long.valueOf(claims.getSubject());
-        } catch (RuntimeException exception) {
-            throw new AuthenticationFailedException();
-        }
+        return userId;
     }
 
+    @Transactional
     public void revoke(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             return;
         }
         try {
             Claims claims = parse(extractToken(authorizationHeader));
-            if (claims.getId() != null && claims.getExpiration() != null) {
-                revokedTokens.put(claims.getId(), claims.getExpiration().toInstant());
-            }
+            sessionRepository.deleteSession(claims.getId(), subject(claims));
         } catch (AuthenticationFailedException ignored) {
             // Logging out with an expired or malformed token is already complete.
         }
     }
 
+    @Transactional
+    public void revokeAll(Long userId) {
+        // Account commands hold the user lock until both changes commit.
+        sessionRepository.deleteAllForUser(userId);
+    }
+
     private Claims parse(String token) {
         try {
-            return Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
+            if (claims.getId() == null || claims.getId().isBlank()
+                    || claims.getIssuedAt() == null || claims.getExpiration() == null
+                    || claims.getIssuedAt().after(new Date())
+                    || !claims.getExpiration().after(claims.getIssuedAt())) {
+                throw invalidToken();
+            }
+            return claims;
         } catch (JwtException | IllegalArgumentException exception) {
-            throw new AuthenticationFailedException();
+            throw invalidToken();
+        }
+    }
+
+    private Long subject(Claims claims) {
+        try {
+            long userId = Long.parseLong(claims.getSubject());
+            if (userId <= 0) {
+                throw invalidToken();
+            }
+            return userId;
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw invalidToken();
         }
     }
 
     private String extractToken(String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new AuthenticationFailedException();
+        if (authorizationHeader == null || !authorizationHeader.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            throw invalidToken();
         }
         String token = authorizationHeader.substring("Bearer ".length()).trim();
         if (token.isEmpty()) {
-            throw new AuthenticationFailedException();
+            throw invalidToken();
         }
         return token;
+    }
+
+    private static AuthenticationFailedException invalidToken() {
+        return new AuthenticationFailedException("登录状态无效或已过期，请重新登录");
     }
 }

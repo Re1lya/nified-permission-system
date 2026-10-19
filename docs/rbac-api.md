@@ -65,7 +65,27 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" spring-boot:run
 
 11. 注销：`POST /api/auth/logout`，添加同一个 `Authorization` 请求头；注销后令牌返回 `401`。
 
-生产环境通过 `PERMISSION_JWT_SECRET` 设置至少 32 个字节的密钥；两台应用服务器必须使用同一个值。
+生产环境通过 `PERMISSION_JWT_SECRET` 设置至少 32 个字节的密钥；多台应用服务器必须使用同一密钥和同一个数据库。
+
+## 新增会话与状态验收
+
+完成上面的演示数据准备，并保留用户角色关系后，可分别执行以下场景。每个场景开始时重新登录，保存新的 `accessToken`；示例 ID 使用创建接口实际返回的值。
+
+| 操作 | 验证 | 预期 |
+|---|---|---|
+| 同一账号登录两次，再 `PUT /api/users/{userId}/password` 设置新密码 | 两个旧 JWT 分别请求 `/api/demo/expenses` | 都为 `401`；新密码登录后可访问 |
+| `PUT /api/users/{userId}`，提交 `{"displayName":"张三","enabled":false}` | 原 JWT 请求业务接口、原密码登录 | 都为 `401` |
+| 上一步后把 `enabled` 改回 `true` | 先用原 JWT，再重新登录获取 JWT | 原 JWT 为 `401`，新 JWT 为 `200` |
+| `PUT /api/systems/{systemId}`，提交 `{"name":"财务系统","enabled":false}` | 查询用户权限、登录、用有效 JWT 请求业务接口 | 不再包含该系统权限；业务接口 `403` |
+| 将系统 `enabled` 改回 `true` | 用同一有效 JWT 请求业务接口 | 有角色权限时恢复为 `200` |
+| `DELETE /api/users/{userId}` | 原 JWT 请求业务接口 | `401` |
+| 同一账号登录两次，仅注销第一个 JWT | 两个 JWT 分别请求业务接口 | 第一个 `401`，第二个 `200` |
+
+停用系统影响权限，不会注销账号的全部会话。注销仍为幂等操作：重复注销、未带令牌或令牌已失效均返回 `204`。
+
+会话表不保存原始 JWT；旧版 JWT 在升级后因没有对应会话而失效。数据库升级脚本见 [migrations/20261019-login-sessions.sql](migrations/20261019-login-sessions.sql)。
+
+当前管理类 API 尚未增加管理员鉴权和管理范围校验，只用于本地演示。后端令牌和权限保护的验收入口为 `/api/demo/expenses`。
 
 ## 其他接口
 

@@ -27,6 +27,7 @@ Controller 不直接访问数据库；Service 负责 DTO、实体和响应对象
 ```mermaid
 erDiagram
     USER_ACCOUNT ||--o{ USER_ROLE : assigned
+    USER_ACCOUNT ||--o{ LOGIN_SESSION : signs_in
     ROLE ||--o{ USER_ROLE : contains
     ROLE ||--o{ ROLE_PERMISSION : grants
     PERMISSION ||--o{ ROLE_PERMISSION : included
@@ -44,6 +45,12 @@ erDiagram
         varchar code UK
         varchar name
         boolean enabled
+    }
+    LOGIN_SESSION {
+        varchar id PK
+        bigint user_id FK
+        timestamp issued_at
+        timestamp expires_at
     }
     BUSINESS_SYSTEM {
         bigint id PK
@@ -66,7 +73,8 @@ erDiagram
 用户的有效权限计算规则为：
 
 ```text
-用户的有效权限 = 用户所有启用角色的权限并集（按权限 code 去重）
+用户启用时的有效权限 = 所有启用角色中，所属业务系统也启用的权限并集（按 code 去重）
+用户停用时的有效权限 = 空集
 ```
 
 用户、角色或业务系统被禁用后，相关登录或权限查询立即受到影响。受保护业务接口每次请求重新读取当前权限，因此回收角色后后续请求会返回 `403`。
@@ -76,6 +84,7 @@ erDiagram
 | 表 | 作用 | 关键约束 |
 |---|---|---|
 | `sys_user` | 员工账号、显示名称、BCrypt 密码摘要、启用状态 | `username` 唯一 |
+| `sys_login_session` | JWT 对应的有效登录会话，只存标识、用户和时间 | `id` 与 JWT 的 `jti` 绑定，关联用户 |
 | `sys_role` | 岗位角色，例如财务查看员 | `code` 唯一 |
 | `biz_system` | OA、财务系统等业务系统 | `code` 唯一 |
 | `sys_permission` | 业务系统菜单或接口权限 | `code` 唯一，关联业务系统 |
@@ -89,9 +98,12 @@ erDiagram
 ### 5.1 登录与调用业务系统
 
 1. 用户调用 `POST /api/auth/login` 提交用户名和密码。
-2. 服务使用 BCrypt 校验密码，返回用户信息、有效权限和 JWT。
+2. 服务使用 BCrypt 校验密码，在数据库登记随机会话标识，返回用户信息、有效权限和 JWT。
 3. 业务系统把 JWT 放入 `Authorization: Bearer <token>` 请求头。
-4. 受保护 API 校验 JWT 签名、过期时间和注销状态，再检查当前用户是否拥有目标权限。
+4. 受保护 API 在一个 Service 事务中校验 JWT 签名、必需字段、到期时间、数据库会话及账号状态，再读取当前权限。JWT 的用户、会话标识和签发/过期时间须与数据库记录一致。
+5. 注销删除当前会话。设置密码、停用或删除账号会在同一事务中删除该账号全部会话；重新启用账号后旧会话不会恢复，必须重新登录。
+
+登录、设置密码、修改账号状态和删除账号按同一账号行加写锁，避免密码校验与会话签发之间穿插账号变更。锁粒度为单个账号，同一账号的登录和变更按序执行。
 
 ### 5.2 权限配置
 
@@ -129,7 +141,8 @@ OA 负责申请和审批，审批通过后调用本系统的角色分配或回�
 - JWT 使用 HMAC 密钥签名，生产环境通过 `PERMISSION_JWT_SECRET` 注入至少 32 字节的密钥。
 - 多个应用实例必须使用相同的 JWT 密钥；数据库使用同一个 MySQL 实例或集群。
 - 本地默认使用 H2 内存数据库，应用停止后数据清空；生产环境使用 `prod` 配置和 MySQL。
-- 当前注销黑名单保存在应用实例内存中，单实例演示可用；多实例正式部署时应改为 Redis 或共享持久化存储。
+- 登录会话保存在共享数据库中，校验时不缓存会话状态。只要实例使用同一数据库和 JWT 密钥，后续请求能读取已提交的注销及账号变更；已开始处理的请求不提供强制中断保证。
+- 管理 CRUD API 暂未接入管理员鉴权；当前只验证受保护业务示例。管理范围、首次管理员初始化和操作审计需要继续实现后再正式接入业务系统。
 - 当前版本没有宣称达到 20 毫秒指标，也没有完成一万并发压测；性能指标需要在部署拓扑、数据量和压测工具确定后单独测量。
 
 两台服务器的角色划分和启动命令见 [deployment-two-servers.md](deployment-two-servers.md)。
@@ -142,11 +155,13 @@ OA 负责申请和审批，审批通过后调用本系统的角色分配或回�
 4. 携带 JWT 请求 `/api/demo/expenses`，返回 `200`。
 5. 回收用户角色后再次请求，返回 `403`。
 6. 登录得到的新 JWT 调用注销接口，再次请求返回 `401`。
+7. 重置密码或停用账号后，原 JWT 返回 `401`；重新启用账号后仍为 `401`，重新登录后可访问。
+8. 停用业务系统后，该系统权限从查询和登录响应中移除，原 JWT 请求对应业务接口返回 `403`。
 
 该场景同时验证登录、JWT、角色权限并集、实时回收和后端权限校验。
 
 ## 9. 本阶段与后续范围
 
-本阶段已完成：RBAC0 基础模型、六张核心表、CRUD、角色和权限关系、BCrypt 登录、JWT 校验、MySQL 建表脚本和 Postman 验收流程。
+本阶段已完成：RBAC0 基础模型、六张核心表和一张登录会话表、CRUD、角色和权限关系、BCrypt 登录、JWT 与持久化会话校验、MySQL 建表/增量脚本和 Postman 基础验收流程。
 
-后续可按优先级增加：HR 员工同步、部门管理员范围、OA 审批单号和调用签名、共享注销存储、管理员网页、审计日志和压测报告。
+后续优先实现管理 API 的管理员鉴权和管理范围，再增加审计与幂等、HR 员工同步、OA 审批单号和调用签名、管理员网页、数据库迁移工具和压测报告。具体借鉴点见 [reference-improvements.md](reference-improvements.md)。

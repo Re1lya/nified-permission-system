@@ -13,6 +13,18 @@ CREATE TABLE IF NOT EXISTS sys_user (
     UNIQUE KEY uk_sys_user_username (username)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS sys_login_session (
+    id VARCHAR(36) NOT NULL,
+    user_id BIGINT NOT NULL,
+    issued_at TIMESTAMP(6) NOT NULL,
+    expires_at TIMESTAMP(6) NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_login_session_user (user_id),
+    KEY idx_login_session_expires (expires_at),
+    CONSTRAINT fk_login_session_user FOREIGN KEY (user_id)
+        REFERENCES sys_user (id)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS sys_role (
     id BIGINT NOT NULL AUTO_INCREMENT,
     code VARCHAR(64) NOT NULL,

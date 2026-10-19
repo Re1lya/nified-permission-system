@@ -16,11 +16,13 @@
 服务器 2：MySQL（3306）
 ```
 
-如果两台服务器都要运行应用，则还需要一个两台应用服务器都能访问的 MySQL 实例或数据库集群；两台应用服务器必须使用完全相同的 `PERMISSION_JWT_SECRET`。当前项目的 JWT 可以在多个实例之间验签，但单机内存注销黑名单不会跨实例同步。
+如果两台服务器都要运行应用，则还需要一个两台应用服务器都能访问的 MySQL 实例或数据库集群；两台应用服务器必须使用完全相同的 `PERMISSION_JWT_SECRET`。登录会话统一保存在 `sys_login_session` 中，注销和账号变更不依赖单机内存。当前集成测试使用 H2，真实 MySQL 多实例验证仍需在部署时完成。
 
 ## 2. 服务器 2：初始化 MySQL
 
-在数据库服务器执行 [database-mysql.sql](database-mysql.sql)。然后创建一个只允许应用服务器访问的账号，例如：
+新数据库在数据库服务器执行 [database-mysql.sql](database-mysql.sql)。如果数据库已有旧版六张表，使用 [migrations/20261019-login-sessions.sql](migrations/20261019-login-sessions.sql) 新增会话表。随后统一升级所有应用实例，用户需重新登录。
+
+再创建一个只允许应用服务器访问的账号，例如：
 
 ```sql
 CREATE USER 'unified_permission'@'应用服务器内网IP'
@@ -131,4 +133,7 @@ curl http://127.0.0.1:8080/hello
 - MySQL 已执行建表脚本，`ddl-auto=validate` 启动无 schema 错误。
 - 没有把 `.env`、数据库密码或 JWT 密钥提交到 Git。
 - 已通过健康检查和 Postman 验收流程。
-- 多实例正式使用前，为注销黑名单配置 Redis 或共享持久化存储。
+- 多实例使用相同数据库，验证在实例 A 注销后实例 B 的后续请求返回 `401`。
+- 当前管理 API 的管理员鉴权和管理范围尚未实现，正式接入前须补齐。
+
+会话过期后即无法通过校验，但记录暂不自动清理。可配置数据库维护任务定期执行 `DELETE FROM sys_login_session WHERE expires_at <= UTC_TIMESTAMP(6)`，会话表的到期时间已有索引。
