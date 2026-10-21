@@ -1,0 +1,1865 @@
+{
+  "info": {
+    "name": "统一权限管理 一期验收串联场景",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "对应 checks.md 的 9 个场景。运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir；不要把真实凭据写入集合。"
+  },
+  "variable": [
+    {
+      "key": "runId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "AUTH-01 登录与密码策略",
+      "item": [
+        {
+          "name": "管理员登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"{{adminUser}}\", \"password\": \"{{adminPassword}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('runId')) pm.collectionVariables.set('runId', Date.now().toString(36));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('AUTH-01 管理员登录成功', () => pm.response.to.have.status(200));",
+                  "const t = pm.response.json().accessToken;",
+                  "pm.test('返回访问令牌', () => pm.expect(t).to.be.a('string').and.not.empty);",
+                  "pm.collectionVariables.set('adminToken', t);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "错误密码登录（反向）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"{{adminUser}}\", \"password\": \"Wrong-Password-1\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('AUTH-01 错误密码返回 401', () => pm.response.to.have.status(401));",
+                  "pm.test('不返回令牌', () => pm.expect(pm.response.text()).to.not.include('accessToken'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RBAC-01 准备：两个角色共享 expense:list",
+      "item": [
+        {
+          "name": "创建业务系统",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/systems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "systems"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\": \"demo_sys_{{runId}}\", \"name\": \"演示报销系统\", \"baseUrl\": \"http://127.0.0.1:18101\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('创建系统返回 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('systemId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建权限 expense:list",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "permissions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"systemId\": \"{{systemId}}\", \"code\": \"expense:list\", \"name\": \"查看报销\", \"menuPath\": \"/expenses\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('创建权限返回 201 或已存在 409', () => pm.expect([201, 409]).to.include(pm.response.code));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('permId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "查询权限编号",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "permissions"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('权限列表可读', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json().find(x => x.code === 'expense:list');",
+                  "pm.test('expense:list 存在', () => pm.expect(p).to.be.an('object'));",
+                  "pm.collectionVariables.set('permId', p.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建角色 A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\": \"demo_a_{{runId}}\", \"name\": \"演示角色A\", \"description\": \"Apifox 验收\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('创建角色 A 返回 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('roleA', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建角色 B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"code\": \"demo_b_{{runId}}\", \"name\": \"演示角色B\", \"description\": \"Apifox 验收\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('创建角色 B 返回 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('roleB', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "角色 A 授予 expense:list",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles/{{roleA}}/permissions/{{permId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "roles",
+                "{{roleA}}",
+                "permissions",
+                "{{permId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('角色 A 授权成功', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "角色 B 授予 expense:list",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/roles/{{roleB}}/permissions/{{permId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "roles",
+                "{{roleB}}",
+                "permissions",
+                "{{permId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('角色 B 授权成功', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建演示用户",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"demo_u_{{runId}}\", \"displayName\": \"演示用户\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('创建用户返回 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('userId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "设置演示用户密码",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"password\": \"Demo-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('设置密码成功', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "赋予角色 A",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleA}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleA}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('赋予角色 A', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "赋予角色 B",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleB}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('赋予角色 B', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "演示用户登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"demo_u_{{runId}}\", \"password\": \"Demo-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('演示用户登录成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('userToken', pm.response.json().accessToken);",
+                  "pm.test('有效权限含 expense:list', () => pm.expect(JSON.stringify(pm.response.json().permissions)).to.include('expense:list'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SCOPE-01 越权与无效令牌（反向）",
+      "item": [
+        {
+          "name": "普通用户请求管理 API",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SCOPE-01 普通用户管理 API 返回 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "普通用户请求导入预览列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "imports"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SCOPE-01 普通用户不能读导入批次', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "未携带令牌",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('未登录返回 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "伪造或过期令牌",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.invalid"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('无效令牌返回 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RBAC-01 权限并集与回收",
+      "item": [
+        {
+          "name": "两角色时访问报销",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('RBAC-01 持有两角色可访问', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "回收角色 A",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleA}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleA}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('回收角色 A', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "同一令牌仍可访问",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('RBAC-01 角色 B 仍提供权限，返回 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "回收角色 B",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "roles",
+                "{{roleB}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('回收角色 B', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "同一令牌被拒绝",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('RBAC-01 全部来源回收后返回 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SESSION-01 注销后旧令牌失效",
+      "item": [
+        {
+          "name": "用户注销",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('注销成功', () => pm.expect([200, 204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "旧令牌再次访问",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SESSION-01 注销后旧令牌返回 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IMPORT-01 三表预览、提交与幂等",
+      "item": [
+        {
+          "name": "三表预览",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/imports/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "imports",
+                "preview"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "departments",
+                  "type": "file",
+                  "src": "{{workbookDir}}/部门演示.xlsx"
+                },
+                {
+                  "key": "employees",
+                  "type": "file",
+                  "src": "{{workbookDir}}/员工演示.xlsx"
+                },
+                {
+                  "key": "permissions",
+                  "type": "file",
+                  "src": "{{workbookDir}}/权限演示.xlsx"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('预览成功', () => pm.response.to.have.status(200));",
+                  "const b = pm.response.json();",
+                  "pm.test('IMPORT-01 预览无错误', () => pm.expect(b.errorCount).to.eql(0));",
+                  "pm.collectionVariables.set('previewId', b.previewId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "确认提交",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/imports/commit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "imports",
+                "commit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"previewId\": \"{{previewId}}\", \"acknowledgeWarnings\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('提交成功', () => pm.response.to.have.status(200));",
+                  "pm.test('返回批次编号', () => pm.expect(pm.response.json().batchId).to.be.a('number'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "同一三表再次预览",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/imports/preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "imports",
+                "preview"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "departments",
+                  "type": "file",
+                  "src": "{{workbookDir}}/部门演示.xlsx"
+                },
+                {
+                  "key": "employees",
+                  "type": "file",
+                  "src": "{{workbookDir}}/员工演示.xlsx"
+                },
+                {
+                  "key": "permissions",
+                  "type": "file",
+                  "src": "{{workbookDir}}/权限演示.xlsx"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('再次预览成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('previewId', pm.response.json().previewId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复提交",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/imports/commit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "imports",
+                "commit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"previewId\": \"{{previewId}}\", \"acknowledgeWarnings\": true}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('重复提交返回 200', () => pm.response.to.have.status(200));",
+                  "pm.test('IMPORT-01 重复提交 reused=true', () => pm.expect(pm.response.json().reused).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "读取部门",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/departments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "departments"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('部门列表', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('departmentId', pm.response.json()[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "读取岗位",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/company/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "company",
+                "posts"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('岗位列表', () => pm.response.to.have.status(200));",
+                  "const p = pm.response.json()[0];",
+                  "pm.collectionVariables.set('postId', p.id);",
+                  "pm.collectionVariables.set('postRoleId', p.role_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HR-01 签名事件与幂等",
+      "item": [
+        {
+          "name": "入职事件",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/hr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "hr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'hr_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'JOIN',username:'hr_'+pm.collectionVariables.get('runId'),displayName:'演示入职',departmentId:Number(pm.collectionVariables.get('departmentId')),postId:Number(pm.collectionVariables.get('postId')),phone:'13900000000',company:'演示公司'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('hr\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('hrSecret') || pm.variables.get('hrSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HR-01 入职成功', () => pm.response.to.have.status(200));",
+                  "pm.test('首次处理 reused=false', () => pm.expect(pm.response.json().reused).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "同一事件重发",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/hr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "hr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'hr_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'JOIN',username:'hr_'+pm.collectionVariables.get('runId'),displayName:'演示入职',departmentId:Number(pm.collectionVariables.get('departmentId')),postId:Number(pm.collectionVariables.get('postId')),phone:'13900000000',company:'演示公司'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('hr\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('hrSecret') || pm.variables.get('hrSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('重发返回 200', () => pm.response.to.have.status(200));",
+                  "pm.test('HR-01 重发 reused=true', () => pm.expect(pm.response.json().reused).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "同编号不同内容（反向）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/hr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "hr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'hr_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'JOIN',username:'hr_x_'+pm.collectionVariables.get('runId'),displayName:'改动内容',departmentId:Number(pm.collectionVariables.get('departmentId')),postId:Number(pm.collectionVariables.get('postId')),phone:'13900000001',company:'演示公司'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('hr\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('hrSecret') || pm.variables.get('hrSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HR-01 同编号不同内容返回 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "过期时间戳（反向）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/hr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "hr"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'hr_old_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'JOIN',username:'hr_old_'+pm.collectionVariables.get('runId'),displayName:'过期',departmentId:1,postId:1,phone:'13900000002',company:'演示公司'});",
+                  "const ts = String(Math.floor(Date.now()/1000) - 900);",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('hr\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('hrSecret') || pm.variables.get('hrSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('过期签名返回 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "OA-01 申请与审批回调",
+      "item": [
+        {
+          "name": "演示用户重新登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"demo_u_{{runId}}\", \"password\": \"Demo-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('重新登录', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('userToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "提交岗位角色申请",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/self/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "self",
+                "applications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"roleId\": \"{{postRoleId}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('申请已登记', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json();",
+                  "pm.test('状态为 PENDING', () => pm.expect(a.decision).to.eql('PENDING'));",
+                  "pm.collectionVariables.set('approvalId', a.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "错误签名回调（反向）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/oa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "oa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'oa_bad_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', '00'.repeat(32));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('错误签名返回 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "审批通过回调",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/oa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "oa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'oa_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OA-01 回调成功', () => pm.response.to.have.status(200));",
+                  "pm.test('首次处理 reused=false', () => pm.expect(pm.response.json().reused).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "重复回调",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/oa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "oa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'oa_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('重复回调返回 200', () => pm.response.to.have.status(200));",
+                  "pm.test('OA-01 重复回调 reused=true', () => pm.expect(pm.response.json().reused).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "查询本人申请",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/self/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "self",
+                "applications"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('申请列表', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().find(x => x.id == pm.collectionVariables.get('approvalId'));",
+                  "pm.test('OA-01 申请变为 APPROVED', () => pm.expect(a.decision).to.eql('APPROVED'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "已授予申请角色",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/self",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "self"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('本人信息', () => pm.response.to.have.status(200));",
+                  "pm.test('权限版本已增加', () => pm.expect(pm.response.json().version).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -9,24 +9,24 @@
   },
   "coverage": {
     "INSTRUCTION": {
-      "covered": 6505,
-      "missed": 3120,
-      "percent": 67.58
+      "covered": 6579,
+      "missed": 3046,
+      "percent": 68.35
     },
     "BRANCH": {
-      "covered": 329,
-      "missed": 333,
-      "percent": 49.7
+      "covered": 345,
+      "missed": 317,
+      "percent": 52.11
     },
     "LINE": {
-      "covered": 951,
-      "missed": 217,
-      "percent": 81.42
+      "covered": 953,
+      "missed": 215,
+      "percent": 81.59
     },
     "COMPLEXITY": {
-      "covered": 468,
-      "missed": 347,
-      "percent": 57.42
+      "covered": 482,
+      "missed": 333,
+      "percent": 59.14
     },
     "METHOD": {
       "covered": 370,

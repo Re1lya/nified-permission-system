@@ -1,0 +1,643 @@
+{
+  "date": "2026-10-21",
+  "runner": "newman 6（Postman v2.1 集合，pm 脚本与 Apifox 兼容）",
+  "target": "本机隔离 H2 实例 127.0.0.1:18091，phase-one 配置，三份虚构演示表",
+  "requests": {
+    "total": 42,
+    "pending": 0,
+    "failed": 0
+  },
+  "assertions": {
+    "total": 56,
+    "pending": 0,
+    "failed": 0
+  },
+  "durationMs": 4528,
+  "scenarios": [
+    {
+      "scenario": "AUTH-01 登录与密码策略",
+      "requests": 2,
+      "assertions": 4,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "管理员登录",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "AUTH-01 管理员登录成功",
+              "passed": true
+            },
+            {
+              "name": "返回访问令牌",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "错误密码登录（反向）",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 401,
+          "assertions": [
+            {
+              "name": "AUTH-01 错误密码返回 401",
+              "passed": true
+            },
+            {
+              "name": "不返回令牌",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "RBAC-01 准备：两个角色共享 expense:list",
+      "requests": 12,
+      "assertions": 14,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "创建业务系统",
+          "method": "POST",
+          "path": "/api/systems",
+          "status": 201,
+          "assertions": [
+            {
+              "name": "创建系统返回 201",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "创建权限 expense:list",
+          "method": "POST",
+          "path": "/api/permissions",
+          "status": 201,
+          "assertions": [
+            {
+              "name": "创建权限返回 201 或已存在 409",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "查询权限编号",
+          "method": "GET",
+          "path": "/api/permissions",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "权限列表可读",
+              "passed": true
+            },
+            {
+              "name": "expense:list 存在",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "创建角色 A",
+          "method": "POST",
+          "path": "/api/roles",
+          "status": 201,
+          "assertions": [
+            {
+              "name": "创建角色 A 返回 201",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "创建角色 B",
+          "method": "POST",
+          "path": "/api/roles",
+          "status": 201,
+          "assertions": [
+            {
+              "name": "创建角色 B 返回 201",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "角色 A 授予 expense:list",
+          "method": "PUT",
+          "path": "/api/roles/1/permissions/1",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "角色 A 授权成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "角色 B 授予 expense:list",
+          "method": "PUT",
+          "path": "/api/roles/2/permissions/1",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "角色 B 授权成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "创建演示用户",
+          "method": "POST",
+          "path": "/api/users",
+          "status": 201,
+          "assertions": [
+            {
+              "name": "创建用户返回 201",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "设置演示用户密码",
+          "method": "PUT",
+          "path": "/api/users/2/password",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "设置密码成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "赋予角色 A",
+          "method": "PUT",
+          "path": "/api/users/2/roles/1",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "赋予角色 A",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "赋予角色 B",
+          "method": "PUT",
+          "path": "/api/users/2/roles/2",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "赋予角色 B",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "演示用户登录",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "演示用户登录成功",
+              "passed": true
+            },
+            {
+              "name": "有效权限含 expense:list",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "SCOPE-01 越权与无效令牌（反向）",
+      "requests": 4,
+      "assertions": 4,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "普通用户请求管理 API",
+          "method": "GET",
+          "path": "/api/users",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "SCOPE-01 普通用户管理 API 返回 403",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "普通用户请求导入预览列表",
+          "method": "GET",
+          "path": "/api/company/imports",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "SCOPE-01 普通用户不能读导入批次",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "未携带令牌",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 401,
+          "assertions": [
+            {
+              "name": "未登录返回 401",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "伪造或过期令牌",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 401,
+          "assertions": [
+            {
+              "name": "无效令牌返回 401",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "RBAC-01 权限并集与回收",
+      "requests": 5,
+      "assertions": 5,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "两角色时访问报销",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "RBAC-01 持有两角色可访问",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "回收角色 A",
+          "method": "DELETE",
+          "path": "/api/users/2/roles/1",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "回收角色 A",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "同一令牌仍可访问",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "RBAC-01 角色 B 仍提供权限，返回 200",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "回收角色 B",
+          "method": "DELETE",
+          "path": "/api/users/2/roles/2",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "回收角色 B",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "同一令牌被拒绝",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "RBAC-01 全部来源回收后返回 403",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "SESSION-01 注销后旧令牌失效",
+      "requests": 2,
+      "assertions": 2,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "用户注销",
+          "method": "POST",
+          "path": "/api/auth/logout",
+          "status": 204,
+          "assertions": [
+            {
+              "name": "注销成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "旧令牌再次访问",
+          "method": "GET",
+          "path": "/api/demo/expenses",
+          "status": 401,
+          "assertions": [
+            {
+              "name": "SESSION-01 注销后旧令牌返回 401",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "IMPORT-01 三表预览、提交与幂等",
+      "requests": 6,
+      "assertions": 9,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "三表预览",
+          "method": "POST",
+          "path": "/api/company/imports/preview",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "预览成功",
+              "passed": true
+            },
+            {
+              "name": "IMPORT-01 预览无错误",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "确认提交",
+          "method": "POST",
+          "path": "/api/company/imports/commit",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "提交成功",
+              "passed": true
+            },
+            {
+              "name": "返回批次编号",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "同一三表再次预览",
+          "method": "POST",
+          "path": "/api/company/imports/preview",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "再次预览成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "重复提交",
+          "method": "POST",
+          "path": "/api/company/imports/commit",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "重复提交返回 200",
+              "passed": true
+            },
+            {
+              "name": "IMPORT-01 重复提交 reused=true",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "读取部门",
+          "method": "GET",
+          "path": "/api/company/departments",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "部门列表",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "读取岗位",
+          "method": "GET",
+          "path": "/api/company/posts",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "岗位列表",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "HR-01 签名事件与幂等",
+      "requests": 4,
+      "assertions": 6,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "入职事件",
+          "method": "POST",
+          "path": "/api/integration/hr",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "HR-01 入职成功",
+              "passed": true
+            },
+            {
+              "name": "首次处理 reused=false",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "同一事件重发",
+          "method": "POST",
+          "path": "/api/integration/hr",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "重发返回 200",
+              "passed": true
+            },
+            {
+              "name": "HR-01 重发 reused=true",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "同编号不同内容（反向）",
+          "method": "POST",
+          "path": "/api/integration/hr",
+          "status": 409,
+          "assertions": [
+            {
+              "name": "HR-01 同编号不同内容返回 409",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "过期时间戳（反向）",
+          "method": "POST",
+          "path": "/api/integration/hr",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "过期签名返回 403",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "OA-01 申请与审批回调",
+      "requests": 7,
+      "assertions": 12,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "演示用户重新登录",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "重新登录",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "提交岗位角色申请",
+          "method": "POST",
+          "path": "/api/platform/self/applications",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "申请已登记",
+              "passed": true
+            },
+            {
+              "name": "状态为 PENDING",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "错误签名回调（反向）",
+          "method": "POST",
+          "path": "/api/integration/oa",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "错误签名返回 403",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "审批通过回调",
+          "method": "POST",
+          "path": "/api/integration/oa",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "OA-01 回调成功",
+              "passed": true
+            },
+            {
+              "name": "首次处理 reused=false",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "重复回调",
+          "method": "POST",
+          "path": "/api/integration/oa",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "重复回调返回 200",
+              "passed": true
+            },
+            {
+              "name": "OA-01 重复回调 reused=true",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "查询本人申请",
+          "method": "GET",
+          "path": "/api/platform/self/applications",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "申请列表",
+              "passed": true
+            },
+            {
+              "name": "OA-01 申请变为 APPROVED",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "已授予申请角色",
+          "method": "GET",
+          "path": "/api/platform/self",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "本人信息",
+              "passed": true
+            },
+            {
+              "name": "权限版本已增加",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "note": "报告只保留步骤名、方法、路径、状态码与断言结果；令牌、密码和签名密钥不入库。"
+}

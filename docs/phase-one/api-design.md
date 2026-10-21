@@ -106,3 +106,28 @@ Apifox 项目已在 CDWY 团队创建：https://app.apifox.com/project/8955177 �
 
 
 已保存 Apifox 场景 SESSION-01（编号 8875512）。本地 CLI 场景文件为 apifox/session-01.apifox-cli.json，含 401 状态断言及错误响应结构校验；本次运行 1 个请求、1 条断言通过。报告为 apifox/session-01-report.html 和 .json。复现命令：apifox run docs/phase-one/apifox/session-01.apifox-cli.json -n 1 -r cli,html,json。网页跨域调试时使用 Apifox 扩展或桌面端；本机 CLI 可直接访问 18081。
+
+### 10.1 九个串联场景的完整运行
+
+checks.md 的 9 个场景已写成 apifox/phase-one-scenarios.postman_collection.json（Postman v2.1，由 scripts/build-acceptance-scenarios.py 生成），可直接导入 Apifox，也可用 newman 运行；断言脚本使用 pm 语法，两者通用。集合只含变量名，运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir。
+
+2026-10-21 在本机隔离实例（phase-one 配置、H2、端口 18091、三份虚构演示表）上用 newman 运行：42 个请求、56 条断言全部通过，用时约 4.5 秒。
+
+| 场景 | 请求 | 断言 | 覆盖的反向用例 |
+| --- | --- | --- | --- |
+| AUTH-01 登录与密码策略 | 2 | 4 | 错误密码 401 |
+| RBAC-01 准备 | 12 | 14 | — |
+| SCOPE-01 越权与无效令牌 | 4 | 4 | 普通用户管理 API 403、无令牌 401、伪造令牌 401 |
+| RBAC-01 权限并集与回收 | 5 | 5 | 全部来源回收后同一令牌 403 |
+| SESSION-01 注销 | 2 | 2 | 注销后旧令牌 401 |
+| IMPORT-01 三表导入 | 6 | 9 | 重复提交 reused=true |
+| HR-01 签名事件 | 4 | 6 | 重发 reused=true、同编号不同内容 409、过期时间戳 403 |
+| OA-01 申请与审批 | 7 | 12 | 错误签名 403、重复回调 reused=true |
+
+运行明细：apifox/phase-one-scenarios-report.json（每步方法、路径、状态码与断言结果）和 apifox/phase-one-scenarios-cli.txt。报告不保存令牌、口令与签名密钥。复现命令（先运行 scripts/make-demo-workbooks.py 生成虚构表）：
+
+```
+npx newman run docs/phase-one/apifox/phase-one-scenarios.postman_collection.json --env-var baseUrl=http://127.0.0.1:18091 --env-var adminUser=… --env-var adminPassword=… --env-var hrSecret=… --env-var oaSecret=… --env-var workbookDir=output/demo-workbooks
+```
+
+运行中观察到一次异常：服务启动后的第一次登录返回 500，日志为 Jackson 类 POJOPropertyBuilder 的 VerifyError；随后的请求和重新启动后的完整运行都正常。打包的 jackson-databind 3.1.5 与 Maven 仓库校验和一致，原因尚未查明，需在答辩前复现排查。
