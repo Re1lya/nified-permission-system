@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f9e4cc7d-3b1d-4a4f-9a4a-6b5e2f70b8d8",
     "name": "Unified Permission System - RBAC0 Acceptance",
-    "description": "按顺序执行即可验证用户、角色、权限、JWT 登录、后端权限校验、角色回收和注销。默认面向本地 H2 空数据库。",
+    "description": "第一次检查：在全新的本地 demo 数据库执行（不要先运行 demo-data.py）。先在环境中填 adminUsername、adminPassword 和 password。管理请求用 adminToken，业务请求用 accessToken。重新启动 demo 后可重复；不要导出带密码或 Token 的环境。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -19,14 +19,50 @@
     }
   ],
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "demoSuffix", "value": "" },
-    { "key": "password", "value": "password-123" },
-    { "key": "systemId", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "roleId", "value": "" },
-    { "key": "permissionId", "value": "" },
-    { "key": "accessToken", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "demoSuffix",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "systemId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "roleId",
+      "value": ""
+    },
+    {
+      "key": "permissionId",
+      "value": ""
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "adminUsername",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -34,141 +70,661 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": { "raw": "{{baseUrl}}/hello", "host": ["{{baseUrl}}"], "path": ["hello"] }
+        "url": {
+          "raw": "{{baseUrl}}/hello",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "hello"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('returns 200', () => pm.response.to.have.status(200));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01b - 管理员登录",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"{{adminUsername}}\", \"password\": \"{{adminPassword}}\"}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('adminToken', pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "02 - Create business system",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"code\": \"pm_demo_{{demoSuffix}}\",\n  \"name\": \"Postman Demo System\",\n  \"baseUrl\": \"http://demo.local\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/systems", "host": ["{{baseUrl}}"], "path": ["api", "systems"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"pm_demo_{{demoSuffix}}\",\n  \"name\": \"Postman Demo System\",\n  \"baseUrl\": \"http://demo.local\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/systems",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "systems"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('systemId', pm.response.json().id);"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('systemId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "03 - Create user",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"pm_demo_{{demoSuffix}}\",\n  \"displayName\": \"Postman Demo User\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"pm_demo_{{demoSuffix}}\",\n  \"displayName\": \"Postman Demo User\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('userId', pm.response.json().id);"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('userId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "04 - Set user password",
       "request": {
         "method": "PUT",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"password\": \"{{password}}\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/users/{{userId}}/password", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "password"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}/password",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}",
+            "password"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('updated', () => pm.response.to.have.status(204));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updated', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "05 - Create role",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"code\": \"pm_demo_viewer_{{demoSuffix}}\",\n  \"name\": \"Postman Demo Viewer\",\n  \"description\": \"RBAC0 acceptance role\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/roles", "host": ["{{baseUrl}}"], "path": ["api", "roles"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"pm_demo_viewer_{{demoSuffix}}\",\n  \"name\": \"Postman Demo Viewer\",\n  \"description\": \"RBAC0 acceptance role\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/roles",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "roles"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('roleId', pm.response.json().id);"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('roleId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "06 - Create expense list permission",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"systemId\": {{systemId}},\n  \"code\": \"expense:list\",\n  \"name\": \"List expenses\",\n  \"menuPath\": \"/expense/list\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/permissions", "host": ["{{baseUrl}}"], "path": ["api", "permissions"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"systemId\": {{systemId}},\n  \"code\": \"expense:list\",\n  \"name\": \"List expenses\",\n  \"menuPath\": \"/expense/list\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/permissions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "permissions"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('permissionId', pm.response.json().id);"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('created', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('permissionId', pm.response.json().id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "07 - Assign permission to role",
       "request": {
         "method": "PUT",
-        "header": [],
-        "url": { "raw": "{{baseUrl}}/api/roles/{{roleId}}/permissions/{{permissionId}}", "host": ["{{baseUrl}}"], "path": ["api", "roles", "{{roleId}}", "permissions", "{{permissionId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/roles/{{roleId}}/permissions/{{permissionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "roles",
+            "{{roleId}}",
+            "permissions",
+            "{{permissionId}}"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('assigned', () => pm.response.to.have.status(204));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('assigned', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "08 - Assign role to user",
       "request": {
         "method": "PUT",
-        "header": [],
-        "url": { "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "roles", "{{roleId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}",
+            "roles",
+            "{{roleId}}"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('assigned', () => pm.response.to.have.status(204));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('assigned', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "09 - Login and save JWT",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": { "mode": "raw", "raw": "{\n  \"username\": \"pm_demo_{{demoSuffix}}\",\n  \"password\": \"{{password}}\"\n}" },
-        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"pm_demo_{{demoSuffix}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('logged in', () => pm.response.to.have.status(200));", "const token = pm.response.json().accessToken;", "pm.expect(token.split('.')).to.have.lengthOf(3);", "pm.collectionVariables.set('accessToken', token);"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('logged in', () => pm.response.to.have.status(200));",
+              "const token = pm.response.json().accessToken;",
+              "pm.expect(token.split('.')).to.have.lengthOf(3);",
+              "pm.collectionVariables.set('accessToken', token);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "10 - Query effective permissions",
       "request": {
         "method": "GET",
-        "header": [],
-        "url": { "raw": "{{baseUrl}}/api/users/{{userId}}/permissions", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "permissions"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}/permissions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}",
+            "permissions"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('returns 200', () => pm.response.to.have.status(200));", "const codes = pm.response.json().map(item => item.code);", "pm.expect(codes).to.include('expense:list');"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200', () => pm.response.to.have.status(200));",
+              "const codes = pm.response.json().map(item => item.code);",
+              "pm.expect(codes).to.include('expense:list');"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "11 - Protected expense API returns 200",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/api/demo/expenses", "host": ["{{baseUrl}}"], "path": ["api", "demo", "expenses"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/demo/expenses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "demo",
+            "expenses"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('allowed', () => pm.response.to.have.status(200));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('allowed', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "12 - Revoke user role",
       "request": {
         "method": "DELETE",
-        "header": [],
-        "url": { "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "roles", "{{roleId}}"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}",
+            "roles",
+            "{{roleId}}"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('revoked', () => pm.response.to.have.status(204));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('revoked', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "13 - Protected expense API returns 403 after revoke",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/api/demo/expenses", "host": ["{{baseUrl}}"], "path": ["api", "demo", "expenses"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/demo/expenses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "demo",
+            "expenses"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('forbidden', () => pm.response.to.have.status(403));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('forbidden', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13b - 普通用户禁止访问管理API",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/users"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13c - 当前登录身份",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "14 - Logout",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "logout"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('logged out', () => pm.response.to.have.status(204));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('logged out', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "15 - Protected expense API returns 401 after logout",
       "request": {
         "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": { "raw": "{{baseUrl}}/api/demo/expenses", "host": ["{{baseUrl}}"], "path": ["api", "demo", "expenses"] }
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/demo/expenses",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "demo",
+            "expenses"
+          ]
+        }
       },
-      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('unauthorized', () => pm.response.to.have.status(401));"] } }]
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('unauthorized', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - 管理员注销",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiAccessConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.config</a> &gt; <span class="el_source">ApiAccessConfig.java</span></div><h1>ApiAccessConfig.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.config;
+
+import com.cdwy.permission.exception.ForbiddenException;
+import com.cdwy.permission.repository.UserAccountRepository;
+import com.cdwy.permission.service.JwtTokenService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+/** Deny ordinary users by default on API routes, including future management endpoints. */
+@Configuration
+public class ApiAccessConfig implements WebMvcConfigurer {
+    private final JwtTokenService tokens;
+    private final UserAccountRepository users;
+
+<span class="fc" id="L19">    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users) {</span>
+<span class="fc" id="L20">        this.tokens = tokens;</span>
+<span class="fc" id="L21">        this.users = users;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+<span class="fc" id="L26">        registry.addInterceptor(new HandlerInterceptor() {</span>
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+<span class="fc" id="L29">                response.setHeader(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
+<span class="fc" id="L30">                return true;</span>
+            }
+<span class="fc" id="L32">        }).addPathPatterns(&quot;/api/**&quot;);</span>
+<span class="fc" id="L33">        registry.addInterceptor(new HandlerInterceptor() {</span>
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+<span class="fc" id="L36">                Long id = tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                if (!users.findById(id).map(user -&gt; user.isAdministrator()).orElse(false)) {</span>
+<span class="fc" id="L38">                    throw new ForbiddenException(&quot;管理接口仅允许管理员访问&quot;);</span>
+                }
+<span class="fc" id="L40">                return true;</span>
+            }
+<span class="fc" id="L42">        }).addPathPatterns(&quot;/api/**&quot;)</span>
+<span class="fc" id="L43">          .excludePathPatterns(&quot;/api/auth/login&quot;, &quot;/api/auth/logout&quot;, &quot;/api/auth/me&quot;, &quot;/api/demo/expenses&quot;);</span>
+<span class="fc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

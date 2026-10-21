@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local browser traces may contain authentication data. Only reviewed screenshots go in docs.
+.playwright-cli/
+output/
+__pycache__/
+.env
+*.local.json

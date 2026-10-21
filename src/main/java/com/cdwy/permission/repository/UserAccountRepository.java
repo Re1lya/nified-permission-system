@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
 
+    boolean existsByAdministratorTrue();
+
     boolean existsByUsername(String username);
 
     Optional<UserAccount> findByUsername(String username);

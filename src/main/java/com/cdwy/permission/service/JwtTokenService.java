@@ -34,13 +34,13 @@ public class JwtTokenService {
             UserAccountRepository userRepository,
             LoginSessionRepository sessionRepository) {
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
-        if (secretBytes.length < 32) {
+        if (secretBytes.length > 0 && secretBytes.length < 32) {
             throw new IllegalArgumentException("permission.jwt.secret 至少需要 32 个字节");
         }
         if (expirationSeconds <= 0) {
             throw new IllegalArgumentException("permission.jwt.expiration-seconds 必须大于 0");
         }
-        this.signingKey = Keys.hmacShaKeyFor(secretBytes);
+        this.signingKey = secretBytes.length == 0 ? Jwts.SIG.HS256.key().build() : Keys.hmacShaKeyFor(secretBytes);
         this.expirationSeconds = expirationSeconds;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;

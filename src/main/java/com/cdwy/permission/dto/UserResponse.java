@@ -10,6 +10,10 @@ public class UserResponse {
     private String username;
     private String displayName;
     private boolean enabled;
+    private boolean administrator;
+
+    public boolean isAdministrator() { return administrator; }
+    public void setAdministrator(boolean administrator) { this.administrator = administrator; }
 
     public UserResponse() {
     }

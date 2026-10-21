@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>统一权限管理 · RBAC0</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/app.css"><script src="/app.js" defer></script>
+</head>
+<body>
+  <header><strong>统一权限管理 <small>RBAC0</small></strong><div id="identity"></div></header>
+  <div id="notice" role="status" aria-live="polite" hidden></div>
+  <section id="login" class="login">
+    <p class="eyebrow">OOAD · 第一次检查</p><h1>登录工作台</h1>
+    <p class="muted">管理员配置授权，普通用户验证业务权限。</p>
+    <form id="login-form">
+      <label>用户名<input name="username" required maxlength="64" autocomplete="username"></label>
+      <label>密码<input name="password" type="password" required maxlength="128" autocomplete="current-password"></label>
+      <button class="primary">登录</button>
+    </form>
+    <p class="hint">首次使用请先按启动文档初始化管理员。此处没有公开注册入口。</p>
+  </section>
+  <div id="workspace" class="workspace" hidden><nav aria-label="功能导航"></nav><main id="main" tabindex="-1"></main></div>
+  <footer>课程演示环境 · 仅实现 RBAC0 · 报销列表为固定演示数据</footer>
+</body>
+</html>

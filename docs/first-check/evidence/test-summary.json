@@ -1,0 +1,136 @@
+{
+  "exportedAt": "2026-10-21T20:07:38.914523+08:00",
+  "baseCommit": "9a5d15906ebf9a95e8b33e6670627d2cbeb5a173",
+  "branch": "codex/first-check-rbac0",
+  "command": "mvn clean verify",
+  "suites": [
+    {
+      "name": "com.cdwy.permission.AdminAccessIntegrationTests",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "8.88"
+    },
+    {
+      "name": "com.cdwy.permission.AuthenticationHttpIntegrationTests",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.893"
+    },
+    {
+      "name": "com.cdwy.permission.NifiedPermissionSystemApplicationTests",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.298"
+    },
+    {
+      "name": "com.cdwy.permission.RbacServiceIntegrationTests",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.15"
+    }
+  ],
+  "coverage": {
+    "INSTRUCTION": {
+      "covered": 2284,
+      "missed": 330,
+      "percentage": 87.38
+    },
+    "BRANCH": {
+      "covered": 77,
+      "missed": 27,
+      "percentage": 74.04
+    },
+    "LINE": {
+      "covered": 579,
+      "missed": 95,
+      "percentage": 85.91
+    },
+    "COMPLEXITY": {
+      "covered": 274,
+      "missed": 79,
+      "percentage": 77.62
+    },
+    "METHOD": {
+      "covered": 249,
+      "missed": 52,
+      "percentage": 82.72
+    },
+    "CLASS": {
+      "covered": 47,
+      "missed": 1,
+      "percentage": 97.92
+    }
+  },
+  "sourceSha256": {
+    "pom.xml": "0163938f9323cc84efd020bc25800b637543a2f185ff73cb4d9922a6fed7fa60",
+    "src/main/java/com/cdwy/permission/config/AdminBootstrap.java": "b163ad652746df6b3b32cc009be0c5b4f6aac0217fe1bb878ee51952d43c62f3",
+    "src/main/java/com/cdwy/permission/config/ApiAccessConfig.java": "7c10c1ab19de73f9b12ae0e28dd22221ffdd0c0142c1f8d27fc80c4aa7ba7704",
+    "src/main/java/com/cdwy/permission/config/PasswordConfig.java": "986a56f15491ca2f68d5f33e3763cb8382caa32a1c32b65dc1d8c3c8f2a4dae1",
+    "src/main/java/com/cdwy/permission/controller/ApiExceptionHandler.java": "e99b6da8cbcdb509559e6f9dc37b7a1b2ce681bc3794a85a6bdcb3bcfad54cf6",
+    "src/main/java/com/cdwy/permission/controller/AuthController.java": "86fa152f9c2c12b9cb2130db9e7078a5094ae6cd52333587d2a6bcdb0d2f2156",
+    "src/main/java/com/cdwy/permission/controller/BusinessSystemController.java": "54a94ae28feb3c941c845ab2e6d55c5e62c39764d52a2e2598c990199faed91f",
+    "src/main/java/com/cdwy/permission/controller/CurrentUserController.java": "85970ae621ee843bddfedf97efd3f7368dd6bdfea175a2e52b9ae9f5134621fe",
+    "src/main/java/com/cdwy/permission/controller/DemoExpenseController.java": "be21070e518c6b7fd994d494d0f848462bcf5efc93958b3d8fa0abf67f55a863",
+    "src/main/java/com/cdwy/permission/controller/HelloController.java": "904506f0aaa0978444751d6cfbb32b8480e9a993ef2a5c6e126fb12f7d2b2a80",
+    "src/main/java/com/cdwy/permission/controller/PermissionController.java": "a97804dfafe0347ea9778349bf35cae84d180c0ee14c5b2db3a08e2a9c7ec424",
+    "src/main/java/com/cdwy/permission/controller/RoleController.java": "28e03093377754fc75c23072411b60fabe90600f53ff7e6bdf16cb373427411d",
+    "src/main/java/com/cdwy/permission/controller/UserController.java": "24750eb30b17895db6e4f720b5d768ab64059cef52762fcd7a274ae9695693c2",
+    "src/main/java/com/cdwy/permission/dto/CreatePermissionRequest.java": "a1cd01e8224a86a9e8c8ebaa804387fffce77abb037cddcd6063262fc8190c59",
+    "src/main/java/com/cdwy/permission/dto/CreateRoleRequest.java": "4e7fd52aa11324fe923f3f78c9e6451d716a69a4ad0073dd2ea0f40b497cb50d",
+    "src/main/java/com/cdwy/permission/dto/CreateSystemRequest.java": "d93edf79c47fe2987104dc281ba26f7097a9d28e9c92816c462bfeb469c6895b",
+    "src/main/java/com/cdwy/permission/dto/CreateUserRequest.java": "c32b245c8142315b8ce64bd55b0f4e583eb98da322bfe1c1dca8affec3939c2d",
+    "src/main/java/com/cdwy/permission/dto/LoginRequest.java": "3edd20506a3a3516b4d0edcec2e5af6eebe45e2e5645685294baec55b7fcefa5",
+    "src/main/java/com/cdwy/permission/dto/LoginResponse.java": "7b17a68bf286ccfc4ac466564232f2dc4b5e9d1876083cd6a0238e940cb1be02",
+    "src/main/java/com/cdwy/permission/dto/PermissionCheckResponse.java": "474115ba2623a8d18907663777ffca8ecd9df055d683f32941d76a4e27b6ef0b",
+    "src/main/java/com/cdwy/permission/dto/PermissionResponse.java": "186e6a727e5f22ab94cd9a4b19a3423aab75c0d27201ec6eef055afcf80a9649",
+    "src/main/java/com/cdwy/permission/dto/RoleResponse.java": "649b85c1b91d19cdf4b9ebfbc9bc114550486ca7c7493bc1075ba96718c4c3fb",
+    "src/main/java/com/cdwy/permission/dto/SetPasswordRequest.java": "9e13b239d2cd5c26edb664eccaa9bfcc52e23e8dd690ebaca613039ad2a0eb7a",
+    "src/main/java/com/cdwy/permission/dto/SystemResponse.java": "fc9bed6817b102b2a58a2920df4f4ff0ad8364a4aa1f865a48cec61284cd8770",
+    "src/main/java/com/cdwy/permission/dto/UpdatePermissionRequest.java": "8919fc60411494d8ac92798c7e60c24c221862e0ea2cc463690bd4a092fc7c8f",
+    "src/main/java/com/cdwy/permission/dto/UpdateRoleRequest.java": "c4d0e4004a583e49520a6f1dceece083dabddefb8029d79fba3f237914a57011",
+    "src/main/java/com/cdwy/permission/dto/UpdateSystemRequest.java": "79a0f1f984e5e8e046220e6e92fc8fac76ae1856f93aeca56c4604f96abd42b0",
+    "src/main/java/com/cdwy/permission/dto/UpdateUserRequest.java": "350f402ce5213d8f4b92bd4e2c3085bee95e6ef086bc963b8e5f7c9bc088374d",
+    "src/main/java/com/cdwy/permission/dto/UserResponse.java": "dce4b32d6006ed97ff6c0ffa4461de65a988b32f91c09150baff4c5161430972",
+    "src/main/java/com/cdwy/permission/entity/BusinessSystem.java": "2d717a2944772dd90ecf418d665425c78aa03739bcd18d6b0de62a0813380e6a",
+    "src/main/java/com/cdwy/permission/entity/LoginSession.java": "f74b15a66e3832db6073db2c8b414c13193fbd2e8799ccbf76b0928ac47bfcc0",
+    "src/main/java/com/cdwy/permission/entity/Permission.java": "e6fad35579b660c863d02f04b9b08180853941aa1b846e2e9d9454bd4a93184e",
+    "src/main/java/com/cdwy/permission/entity/Role.java": "ab4be8ca390c05cb0c3af3b66b1b8f502394279a916f8811b44678d814a02448",
+    "src/main/java/com/cdwy/permission/entity/RolePermission.java": "6805d0b9340333aeb48e204ff1d40b5ff1c82dfe3df39c84fd1f4d46ad696c09",
+    "src/main/java/com/cdwy/permission/entity/UserAccount.java": "e15631f360b34fa77cb9319ac1e682b08baa82bfcd751e92a5e2a066ff01b07b",
+    "src/main/java/com/cdwy/permission/entity/UserRole.java": "4aeb7e43a447e798c8f299499e069dfcc511e0770b25a7817127035bed1280f8",
+    "src/main/java/com/cdwy/permission/exception/AuthenticationFailedException.java": "eb64c6b00a90a430dba4895640f87e80be9d75784d5b7ede0f6fcdc08556a45c",
+    "src/main/java/com/cdwy/permission/exception/ConflictException.java": "99c04d8791b8be042cddd6db6320e4ce683022405e5537883e90054abea0b56b",
+    "src/main/java/com/cdwy/permission/exception/ForbiddenException.java": "3cebd8d8e03a00f67544fc8f80f6e04becda38694e877d2f82b772fd1872064f",
+    "src/main/java/com/cdwy/permission/exception/ResourceNotFoundException.java": "687b150d884bb9f9888f1a2e32ceae25a5a30d3e7abf8a4bed8232340f6f8dec",
+    "src/main/java/com/cdwy/permission/NifiedPermissionSystemApplication.java": "58bafa5245866192ca0bb54a81830a0faedd18d108cab90624a8ea9dbd5a3e6f",
+    "src/main/java/com/cdwy/permission/repository/BusinessSystemRepository.java": "eda2f886ffb27bad76d4fee273f9b08ef5cae2bef0057fe5897abb82818c6df0",
+    "src/main/java/com/cdwy/permission/repository/LoginSessionRepository.java": "1c026f35c8e11f34fb170f82b3b5daee48ad66a2e2a8e1a94333f3f34148ee72",
+    "src/main/java/com/cdwy/permission/repository/PermissionRepository.java": "14eaf321e18db865acaab0cb09bc939c0cd5dab242550c0512565ca4877b8907",
+    "src/main/java/com/cdwy/permission/repository/RolePermissionRepository.java": "c52952e19313d1d66e2ca71293fb51da11caf7333fbba1c296f9b5abfd5548ed",
+    "src/main/java/com/cdwy/permission/repository/RoleRepository.java": "a29b7eff64922c0979565e0fbdd359970166e289cabd41c801d5d4fd45247bf5",
+    "src/main/java/com/cdwy/permission/repository/UserAccountRepository.java": "40f138b83be0b86e68d8a4c3a7c6533951c47a18ec31690501e5f0bf68c9d2dc",
+    "src/main/java/com/cdwy/permission/repository/UserRoleRepository.java": "0b850442590314738dc84b61fbfd5ee52ce976c4c970ba783337b18b39161a27",
+    "src/main/java/com/cdwy/permission/service/AdminBootstrapService.java": "3de2b8d3fd8fbad4d896c02caca499560d9abd86e4dbc162759787f83e281096",
+    "src/main/java/com/cdwy/permission/service/JwtTokenService.java": "e7190d53ec60a774b6135b69af5b57952445a9eb5ed997a545af7001b7e4ffa7",
+    "src/main/java/com/cdwy/permission/service/PasswordPolicy.java": "cc5b3a0c6fea28c437bc4a5d407ee8a231eecc7154a9aa8fcaed520ecf2539cb",
+    "src/main/java/com/cdwy/permission/service/RbacService.java": "ba5994a43ee1369484f3cd6a266b0829500fdba1fd00a3d9f45087cad3d42b49",
+    "src/main/resources/application-demo.properties": "9d5693dd01fd711146e711b22fc8450ddb22a632e6b015d039ab3bc00ca40fc9",
+    "src/main/resources/application-prod.yml": "b543c8122eb4f2aff9411ac8193b1dfe860da966dc61c5403cc6af2b6eb66982",
+    "src/main/resources/application.properties": "890752a9aa4cc94a32331dc24305364819bd35781d0ae7359c92c4baa96d85ad",
+    "src/main/resources/static/app.css": "0d09b50786cb7f06b7872d4861bcea3230af96c830410bdf86efece832feb4af",
+    "src/main/resources/static/app.js": "3c01815e26ddee60125f54b0150ba740c9ee1aa0e9b54a8806301a98300704fe",
+    "src/main/resources/static/index.html": "7f160be7982b6a9c4196ce5df1a0a9489ce8ca06b224afaa7cf87af12d67a427",
+    "src/test/java/com/cdwy/permission/AdminAccessIntegrationTests.java": "e3adf19493e35b291d90872c12e440dc5c5da220dcc7d7acd6c521e53b06a6a8",
+    "src/test/java/com/cdwy/permission/AuthenticationHttpIntegrationTests.java": "9882bdf04d41a3f5627236b55c002a8ee24df6935d5c0c892415b596b6b2fce5",
+    "src/test/java/com/cdwy/permission/NifiedPermissionSystemApplicationTests.java": "37553f36e810de62e0e878d98d6c70d41d3bece238ed05ef58a76f75ecb37d1f",
+    "src/test/java/com/cdwy/permission/RbacServiceIntegrationTests.java": "8228c2d423f7c8286682518345539eff8c2fd61480712096d5b1cb02385ff495"
+  }
+}

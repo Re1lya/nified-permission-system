@@ -20,7 +20,7 @@ Repository：Spring Data JPA 数据访问
 H2（本地）/ MySQL（生产）
 ```
 
-Controller 不直接访问数据库；Service 负责 DTO、实体和响应对象之间的转换；Repository 只负责持久化查询。
+主要管理功能由 Controller 调用 Service；当前身份查询只读取用户身份字段。Service 负责 DTO、实体和响应对象之间的转换；Repository 负责持久化查询。管理 API 在进入 Controller 前统一校验管理员身份。
 
 ## 3. RBAC0 模型
 
@@ -39,6 +39,7 @@ erDiagram
         varchar display_name
         varchar password_hash
         boolean enabled
+        boolean administrator
     }
     ROLE {
         bigint id PK
@@ -142,7 +143,7 @@ OA 负责申请和审批，审批通过后调用本系统的角色分配或回�
 - 多个应用实例必须使用相同的 JWT 密钥；数据库使用同一个 MySQL 实例或集群。
 - 本地默认使用 H2 内存数据库，应用停止后数据清空；生产环境使用 `prod` 配置和 MySQL。
 - 登录会话保存在共享数据库中，校验时不缓存会话状态。只要实例使用同一数据库和 JWT 密钥，后续请求能读取已提交的注销及账号变更；已开始处理的请求不提供强制中断保证。
-- 管理 CRUD API 暂未接入管理员鉴权；当前只验证受保护业务示例。管理范围、首次管理员初始化和操作审计需要继续实现后再正式接入业务系统。
+- 管理 CRUD API 已统一校验管理员身份；启动参数首次初始化一个管理员。管理范围为全局，无部门或租户边界。初始化防覆盖及防提权规则见 [第一次检查详细设计](first-check/design.md)。操作审计不在本次实现范围。
 - 当前版本没有宣称达到 20 毫秒指标，也没有完成一万并发压测；性能指标需要在部署拓扑、数据量和压测工具确定后单独测量。
 
 两台服务器的角色划分和启动命令见 [deployment-two-servers.md](deployment-two-servers.md)。
@@ -164,4 +165,4 @@ OA 负责申请和审批，审批通过后调用本系统的角色分配或回�
 
 本阶段已完成：RBAC0 基础模型、六张核心表和一张登录会话表、CRUD、角色和权限关系、BCrypt 登录、JWT 与持久化会话校验、MySQL 建表/增量脚本和 Postman 基础验收流程。
 
-后续优先实现管理 API 的管理员鉴权和管理范围，再增加审计与幂等、HR 员工同步、OA 审批单号和调用签名、管理员网页、数据库迁移工具和压测报告。具体借鉴点见 [reference-improvements.md](reference-improvements.md)。
+2026-10-21 已补齐管理员鉴权、首次管理员初始化、可操作的中文网页和 JaCoCo 报告。第一次检查以 [检查材料](first-check/README.md) 为准；前文涉及 OA/Excel 等的描述只是历史远期设想，本次不实现也不验收。

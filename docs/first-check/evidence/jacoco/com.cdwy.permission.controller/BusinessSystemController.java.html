@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessSystemController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.controller</a> &gt; <span class="el_source">BusinessSystemController.java</span></div><h1>BusinessSystemController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.controller;
+
+import com.cdwy.permission.dto.CreateSystemRequest;
+import com.cdwy.permission.dto.SystemResponse;
+import com.cdwy.permission.dto.UpdateSystemRequest;
+import com.cdwy.permission.service.RbacService;
+import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/systems&quot;)
+public class BusinessSystemController {
+
+    private final RbacService rbacService;
+
+<span class="fc" id="L26">    public BusinessSystemController(RbacService rbacService) {</span>
+<span class="fc" id="L27">        this.rbacService = rbacService;</span>
+<span class="fc" id="L28">    }</span>
+
+    @PostMapping
+    public ResponseEntity&lt;SystemResponse&gt; create(@Valid @RequestBody CreateSystemRequest request) {
+<span class="fc" id="L32">        return ResponseEntity.status(HttpStatus.CREATED).body(rbacService.createSystem(request));</span>
+    }
+
+    @GetMapping
+    public List&lt;SystemResponse&gt; list() {
+<span class="nc" id="L37">        return rbacService.listSystems();</span>
+    }
+
+    @PutMapping(&quot;/{systemId}&quot;)
+    public SystemResponse update(
+            @PathVariable Long systemId,
+            @Valid @RequestBody UpdateSystemRequest request) {
+<span class="fc" id="L44">        return rbacService.updateSystem(systemId, request);</span>
+    }
+
+    @DeleteMapping(&quot;/{systemId}&quot;)
+    public ResponseEntity&lt;Void&gt; delete(@PathVariable Long systemId) {
+<span class="fc" id="L49">        rbacService.deleteSystem(systemId);</span>
+<span class="fc" id="L50">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

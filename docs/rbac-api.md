@@ -1,19 +1,22 @@
-# RBAC0 基础接口
+# API 与验收说明
 
-当前项目使用 H2 内存数据库启动，应用停止后数据会清空。CloneFactory 注解处理器
-源码随项目保存在 `third-party/clonefactory`，首次构建步骤见
-[CloneFactory 集成说明](clonefactory.md)。
+启动方式见 [本地启动](first-check/local-run.md)。以下示例中的密码仅表示请求格式，运行时换成自己的临时演示密码。
 
-启动：
+## 访问边界（2026-10-21 更新）
 
-```powershell
-$env:JAVA_HOME = 'C:\Users\姚景云\.jdks\corretto-21.0.12.1'
-$env:Path = "$env:JAVA_HOME\bin;$env:Path"
-cd D:\nified-permission-system
-mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" spring-boot:run
-```
+先用启动时初始化的管理员调用 `POST /api/auth/login`，保存 `adminToken`。**下方所有用户、角色、系统、权限管理请求均必须添加 `Authorization: Bearer <adminToken>`，包括 GET 查询。** 普通用户返回 403，未登录或失效令牌返回 401。
 
-请求均使用 `Content-Type: application/json`。
+- `POST /api/auth/login`：公开登录；请求和 LoginResponse 原有字段不变。
+- `POST /api/auth/logout`：幂等注销当前 Bearer 会话，返回 204；已失效或缺少令牌仍为 204。
+- `GET /api/auth/me`：需要有效登录，返回 `{userId, username, displayName, administrator, permissions}`。只能返回当前 JWT 身份，不接受目标用户 ID；权限每次重新计算。
+- `GET /api/demo/expenses`：需要有效登录及 `expense:list`，返回固定演示数据。管理员不绕过业务权限。
+- 其他 `/api/**` 默认要求管理员。静态网页和 `/hello` 不要求登录。H2 控制台默认关闭。
+
+用户管理响应新增只读 `administrator` 字段，创建/更新请求不能设置它。创建用户后须单独设置密码才可登录。密码至少 8 个字符且 UTF-8 编码最多 72 字节（BCrypt 限制）。首次管理员不能停用或删除，返回 409；允许改密码，修改后也会撤销其原有会话。
+
+参数错误返回 400，数据不存在 404，名称/编码冲突或关联约束冲突 409。错误体统一包含 `error` 和中文 `message`。新建系统/角色/权限的编码创建后不可修改，权限的所属系统创建后不可更换；权限无独立启停字段，以角色或所属系统状态控制。
+
+普通用户不能修改任何账号密码、配置自己的角色或创建管理员。初始化规则见 [详细设计](first-check/design.md)。
 
 ## 建立 RBAC0 演示数据
 
@@ -85,7 +88,7 @@ mvn "-Dmaven.repo.local=D:\CodexData\cache\m2" spring-boot:run
 
 会话表不保存原始 JWT；旧版 JWT 在升级后因没有对应会话而失效。数据库升级脚本见 [migrations/20261019-login-sessions.sql](migrations/20261019-login-sessions.sql)。
 
-当前管理类 API 尚未增加管理员鉴权和管理范围校验，只用于本地演示。后端令牌和权限保护的验收入口为 `/api/demo/expenses`。
+所有管理类 API 已统一校验管理员身份，本阶段管理范围为全局。管理操作使用 adminToken，业务演示使用普通用户 accessToken，不能混用。
 
 ## 其他接口
 

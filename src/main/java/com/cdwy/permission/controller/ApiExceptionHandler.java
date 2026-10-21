@@ -44,6 +44,18 @@ public class ApiExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, message);
     }
 
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, String>> badInput(Exception exception) {
+        return response(HttpStatus.BAD_REQUEST, exception instanceof IllegalArgumentException
+                ? exception.getMessage() : "请求格式不正确，请检查字段类型和 JSON");
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> constraint(Exception exception) {
+        return response(HttpStatus.CONFLICT, "数据重复或关联约束冲突，请刷新后重试");
+    }
+
     private ResponseEntity<Map<String, String>> response(HttpStatus status, String message) {
         Map<String, String> body = new LinkedHashMap<>();
         body.put("error", status.getReasonPhrase());
