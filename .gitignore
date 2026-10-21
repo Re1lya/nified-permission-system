@@ -38,3 +38,4 @@ output/
 __pycache__/
 .env
 *.local.json
+node_modules/

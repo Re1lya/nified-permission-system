@@ -27,12 +27,13 @@ public class JwtTokenService {
     private final long expirationSeconds;
     private final UserAccountRepository userRepository;
     private final LoginSessionRepository sessionRepository;
+    private final com.cdwy.permission.platform.PlatformStore platform;
 
     public JwtTokenService(
             @Value("${permission.jwt.secret}") String secret,
             @Value("${permission.jwt.expiration-seconds:7200}") long expirationSeconds,
             UserAccountRepository userRepository,
-            LoginSessionRepository sessionRepository) {
+            LoginSessionRepository sessionRepository, com.cdwy.permission.platform.PlatformStore platform) {
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (secretBytes.length > 0 && secretBytes.length < 32) {
             throw new IllegalArgumentException("permission.jwt.secret 至少需要 32 个字节");
@@ -44,6 +45,7 @@ public class JwtTokenService {
         this.expirationSeconds = expirationSeconds;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
+        this.platform = platform;
     }
 
     @Transactional
@@ -66,9 +68,11 @@ public class JwtTokenService {
         return token;
     }
 
+    @Transactional
     public Long requireUserId(String authorizationHeader) {
         Claims claims = parse(extractToken(authorizationHeader));
         Long userId = subject(claims);
+        platform.validAccount(userId);
         LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
                 .orElseThrow(JwtTokenService::invalidToken);
         if (!session.getUser().isEnabled()
@@ -77,6 +81,12 @@ public class JwtTokenService {
                 || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {
             throw invalidToken();
         }
+        var activity=platform.rows("select last_seen from session_activity where session_id=?",claims.getId());
+        Object stored=activity.isEmpty()?null:activity.getFirst().get("last_seen");
+        Instant last=stored==null?session.getIssuedAt():stored instanceof java.time.OffsetDateTime offset?offset.toInstant():((java.sql.Timestamp)stored).toInstant();
+        if(last.plusSeconds(1800).isBefore(Instant.now()))throw invalidToken();
+        platform.db().update("insert into session_activity(session_id,last_seen) select ?,? where not exists(select 1 from session_activity where session_id=?)",claims.getId(),Instant.now(),claims.getId());
+        platform.db().update("update session_activity set last_seen=? where session_id=?",Instant.now(),claims.getId());
         return userId;
     }
 
@@ -98,6 +108,9 @@ public class JwtTokenService {
         // Account commands hold the user lock until both changes commit.
         sessionRepository.deleteAllForUser(userId);
     }
+
+    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}
+    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}
 
     private Claims parse(String token) {
         try {

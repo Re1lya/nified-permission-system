@@ -1,0 +1,58 @@
+package com.cdwy.permission.company;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+
+/** Import-owned master data is separate from credentials and live grants. */
+public final class CompanyData {
+    private CompanyData() {}
+    @MappedSuperclass public static class Row {
+        @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id;
+    }
+    @Entity @Table(name="sys_department") public static class Department extends Row {
+        @Column(nullable=false,unique=true,length=128) public String name;
+        @ManyToOne public Department parent;
+        @Column(length=128) public String managerName;
+        @ManyToOne public com.cdwy.permission.entity.UserAccount manager;
+    }
+    @Entity @Table(name="sys_post") public static class Post extends Row {
+        @Column(nullable=false,unique=true,length=128) public String name;
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.Role role;
+    }
+    @Entity @Table(name="employee_profile") public static class Employee extends Row {
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.UserAccount user;
+        @ManyToOne(optional=false) public Department department;
+        @ManyToOne(optional=false) public Post post;
+        @Column(nullable=false,length=32) public String phone;
+        @Column(nullable=false,length=128) public String company;
+    }
+    @Entity @Table(name="sys_module",uniqueConstraints=@UniqueConstraint(columnNames={"system_id","name"}))
+    public static class Module extends Row {
+        @ManyToOne(optional=false) public com.cdwy.permission.entity.BusinessSystem system;
+        @Column(nullable=false,length=128) public String name;
+    }
+    @Entity @Table(name="sys_function",uniqueConstraints=@UniqueConstraint(columnNames={"module_id","name"}))
+    public static class Function extends Row {
+        @ManyToOne(optional=false) public Module module;
+        @Column(nullable=false,length=128) public String name;
+        @Column(nullable=false,length=2000) public String description;
+    }
+    @Entity @Table(name="permission_detail") public static class Detail extends Row {
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.Permission permission;
+        @ManyToOne(optional=false) public Function function;
+        @Column(nullable=false,length=32) public String action;
+    }
+    @Entity @Table(name="permission_template",uniqueConstraints=@UniqueConstraint(columnNames={"name","permission_id"}))
+    public static class Template extends Row {
+        @Column(nullable=false,length=64) public String name;
+        @ManyToOne(optional=false) public com.cdwy.permission.entity.Permission permission;
+    }
+    @Entity @Table(name="company_import_batch") public static class Batch extends Row {
+        @Column(nullable=false,unique=true,length=64) public String fingerprint;
+        @Column(nullable=false) public Instant createdAt;
+        @Column(nullable=false) public Long actorId;
+        @Column(nullable=false) public int employees;
+        @Column(nullable=false) public int departments;
+        @Column(nullable=false) public int functions;
+    }
+}

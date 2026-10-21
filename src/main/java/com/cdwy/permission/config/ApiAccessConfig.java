@@ -15,10 +15,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class ApiAccessConfig implements WebMvcConfigurer {
     private final JwtTokenService tokens;
     private final UserAccountRepository users;
+    private final com.cdwy.permission.platform.PlatformStore platform;
 
-    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users) {
+    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users,com.cdwy.permission.platform.PlatformStore platform) {
         this.tokens = tokens;
         this.users = users;
+        this.platform = platform;
     }
 
     @Override
@@ -29,7 +31,18 @@ public class ApiAccessConfig implements WebMvcConfigurer {
                 response.setHeader("Cache-Control", "no-store");
                 return true;
             }
+            @Override public void afterCompletion(HttpServletRequest request,HttpServletResponse response,Object handler,Exception error){
+                if(!java.util.Set.of("GET","HEAD","OPTIONS").contains(request.getMethod())&&response.getStatus()<400&&request.getHeader("Authorization")!=null&&!request.getRequestURI().startsWith("/api/integration/")){
+                    try{long actor=tokens.requireUserId(request.getHeader("Authorization"));platform.audit(actor,"HTTP_"+request.getMethod(),request.getRequestURI(),"SUCCESS");}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}
+                }
+            }
         }).addPathPatterns("/api/**");
+        registry.addInterceptor(new HandlerInterceptor(){
+            @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler){
+                long id=tokens.requireUserId(request.getHeader("Authorization"));
+                if(platform.mustChange(id)&&!java.util.Set.of("/api/platform/self","/api/platform/self/password").contains(request.getRequestURI()))throw new ForbiddenException("请先修改初始密码");return true;
+            }
+        }).addPathPatterns("/api/**").excludePathPatterns("/api/auth/login","/api/auth/logout","/api/auth/me","/api/integration/**","/api/oidc/**");
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -40,6 +53,6 @@ public class ApiAccessConfig implements WebMvcConfigurer {
                 return true;
             }
         }).addPathPatterns("/api/**")
-          .excludePathPatterns("/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/demo/expenses");
+          .excludePathPatterns("/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/demo/expenses", "/api/platform/**", "/api/integration/**", "/api/oidc/**");
     }
 }

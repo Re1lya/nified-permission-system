@@ -51,6 +51,7 @@ public class RbacService {
     private final RolePermissionRepository rolePermissionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
+    private final com.cdwy.permission.platform.PlatformStore platform;
 
     public RbacService(
             UserAccountRepository userRepository,
@@ -60,7 +61,7 @@ public class RbacService {
             UserRoleRepository userRoleRepository,
             RolePermissionRepository rolePermissionRepository,
             PasswordEncoder passwordEncoder,
-            JwtTokenService jwtTokenService) {
+            JwtTokenService jwtTokenService, com.cdwy.permission.platform.PlatformStore platform) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.systemRepository = systemRepository;
@@ -69,6 +70,7 @@ public class RbacService {
         this.rolePermissionRepository = rolePermissionRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
+        this.platform = platform;
     }
 
     @Transactional
@@ -118,11 +120,23 @@ public class RbacService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        UserAccount user = userRepository.findByUsernameForUpdate(request.username())
+        if(request.username()==null||request.username().isBlank()||request.username().length()>64||request.password()==null||request.password().length()>256)throw new AuthenticationFailedException();
+        platform.notLocked(request.username());
+        String username=request.username();
+        if(!userRepository.existsByUsername(username)) {
+            var candidates=platform.rows("select u.username from employee_profile e join sys_user u on u.id=e.user_id where e.phone=?",username);
+            if(candidates.size()==1) username=(String)candidates.getFirst().get("username");
+        }
+        UserAccount user = userRepository.findByUsernameForUpdate(username)
                 .filter(UserAccount::isEnabled)
                 .filter(account -> account.getPasswordHash() != null)
                 .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
-                .orElseThrow(AuthenticationFailedException::new);
+                .orElse(null);
+        if(user==null){platform.loginResult(request.username(),false);platform.audit(null,"LOGIN",request.username(),"FAILED");throw new AuthenticationFailedException();}
+        platform.validAccount(user.getId());
+        platform.ensurePolicy(user.getId());
+        platform.loginResult(request.username(),true);
+        platform.audit(user.getId(),"LOGIN",user.getUsername(),"SUCCESS");
         String accessToken = jwtTokenService.issue(user.getId());
         return new LoginResponse(accessToken, user.getId(), user.getUsername(), user.getDisplayName(),
                 effectivePermissions(user.getId()));
@@ -147,12 +161,15 @@ public class RbacService {
         role.setName(request.name());
         role.setDescription(request.description());
         role.setEnabled(request.enabled());
+        platform.db().update("update sys_post set name=? where role_id=?",request.name(),roleId);
+        platform.permissionsChanged();
         return toRoleResponse(roleRepository.save(role));
     }
 
     @Transactional
     public void deleteRole(Long roleId) {
         getRole(roleId);
+        if(platform.count("select count(*) from sys_user_role where role_id=?",roleId)>0||platform.count("select count(*) from sys_post where role_id=?",roleId)>0)throw new ConflictException("角色仍被员工或岗位引用，请先解除关联");
         rolePermissionRepository.deleteAllByRole_Id(roleId);
         userRoleRepository.deleteAllByRole_Id(roleId);
         roleRepository.deleteById(roleId);
@@ -178,12 +195,14 @@ public class RbacService {
         system.setName(request.name());
         system.setBaseUrl(request.baseUrl());
         system.setEnabled(request.enabled());
+        platform.permissionsChanged();
         return toSystemResponse(systemRepository.save(system));
     }
 
     @Transactional
     public void deleteSystem(Long systemId) {
         getSystem(systemId);
+        if(!permissionRepository.findAllBySystem_Id(systemId).isEmpty())throw new ConflictException("业务系统仍有权限，请先解除关联");
         permissionRepository.findAllBySystem_Id(systemId)
                 .forEach(permission -> deletePermission(permission.getId()));
         systemRepository.deleteById(systemId);
@@ -219,6 +238,7 @@ public class RbacService {
     @Transactional
     public void deletePermission(Long permissionId) {
         getPermission(permissionId);
+        if(platform.count("select count(*) from sys_role_permission where permission_id=?",permissionId)>0)throw new ConflictException("权限仍被角色引用，请先回收授权");
         rolePermissionRepository.deleteAllByPermission_Id(permissionId);
         permissionRepository.deleteById(permissionId);
     }
@@ -229,6 +249,7 @@ public class RbacService {
         Role role = getRole(roleId);
         if (!userRoleRepository.existsByUser_IdAndRole_Id(userId, roleId)) {
             userRoleRepository.save(new UserRole(user, role));
+            platform.changed(userId);
         }
     }
 
@@ -237,6 +258,7 @@ public class RbacService {
         getUser(userId);
         getRole(roleId);
         userRoleRepository.deleteByUser_IdAndRole_Id(userId, roleId);
+        platform.changed(userId);
     }
 
     @Transactional
@@ -245,6 +267,7 @@ public class RbacService {
         Permission permission = getPermission(permissionId);
         if (!rolePermissionRepository.existsByRole_IdAndPermission_Id(roleId, permissionId)) {
             rolePermissionRepository.save(new RolePermission(role, permission));
+            userRoleRepository.findAllByRole_Id(roleId).forEach(link->platform.changed(link.getUser().getId()));
         }
     }
 
@@ -253,6 +276,7 @@ public class RbacService {
         getRole(roleId);
         getPermission(permissionId);
         rolePermissionRepository.deleteByRole_IdAndPermission_Id(roleId, permissionId);
+        userRoleRepository.findAllByRole_Id(roleId).forEach(link->platform.changed(link.getUser().getId()));
     }
 
     public List<RoleResponse> listUserRoles(Long userId) {
