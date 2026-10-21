@@ -69,6 +69,8 @@ class AuthenticationHttpIntegrationTests {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired private com.cdwy.permission.service.AdminBootstrapService bootstrap;
+    private String adminToken;
     private long userId;
     private long systemId;
     private long roleId;
@@ -77,7 +79,7 @@ class AuthenticationHttpIntegrationTests {
     void createFixture() throws Exception {
         // Each HTTP call commits independently, as it would in Postman.
         for (var user : rbacService.listUsers()) {
-            rbacService.deleteUser(user.id());
+            if (!user.isAdministrator()) rbacService.deleteUser(user.id());
         }
         for (var role : rbacService.listRoles()) {
             rbacService.deleteRole(role.id());
@@ -85,6 +87,8 @@ class AuthenticationHttpIntegrationTests {
         for (var system : rbacService.listSystems()) {
             rbacService.deleteSystem(system.id());
         }
+        bootstrap.initialize("test-admin", PASSWORD);
+        adminToken = login("test-admin", PASSWORD);
         systemId = create("/api/systems", """
                 {"code":"finance","name":"财务系统"}
                 """).path("id").asLong();
@@ -94,7 +98,7 @@ class AuthenticationHttpIntegrationTests {
         long permissionId = create("/api/permissions", """
                 {"systemId":%d,"code":"expense:list","name":"查看报销","menuPath":"/expense/list"}
                 """.formatted(systemId)).path("id").asLong();
-        mvc.perform(put("/api/roles/{roleId}/permissions/{permissionId}", roleId, permissionId))
+        mvc.perform(put("/api/roles/{roleId}/permissions/{permissionId}", roleId, permissionId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
         userId = createUser("alice");
     }
@@ -107,7 +111,7 @@ class AuthenticationHttpIntegrationTests {
         String otherUser = login("bob", PASSWORD);
         expectExpense(first, 200);
 
-        mvc.perform(put("/api/users/{id}/password", userId)
+        mvc.perform(put("/api/users/{id}/password", userId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"new-password-456\"}"))
                 .andExpect(status().isNoContent());
@@ -138,7 +142,7 @@ class AuthenticationHttpIntegrationTests {
     @Test
     void deletingAnAccountReturns401ForItsOldToken() throws Exception {
         String token = login("alice", PASSWORD);
-        mvc.perform(delete("/api/users/{id}", userId)).andExpect(status().isNoContent());
+        mvc.perform(delete("/api/users/{id}", userId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).andExpect(status().isNoContent());
         expectExpense(token, 401);
         createUser("alice");
         expectExpense(login("alice", PASSWORD), 200);
@@ -174,7 +178,7 @@ class AuthenticationHttpIntegrationTests {
     void disabledBusinessSystemsAreExcludedFromPermissionsAndProtectedRequests() throws Exception {
         String token = login("alice", PASSWORD);
         updateSystem(false);
-        mvc.perform(get("/api/users/{id}/permissions", userId))
+        mvc.perform(get("/api/users/{id}/permissions", userId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
         expectExpense(token, 403);
         String loginResponse = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
@@ -191,10 +195,10 @@ class AuthenticationHttpIntegrationTests {
     void roleRemovalAffectsTheNextRequestWithoutReissuingTheToken() throws Exception {
         String token = login("alice", PASSWORD);
         expectExpense(token, 200);
-        mvc.perform(delete("/api/users/{id}/roles/{roleId}", userId, roleId))
+        mvc.perform(delete("/api/users/{id}/roles/{roleId}", userId, roleId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
         expectExpense(token, 403);
-        mvc.perform(put("/api/users/{id}/roles/{roleId}", userId, roleId))
+        mvc.perform(put("/api/users/{id}/roles/{roleId}", userId, roleId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
         expectExpense(token, 200);
     }
@@ -316,15 +320,15 @@ class AuthenticationHttpIntegrationTests {
         long id = create("/api/users", """
                 {"username":"%s","displayName":"测试用户"}
                 """.formatted(username)).path("id").asLong();
-        mvc.perform(put("/api/users/{id}/password", id).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put("/api/users/{id}/password", id).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"password\":\"" + PASSWORD + "\"}"))
                 .andExpect(status().isNoContent());
-        mvc.perform(put("/api/users/{id}/roles/{roleId}", id, roleId)).andExpect(status().isNoContent());
+        mvc.perform(put("/api/users/{id}/roles/{roleId}", id, roleId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).andExpect(status().isNoContent());
         return id;
     }
 
     private JsonNode create(String path, String body) throws Exception {
-        return json.readTree(mvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body))
+        return json.readTree(mvc.perform(post(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
     }
 
@@ -341,13 +345,13 @@ class AuthenticationHttpIntegrationTests {
     }
 
     private void updateUser(boolean enabled) throws Exception {
-        mvc.perform(put("/api/users/{id}", userId).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put("/api/users/{id}", userId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"displayName\":\"测试用户\",\"enabled\":" + enabled + "}"))
                 .andExpect(status().isOk());
     }
 
     private void updateSystem(boolean enabled) throws Exception {
-        mvc.perform(put("/api/systems/{id}", systemId).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put("/api/systems/{id}", systemId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"财务系统\",\"enabled\":" + enabled + "}"))
                 .andExpect(status().isOk());
     }

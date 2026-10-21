@@ -30,6 +30,13 @@ public class UserAccount {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Column(nullable = false)
+    private boolean administrator = false;
+
+    public boolean isAdministrator() { return administrator; }
+    public boolean getAdministrator() { return administrator; }
+    public void setAdministrator(boolean administrator) { this.administrator = administrator; }
+
     protected UserAccount() {
     }
 

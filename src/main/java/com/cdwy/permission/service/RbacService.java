@@ -87,6 +87,9 @@ public class RbacService {
     @Transactional
     public UserResponse updateUser(Long userId, UpdateUserRequest request) {
         UserAccount user = getUserForUpdate(userId);
+        if (user.isAdministrator() && !request.enabled()) {
+            throw new ConflictException("首次管理员不能停用");
+        }
         CloneFactory.copyNotNull(user, request);
         if (!user.isEnabled()) {
             jwtTokenService.revokeAll(userId);
@@ -96,7 +99,9 @@ public class RbacService {
 
     @Transactional
     public void deleteUser(Long userId) {
-        getUserForUpdate(userId);
+        if (getUserForUpdate(userId).isAdministrator()) {
+            throw new ConflictException("首次管理员不能删除");
+        }
         jwtTokenService.revokeAll(userId);
         userRoleRepository.deleteAllByUser_Id(userId);
         userRepository.deleteById(userId);
@@ -105,6 +110,7 @@ public class RbacService {
     @Transactional
     public void setPassword(Long userId, SetPasswordRequest request) {
         UserAccount user = getUserForUpdate(userId);
+        PasswordPolicy.validate(request.password());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
         jwtTokenService.revokeAll(userId);

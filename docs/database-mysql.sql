@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     username VARCHAR(64) NOT NULL,
     display_name VARCHAR(128) NOT NULL,
     password_hash VARCHAR(255) NULL,
+    administrator BOOLEAN NOT NULL DEFAULT FALSE,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id),
     UNIQUE KEY uk_sys_user_username (username)
