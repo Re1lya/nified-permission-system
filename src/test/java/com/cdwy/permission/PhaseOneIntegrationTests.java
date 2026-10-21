@@ -110,6 +110,37 @@ class PhaseOneIntegrationTests {
   });endpoints.sort(Comparator.comparing(e->e.get("path").toString()));
   java.nio.file.Files.writeString(java.nio.file.Path.of("output/phase-one-endpoints.json"),json.writerWithDefaultPrettyPrinter().writeValueAsString(endpoints));
  }
+ String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
+ long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
+ @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {
+  var today=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
+  request("/api/platform/external-users",external("ext"+suffix,"EXTERNAL",today.minusDays(1),department),admin,400);
+  request("/api/platform/external-users",external("ext"+suffix,"EXTERNAL",today.plusDays(366),department),admin,400);
+  request("/api/platform/external-users",external("tmp"+suffix,"TEMPORARY",today.plusDays(91),department),admin,400);
+  request("/api/platform/external-users",external("ext"+suffix,"EXTERNAL",today.plusDays(30),otherDepartment),managerToken,403);
+  request("/api/platform/external-users",external("ext"+suffix,"EXTERNAL",today.plusDays(30),department),managerToken,200);
+  request("/api/platform/external-users",external("tmp"+suffix,"TEMPORARY",today.plusDays(5),department),userToken,403);
+  long id=externalId("ext"+suffix);
+  assertEquals("EXTERNAL",db.queryForObject("select person_type from account_policy where user_id=?",String.class,id));
+  assertEquals(true,db.queryForObject("select must_change_password from account_policy where user_id=?",Boolean.class,id));
+  assertEquals(0,db.queryForObject("select count(*) from sys_user_role where user_id=?",Integer.class,id));
+ }
+ @Test void expiredExternalPersonIsRejectedUntilRenewed() throws Exception {
+  var today=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
+  request("/api/platform/external-users",external("tmp"+suffix,"TEMPORARY",today.plusDays(3),department),admin,200);
+  long id=externalId("tmp"+suffix);String token=login("tmp"+suffix);
+  mvc.perform(get("/api/platform/self").header("Authorization",token)).andExpect(status().isOk());
+  String list=mvc.perform(get("/api/platform/external-users").header("Authorization",managerToken)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+  var row=java.util.stream.StreamSupport.stream(json.readTree(list).spliterator(),false).filter(r->r.get("id").asLong()==id).findFirst().orElseThrow();
+  assertEquals("EXPIRING",row.get("status").asText());assertEquals(3,row.get("days_left").asInt());
+  db.update("update account_policy set expires_at=? where user_id=?",Instant.now().minusSeconds(1),id);
+  mvc.perform(get("/api/platform/self").header("Authorization",token)).andExpect(status().isUnauthorized());
+  assertThrows(com.cdwy.permission.exception.AuthenticationFailedException.class,()->login("tmp"+suffix));
+  mvc.perform(put("/api/platform/external-users/"+id+"/expiry").header("Authorization",managerToken).contentType("application/json").content("{\"expiresOn\":\""+today.plusDays(91)+"\"}")).andExpect(status().isBadRequest());
+  mvc.perform(put("/api/platform/external-users/"+id+"/expiry").header("Authorization",managerToken).contentType("application/json").content("{\"expiresOn\":\""+today.plusDays(30)+"\"}")).andExpect(status().isOk());
+  assertNotNull(login("tmp"+suffix));
+  mvc.perform(put("/api/platform/external-users/"+user+"/expiry").header("Authorization",admin).contentType("application/json").content("{\"expiresOn\":\""+today.plusDays(30)+"\"}")).andExpect(status().isBadRequest());
+ }
  void signed(String source,String id,String body,int status) throws Exception {
   String timestamp=Long.toString(Instant.now().getEpochSecond());Mac mac=Mac.getInstance("HmacSHA256");mac.init(new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8),"HmacSHA256"));String signature=HexFormat.of().formatHex(mac.doFinal((source+"\n"+timestamp+"\n"+id+"\n"+body).getBytes(StandardCharsets.UTF_8)));
   mvc.perform(post("/api/integration/"+source).header("X-Request-Id",id).header("X-Timestamp",timestamp).header("X-Signature",signature).contentType("application/json").content(body)).andExpect(status().is(status));
