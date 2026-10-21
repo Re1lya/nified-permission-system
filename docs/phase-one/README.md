@@ -9,7 +9,7 @@
 - [API设计文档](03-API设计文档.docx)：现有接口、鉴权、导入、OIDC、OA/HR 契约。
 - [数据库设计文档](04-数据库设计文档.docx)：实际 25 张表的字段、关联、约束、ER 图与 SQL。
 
-Word 由 `scripts/build-phase-one-documents.py` 根据本目录说明、实际数据库元数据和接口映射生成。没有虚构成员分工。截图使用虚构演示员工；真实三表与运行凭据不入库。
+Word 由 `scripts/build-phase-one-documents.py` 根据本目录说明、实际数据库元数据和接口映射生成。需求分析中的用例图、领域模型和时序图由 `scripts/build-requirement-diagrams.py` 生成，用例状态改变时需同时更新该脚本和 `requirements.md` 第 12 节。没有虚构成员分工。截图使用虚构演示员工；真实三表与运行凭据不入库。
 
 ## 本地启动
 

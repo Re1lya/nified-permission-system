@@ -35,6 +35,10 @@ def markdown(d,path):
    while i<len(lines) and not lines[i].startswith('```'):block.append(lines[i]);i+=1
    para=d.add_paragraph('\n'.join(block));para.paragraph_format.line_spacing=1
    for r in para.runs:r.font.size=Pt(9)
+  elif m:=re.fullmatch(r'!\[(.*)\]\((.+)\)',line):
+   d.add_picture(str(path.parent/m[2]),width=Cm(16.5));d.paragraphs[-1].alignment=1;d.paragraphs[-1].paragraph_format.keep_with_next=True
+   cap=d.add_paragraph(m[1]);cap.alignment=1
+   for r in cap.runs:r.font.size=Pt(9)
   elif line.startswith('|'):
    rows=[]
    while i<len(lines) and lines[i].strip().startswith('|'):
@@ -62,9 +66,9 @@ evidence={'date':'2026-10-21','command':'mvn clean verify (COMPANY_WORKBOOK_DIR 
 shutil.copyfile(ROOT/'output/actual-import-result.txt',OUT/'actual-import.txt')
 shutil.copyfile(ROOT/'output/phase-one-http-results.json',OUT/'http-verification.json')
 
-requirements=doc('需求规格说明（Spec）','按需求编号描述当前一期的输入、业务规则、验收条件，并建立页面、API、数据表之间的追踪关系。')
+requirements=doc('需求规格说明（Spec）','沿用原需求的 UC/BR 编号，给出用例模型、领域模型、业务流程、功能规格与当前状态，并建立页面、API、数据表之间的追踪关系。')
 markdown(requirements,OUT/'requirements.md')
-requirements.add_heading('10 本次实际验证摘要',1)
+requirements.add_heading('13 本次实际验证摘要',1)
 p(requirements,f"实际运行 {counts['tests']} 项测试，失败 {counts['failures']}，错误 {counts['errors']}，跳过 {counts['skipped']}。JaCoCo 行覆盖率 {coverage['LINE']['percent']}%，分支覆盖率 {coverage['BRANCH']['percent']}%。覆盖率来自本次实际运行报告。")
 save(requirements,'01-需求分析文档.docx')
 
