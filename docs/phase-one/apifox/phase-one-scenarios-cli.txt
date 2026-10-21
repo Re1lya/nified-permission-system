@@ -4,43 +4,43 @@ newman
 
 □ AUTH-01 登录与密码策略
 └ 管理员登录
-  POST http://127.0.0.1:18091/api/auth/login [200 OK, 545B, 237ms]
+  POST http://127.0.0.1:18091/api/auth/login [200 OK, 545B, 211ms]
   √  AUTH-01 管理员登录成功
   √  返回访问令牌
 
 └ 错误密码登录（反向）
-  POST http://127.0.0.1:18091/api/auth/login [401 Unauthorized, 337B, 55ms]
+  POST http://127.0.0.1:18091/api/auth/login [401 Unauthorized, 337B, 67ms]
   √  AUTH-01 错误密码返回 401
   √  不返回令牌
 
 □ RBAC-01 准备：两个角色共享 expense:list
 └ 创建业务系统
-  POST http://127.0.0.1:18091/api/systems [201 Created, 384B, 64ms]
+  POST http://127.0.0.1:18091/api/systems [201 Created, 384B, 52ms]
   √  创建系统返回 201
 
 └ 创建权限 expense:list
-  POST http://127.0.0.1:18091/api/permissions [201 Created, 392B, 41ms]
+  POST http://127.0.0.1:18091/api/permissions [201 Created, 392B, 23ms]
   √  创建权限返回 201 或已存在 409
 
 └ 查询权限编号
-  GET http://127.0.0.1:18091/api/permissions [200 OK, 382B, 23ms]
+  GET http://127.0.0.1:18091/api/permissions [200 OK, 382B, 20ms]
   √  权限列表可读
   √  expense:list 存在
 
 └ 创建角色 A
-  POST http://127.0.0.1:18091/api/roles [201 Created, 372B, 21ms]
+  POST http://127.0.0.1:18091/api/roles [201 Created, 372B, 20ms]
   √  创建角色 A 返回 201
 
 └ 创建角色 B
-  POST http://127.0.0.1:18091/api/roles [201 Created, 372B, 14ms]
+  POST http://127.0.0.1:18091/api/roles [201 Created, 372B, 12ms]
   √  创建角色 B 返回 201
 
 └ 角色 A 授予 expense:list
-  PUT http://127.0.0.1:18091/api/roles/1/permissions/1 [204 No Content, 214B, 21ms]
+  PUT http://127.0.0.1:18091/api/roles/1/permissions/1 [204 No Content, 214B, 18ms]
   √  角色 A 授权成功
 
 └ 角色 B 授予 expense:list
-  PUT http://127.0.0.1:18091/api/roles/2/permissions/1 [204 No Content, 214B, 16ms]
+  PUT http://127.0.0.1:18091/api/roles/2/permissions/1 [204 No Content, 214B, 17ms]
   √  角色 B 授权成功
 
 └ 创建演示用户
@@ -48,29 +48,29 @@ newman
   √  创建用户返回 201
 
 └ 设置演示用户密码
-  PUT http://127.0.0.1:18091/api/users/2/password [204 No Content, 214B, 73ms]
+  PUT http://127.0.0.1:18091/api/users/2/password [204 No Content, 214B, 81ms]
   √  设置密码成功
 
 └ 赋予角色 A
-  PUT http://127.0.0.1:18091/api/users/2/roles/1 [204 No Content, 214B, 16ms]
+  PUT http://127.0.0.1:18091/api/users/2/roles/1 [204 No Content, 214B, 17ms]
   √  赋予角色 A
 
 └ 赋予角色 B
-  PUT http://127.0.0.1:18091/api/users/2/roles/2 [204 No Content, 214B, 14ms]
+  PUT http://127.0.0.1:18091/api/users/2/roles/2 [204 No Content, 214B, 12ms]
   √  赋予角色 B
 
 └ 演示用户登录
-  POST http://127.0.0.1:18091/api/auth/login [200 OK, 669B, 59ms]
+  POST http://127.0.0.1:18091/api/auth/login [200 OK, 669B, 70ms]
   √  演示用户登录成功
   √  有效权限含 expense:list
 
 □ SCOPE-01 越权与无效令牌（反向）
 └ 普通用户请求管理 API
-  GET http://127.0.0.1:18091/api/users [403 Forbidden, 343B, 10ms]
+  GET http://127.0.0.1:18091/api/users [403 Forbidden, 343B, 9ms]
   √  SCOPE-01 普通用户管理 API 返回 403
 
 └ 普通用户请求导入预览列表
-  GET http://127.0.0.1:18091/api/company/imports [403 Forbidden, 343B, 8ms]
+  GET http://127.0.0.1:18091/api/company/imports [403 Forbidden, 343B, 7ms]
   √  SCOPE-01 普通用户不能读导入批次
 
 └ 未携带令牌
@@ -78,16 +78,16 @@ newman
   √  未登录返回 401
 
 └ 伪造或过期令牌
-  GET http://127.0.0.1:18091/api/demo/expenses [401 Unauthorized, 361B, 4ms]
+  GET http://127.0.0.1:18091/api/demo/expenses [401 Unauthorized, 361B, 5ms]
   √  无效令牌返回 401
 
 □ RBAC-01 权限并集与回收
 └ 两角色时访问报销
-  GET http://127.0.0.1:18091/api/demo/expenses [200 OK, 378B, 15ms]
+  GET http://127.0.0.1:18091/api/demo/expenses [200 OK, 378B, 13ms]
   √  RBAC-01 持有两角色可访问
 
 └ 回收角色 A
-  DELETE http://127.0.0.1:18091/api/users/2/roles/1 [204 No Content, 214B, 21ms]
+  DELETE http://127.0.0.1:18091/api/users/2/roles/1 [204 No Content, 214B, 23ms]
   √  回收角色 A
 
 └ 同一令牌仍可访问
@@ -95,11 +95,11 @@ newman
   √  RBAC-01 角色 B 仍提供权限，返回 200
 
 └ 回收角色 B
-  DELETE http://127.0.0.1:18091/api/users/2/roles/2 [204 No Content, 214B, 15ms]
+  DELETE http://127.0.0.1:18091/api/users/2/roles/2 [204 No Content, 214B, 27ms]
   √  回收角色 B
 
 └ 同一令牌被拒绝
-  GET http://127.0.0.1:18091/api/demo/expenses [403 Forbidden, 339B, 10ms]
+  GET http://127.0.0.1:18091/api/demo/expenses [403 Forbidden, 339B, 11ms]
   √  RBAC-01 全部来源回收后返回 403
 
 □ SESSION-01 注销后旧令牌失效
@@ -108,37 +108,37 @@ newman
   √  注销成功
 
 └ 旧令牌再次访问
-  GET http://127.0.0.1:18091/api/demo/expenses [401 Unauthorized, 361B, 6ms]
+  GET http://127.0.0.1:18091/api/demo/expenses [401 Unauthorized, 361B, 4ms]
   √  SESSION-01 注销后旧令牌返回 401
 
 □ IMPORT-01 三表预览、提交与幂等
 └ 三表预览
-  POST http://127.0.0.1:18091/api/company/imports/preview (node:57064) [DEP0044] DeprecationWarning: The `util.isArray` API is deprecated. Please use `Array.isArray()` instead.
+  POST http://127.0.0.1:18091/api/company/imports/preview (node:54568) [DEP0044] DeprecationWarning: The `util.isArray` API is deprecated. Please use `Array.isArray()` instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-[200 OK, 876B, 71ms]
+[200 OK, 876B, 63ms]
   √  预览成功
   √  IMPORT-01 预览无错误
 
 └ 确认提交
-  POST http://127.0.0.1:18091/api/company/imports/commit [200 OK, 450B, 44ms]
+  POST http://127.0.0.1:18091/api/company/imports/commit [200 OK, 450B, 35ms]
   √  提交成功
-  √  返回批次编号
+  √  新建批次或识别为已导入
 
 └ 同一三表再次预览
-  POST http://127.0.0.1:18091/api/company/imports/preview [200 OK, 876B, 29ms]
+  POST http://127.0.0.1:18091/api/company/imports/preview [200 OK, 876B, 24ms]
   √  再次预览成功
 
 └ 重复提交
-  POST http://127.0.0.1:18091/api/company/imports/commit [200 OK, 407B, 17ms]
+  POST http://127.0.0.1:18091/api/company/imports/commit [200 OK, 407B, 13ms]
   √  重复提交返回 200
   √  IMPORT-01 重复提交 reused=true
 
 └ 读取部门
-  GET http://127.0.0.1:18091/api/company/departments [200 OK, 549B, 11ms]
+  GET http://127.0.0.1:18091/api/company/departments [200 OK, 549B, 9ms]
   √  部门列表
 
 └ 读取岗位
-  GET http://127.0.0.1:18091/api/company/posts [200 OK, 379B, 10ms]
+  GET http://127.0.0.1:18091/api/company/posts [200 OK, 379B, 8ms]
   √  岗位列表
 
 □ HR-01 签名事件与幂等
@@ -147,7 +147,7 @@ newman
   │ `Using "CryptoJS" is deprecated. Use "require('crypto-
   │ js')" instead.`
   └
-  POST http://127.0.0.1:18091/api/integration/hr [200 OK, 293B, 14ms]
+  POST http://127.0.0.1:18091/api/integration/hr [200 OK, 293B, 15ms]
   √  HR-01 入职成功
   √  首次处理 reused=false
 
@@ -156,7 +156,7 @@ newman
   │ `Using "CryptoJS" is deprecated. Use "require('crypto-
   │ js')" instead.`
   └
-  POST http://127.0.0.1:18091/api/integration/hr [200 OK, 292B, 3ms]
+  POST http://127.0.0.1:18091/api/integration/hr [200 OK, 292B, 4ms]
   √  重发返回 200
   √  HR-01 重发 reused=true
 
@@ -173,16 +173,16 @@ newman
   │ `Using "CryptoJS" is deprecated. Use "require('crypto-
   │ js')" instead.`
   └
-  POST http://127.0.0.1:18091/api/integration/hr [403 Forbidden, 328B, 3ms]
+  POST http://127.0.0.1:18091/api/integration/hr [403 Forbidden, 328B, 4ms]
   √  过期签名返回 403
 
 □ OA-01 申请与审批回调
 └ 演示用户重新登录
-  POST http://127.0.0.1:18091/api/auth/login [200 OK, 548B, 54ms]
+  POST http://127.0.0.1:18091/api/auth/login [200 OK, 548B, 74ms]
   √  重新登录
 
 └ 提交岗位角色申请
-  POST http://127.0.0.1:18091/api/platform/self/applications [200 OK, 339B, 17ms]
+  POST http://127.0.0.1:18091/api/platform/self/applications [200 OK, 339B, 16ms]
   √  申请已登记
   √  状态为 PENDING
 
@@ -204,36 +204,67 @@ newman
   │ `Using "CryptoJS" is deprecated. Use "require('crypto-
   │ js')" instead.`
   └
-  POST http://127.0.0.1:18091/api/integration/oa [200 OK, 292B, 5ms]
+  POST http://127.0.0.1:18091/api/integration/oa [200 OK, 292B, 3ms]
   √  重复回调返回 200
   √  OA-01 重复回调 reused=true
 
 └ 查询本人申请
-  GET http://127.0.0.1:18091/api/platform/self/applications [200 OK, 410B, 9ms]
+  GET http://127.0.0.1:18091/api/platform/self/applications [200 OK, 410B, 7ms]
   √  申请列表
   √  OA-01 申请变为 APPROVED
 
 └ 已授予申请角色
-  GET http://127.0.0.1:18091/api/platform/self [200 OK, 383B, 16ms]
+  GET http://127.0.0.1:18091/api/platform/self [200 OK, 383B, 10ms]
   √  本人信息
   √  权限版本已增加
+
+□ EXT-01 外部与临时人员有效期
+└ 计算日期
+  GET http://127.0.0.1:18091/api/platform/self [200 OK, 382B, 9ms]
+  √  管理员身份有效
+
+└ 超过 90 天的临时人员（反向）
+  POST http://127.0.0.1:18091/api/platform/external-users [400 Bad Request, 316B, 19ms]
+  √  EXT-01 临时人员超过 90 天返回 400
+
+└ 创建 3 天后到期的临时人员
+  POST http://127.0.0.1:18091/api/platform/external-users [200 OK, 316B, 72ms]
+  √  EXT-01 创建成功
+
+└ 到期提醒列表
+  GET http://127.0.0.1:18091/api/platform/external-users [200 OK, 487B, 9ms]
+  √  列表可读
+  √  EXT-01 标为即将到期
+  √  剩余 3 天
+
+└ 普通用户不能查看（反向）
+  GET http://127.0.0.1:18091/api/platform/external-users [403 Forbidden, 325B, 7ms]
+  √  EXT-01 普通用户返回 403
+
+└ 续期到 30 天后
+  PUT http://127.0.0.1:18091/api/platform/external-users/6/expiry [200 OK, 291B, 21ms]
+  √  EXT-01 续期成功
+
+└ 临时人员登录
+  POST http://127.0.0.1:18091/api/auth/login [200 OK, 545B, 68ms]
+  √  EXT-01 有效期内可登录
 
 ┌─────────────────────────┬───────────────────┬──────────────────┐
 │                         │          executed │           failed │
 ├─────────────────────────┼───────────────────┼──────────────────┤
 │              iterations │                 1 │                0 │
 ├─────────────────────────┼───────────────────┼──────────────────┤
-│                requests │                42 │                0 │
+│                requests │                49 │                0 │
 ├─────────────────────────┼───────────────────┼──────────────────┤
-│            test-scripts │                42 │                0 │
+│            test-scripts │                49 │                0 │
 ├─────────────────────────┼───────────────────┼──────────────────┤
-│      prerequest-scripts │                 8 │                0 │
+│      prerequest-scripts │                 9 │                0 │
 ├─────────────────────────┼───────────────────┼──────────────────┤
-│              assertions │                56 │                0 │
+│              assertions │                65 │                0 │
 ├─────────────────────────┴───────────────────┴──────────────────┤
-│ total run duration: 4.5s                                       │
+│ total run duration: 5.3s                                       │
 ├────────────────────────────────────────────────────────────────┤
-│ total data received: 5.07kB (approx)                           │
+│ total data received: 5.92kB (approx)                           │
 ├────────────────────────────────────────────────────────────────┤
-│ average response time: 26ms [min: 3ms, max: 237ms, s.d.: 38ms] │
+│ average response time: 25ms [min: 3ms, max: 211ms, s.d.: 34ms] │
 └────────────────────────────────────────────────────────────────┘

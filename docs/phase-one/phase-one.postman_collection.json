@@ -299,6 +299,20 @@
       }
     },
     {
+      "name": "DELETE /api/permissions/{permissionId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/permissions/{{permissionId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
       "name": "PUT /api/permissions/{permissionId}",
       "request": {
         "method": "PUT",
@@ -319,20 +333,6 @@
             }
           }
         }
-      }
-    },
-    {
-      "name": "DELETE /api/permissions/{permissionId}",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/api/permissions/{{permissionId}}",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
       }
     },
     {
@@ -429,6 +429,66 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"category\": null,\n  \"code\": null,\n  \"name\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/platform/external-users",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/external-users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/external-users",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/external-users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": null,\n  \"displayName\": null,\n  \"personType\": null,\n  \"expiresOn\": null,\n  \"departmentId\": null,\n  \"postId\": null,\n  \"company\": null,\n  \"phone\": null,\n  \"password\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/platform/external-users/{id}/expiry",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/external-users/{{id}}/expiry",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"expiresOn\": null\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -809,6 +869,20 @@
       }
     },
     {
+      "name": "GET /api/roles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/roles",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
       "name": "POST /api/roles",
       "request": {
         "method": "POST",
@@ -832,10 +906,10 @@
       }
     },
     {
-      "name": "GET /api/roles",
+      "name": "DELETE /api/roles/{roleId}",
       "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/api/roles",
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}",
         "header": [
           {
             "key": "Authorization",
@@ -866,20 +940,6 @@
             }
           }
         }
-      }
-    },
-    {
-      "name": "DELETE /api/roles/{roleId}",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/api/roles/{{roleId}}",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
       }
     },
     {
@@ -962,6 +1022,20 @@
       }
     },
     {
+      "name": "DELETE /api/systems/{systemId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/systems/{{systemId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
       "name": "PUT /api/systems/{systemId}",
       "request": {
         "method": "PUT",
@@ -985,10 +1059,10 @@
       }
     },
     {
-      "name": "DELETE /api/systems/{systemId}",
+      "name": "GET /api/users",
       "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/api/systems/{{systemId}}",
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users",
         "header": [
           {
             "key": "Authorization",
@@ -1019,20 +1093,6 @@
             }
           }
         }
-      }
-    },
-    {
-      "name": "GET /api/users",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/api/users",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{accessToken}}"
-          }
-        ],
-        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
       }
     },
     {

@@ -93,6 +93,14 @@ GET `/api/oidc/permissions/check?code=...&clientId=...` 使用 OIDC Bearer，检
 
 HR 调岗：来源验签 → 查幂等事件 → 锁定账号 → 校验组织和岗位角色 → 删除旧角色 → 更新档案 → 写新角色 → 增加权限版本 → 写事件。OA：来源验签 → 查事件 → 锁定申请 → 验证状态 → 按审批结果授权 → 写事件。
 
+### 9.1 外部与临时人员接口（UC-C05）
+
+POST /api/platform/external-users 由超级管理员或绑定部门的部门管理员调用，请求体：username、displayName、personType（EXTERNAL 或 TEMPORARY）、expiresOn（yyyy-MM-dd）、departmentId、postId、company、phone、password。外部人员有效期最长 365 天，临时人员最长 90 天，不能早于今天，否则返回 400；部门不在管理范围返回 403。成功返回 id、personType、expiresOn。账号无角色，初始密码标记为首次登录须修改。
+
+PUT /api/platform/external-users/{id}/expiry 请求体 expiresOn，按原人员类型重新校验上限；对正式员工返回 400。续期使权限版本号加一并写审计 EXTERNAL_RENEW。
+
+GET /api/platform/external-users?remindDays=14 返回管理范围内的外部与临时人员：id、username、display_name、person_type、company、department_id、post_id、enabled、expires_on、days_left、status（ACTIVE / EXPIRING / EXPIRED）。有效期截止为到期日次日 0 点（Asia/Shanghai），到期后登录和已有令牌都返回 401。
+
 ## 10 Apifox 设计与检查
 
 接口契约见 apifox/openapi.json（OpenAPI 3.0.3）。在 Apifox 项目设置中导入，使用本地环境 baseUrl=http://127.0.0.1:18081；令牌和管理员口令只填写在本地私密环境。接口按认证、公司数据、范围管理、集成事件、业务权限分组。
@@ -109,9 +117,9 @@ Apifox 项目已在 CDWY 团队创建：https://app.apifox.com/project/8955177 �
 
 ### 10.1 九个串联场景的完整运行
 
-checks.md 的 9 个场景已写成 apifox/phase-one-scenarios.postman_collection.json（Postman v2.1，由 scripts/build-acceptance-scenarios.py 生成），可直接导入 Apifox，也可用 newman 运行；断言脚本使用 pm 语法，两者通用。集合只含变量名，运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir。
+checks.md 的 9 个场景及 EXT-01 已写成 apifox/phase-one-scenarios.postman_collection.json（Postman v2.1，由 scripts/build-acceptance-scenarios.py 生成），可直接导入 Apifox，也可用 newman 运行；断言脚本使用 pm 语法，两者通用。集合只含变量名，运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir。
 
-2026-10-21 在本机隔离实例（phase-one 配置、H2、端口 18091、三份虚构演示表）上用 newman 运行：42 个请求、56 条断言全部通过，用时约 4.5 秒。
+2026-10-21 在本机隔离实例（phase-one 配置、H2、端口 18091、三份虚构演示表）上用 newman 运行：49 个请求、65 条断言全部通过，用时约 5.3 秒。
 
 | 场景 | 请求 | 断言 | 覆盖的反向用例 |
 | --- | --- | --- | --- |
@@ -123,6 +131,7 @@ checks.md 的 9 个场景已写成 apifox/phase-one-scenarios.postman_collection
 | IMPORT-01 三表导入 | 6 | 9 | 重复提交 reused=true |
 | HR-01 签名事件 | 4 | 6 | 重发 reused=true、同编号不同内容 409、过期时间戳 403 |
 | OA-01 申请与审批 | 7 | 12 | 错误签名 403、重复回调 reused=true |
+| EXT-01 外部与临时人员有效期 | 7 | 9 | 临时人员超过 90 天 400、普通用户 403 |
 
 运行明细：apifox/phase-one-scenarios-report.json（每步方法、路径、状态码与断言结果）和 apifox/phase-one-scenarios-cli.txt。报告不保存令牌、口令与签名密钥。复现命令（先运行 scripts/make-demo-workbooks.py 生成虚构表）：
 

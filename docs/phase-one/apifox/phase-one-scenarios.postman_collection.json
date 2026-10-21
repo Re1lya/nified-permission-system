@@ -2,7 +2,7 @@
   "info": {
     "name": "统一权限管理 一期验收串联场景",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "对应 checks.md 的 9 个场景。运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir；不要把真实凭据写入集合。"
+    "description": "对应 checks.md 的 9 个场景及 EXT-01 外部人员有效期。运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir；不要把真实凭据写入集合。"
   },
   "variable": [
     {
@@ -1069,7 +1069,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('提交成功', () => pm.response.to.have.status(200));",
-                  "pm.test('返回批次编号', () => pm.expect(pm.response.json().batchId).to.be.a('number'));"
+                  "const c = pm.response.json();",
+                  "pm.test('新建批次或识别为已导入', () => pm.expect(typeof c.batchId === 'number' || c.reused === true).to.eql(true));"
                 ]
               }
             }
@@ -1854,6 +1855,293 @@
                 "exec": [
                   "pm.test('本人信息', () => pm.response.to.have.status(200));",
                   "pm.test('权限版本已增加', () => pm.expect(pm.response.json().version).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "EXT-01 外部与临时人员有效期",
+      "item": [
+        {
+          "name": "计算日期",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/self",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "self"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = n => { const t = new Date(Date.now() + 8*3600e3 + n*86400e3); return t.toISOString().slice(0,10); };",
+                  "['3','30','91'].forEach(n => pm.collectionVariables.set('day'+n, d(Number(n))));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('管理员身份有效', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "超过 90 天的临时人员（反向）",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/external-users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "external-users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"tmp_{{runId}}\", \"displayName\": \"临时人员\", \"personType\": \"TEMPORARY\", \"expiresOn\": \"{{day91}}\", \"departmentId\": \"{{departmentId}}\", \"postId\": \"{{postId}}\", \"company\": \"演示外包公司\", \"phone\": \"13700000000\", \"password\": \"Ext-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EXT-01 临时人员超过 90 天返回 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "创建 3 天后到期的临时人员",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/external-users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "external-users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"tmp_{{runId}}\", \"displayName\": \"临时人员\", \"personType\": \"TEMPORARY\", \"expiresOn\": \"{{day3}}\", \"departmentId\": \"{{departmentId}}\", \"postId\": \"{{postId}}\", \"company\": \"演示外包公司\", \"phone\": \"13700000000\", \"password\": \"Ext-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EXT-01 创建成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('externalId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "到期提醒列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/external-users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "external-users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('列表可读', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json().find(x => x.id == pm.collectionVariables.get('externalId'));",
+                  "pm.test('EXT-01 标为即将到期', () => pm.expect(r.status).to.eql('EXPIRING'));",
+                  "pm.test('剩余 3 天', () => pm.expect(r.days_left).to.eql(3));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "普通用户不能查看（反向）",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/external-users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "external-users"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EXT-01 普通用户返回 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "续期到 30 天后",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/platform/external-users/{{externalId}}/expiry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "platform",
+                "external-users",
+                "{{externalId}}",
+                "expiry"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"expiresOn\": \"{{day30}}\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EXT-01 续期成功', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "临时人员登录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"tmp_{{runId}}\", \"password\": \"Ext-{{runId}}-9a\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('EXT-01 有效期内可登录', () => pm.response.to.have.status(200));"
                 ]
               }
             }

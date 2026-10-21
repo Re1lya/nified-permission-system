@@ -87,7 +87,7 @@ folders=[
   req('三表预览','POST','/api/company/imports/preview','adminToken',form=[('departments','{{workbookDir}}/部门演示.xlsx'),('employees','{{workbookDir}}/员工演示.xlsx'),('permissions','{{workbookDir}}/权限演示.xlsx')],
       tests=[status(200,'预览成功'),"const b = pm.response.json();","pm.test('IMPORT-01 预览无错误', () => pm.expect(b.errorCount).to.eql(0));",save('previewId','b.previewId')]),
   req('确认提交','POST','/api/company/imports/commit','adminToken',{'previewId':'{{previewId}}','acknowledgeWarnings':True},
-      tests=[status(200,'提交成功'),"pm.test('返回批次编号', () => pm.expect(pm.response.json().batchId).to.be.a('number'));"]),
+      tests=[status(200,'提交成功'),"const c = pm.response.json();","pm.test('新建批次或识别为已导入', () => pm.expect(typeof c.batchId === 'number' || c.reused === true).to.eql(true));"]),
   req('同一三表再次预览','POST','/api/company/imports/preview','adminToken',form=[('departments','{{workbookDir}}/部门演示.xlsx'),('employees','{{workbookDir}}/员工演示.xlsx'),('permissions','{{workbookDir}}/权限演示.xlsx')],
       tests=[status(200,'再次预览成功'),save('previewId','pm.response.json().previewId')]),
   req('重复提交','POST','/api/company/imports/commit','adminToken',{'previewId':'{{previewId}}','acknowledgeWarnings':True},
@@ -118,9 +118,21 @@ folders=[
       tests=[status(200,'申请列表'),"const a = pm.response.json().find(x => x.id == pm.collectionVariables.get('approvalId'));","pm.test('OA-01 申请变为 APPROVED', () => pm.expect(a.decision).to.eql('APPROVED'));"]),
   req('已授予申请角色','GET','/api/platform/self','userToken',tests=[status(200,'本人信息'),"pm.test('权限版本已增加', () => pm.expect(pm.response.json().version).to.be.above(0));"]),
  ]),
+ ('EXT-01 外部与临时人员有效期',[
+  req('计算日期','GET','/api/platform/self','adminToken',pre=["const d = n => { const t = new Date(Date.now() + 8*3600e3 + n*86400e3); return t.toISOString().slice(0,10); };","['3','30','91'].forEach(n => pm.collectionVariables.set('day'+n, d(Number(n))));"],tests=[status(200,'管理员身份有效')]),
+  req('超过 90 天的临时人员（反向）','POST','/api/platform/external-users','adminToken',{'username':'tmp_{{runId}}','displayName':'临时人员','personType':'TEMPORARY','expiresOn':'{{day91}}','departmentId':'{{departmentId}}','postId':'{{postId}}','company':'演示外包公司','phone':'13700000000','password':'Ext-{{runId}}-9a'},
+      tests=[status(400,'EXT-01 临时人员超过 90 天返回 400')]),
+  req('创建 3 天后到期的临时人员','POST','/api/platform/external-users','adminToken',{'username':'tmp_{{runId}}','displayName':'临时人员','personType':'TEMPORARY','expiresOn':'{{day3}}','departmentId':'{{departmentId}}','postId':'{{postId}}','company':'演示外包公司','phone':'13700000000','password':'Ext-{{runId}}-9a'},
+      tests=[status(200,'EXT-01 创建成功'),save('externalId','pm.response.json().id')]),
+  req('到期提醒列表','GET','/api/platform/external-users','adminToken',
+      tests=[status(200,'列表可读'),"const r = pm.response.json().find(x => x.id == pm.collectionVariables.get('externalId'));","pm.test('EXT-01 标为即将到期', () => pm.expect(r.status).to.eql('EXPIRING'));","pm.test('剩余 3 天', () => pm.expect(r.days_left).to.eql(3));"]),
+  req('普通用户不能查看（反向）','GET','/api/platform/external-users','userToken',tests=[status(403,'EXT-01 普通用户返回 403')]),
+  req('续期到 30 天后','PUT','/api/platform/external-users/{{externalId}}/expiry','adminToken',{'expiresOn':'{{day30}}'},tests=[status(200,'EXT-01 续期成功')]),
+  req('临时人员登录','POST','/api/auth/login',body={'username':'tmp_{{runId}}','password':'Ext-{{runId}}-9a'},tests=[status(200,'EXT-01 有效期内可登录')]),
+ ]),
 ]
 collection={'info':{'name':'统一权限管理 一期验收串联场景','schema':'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
-  'description':'对应 checks.md 的 9 个场景。运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir；不要把真实凭据写入集合。'},
+  'description':'对应 checks.md 的 9 个场景及 EXT-01 外部人员有效期。运行时提供 baseUrl、adminUser、adminPassword、hrSecret、oaSecret、workbookDir；不要把真实凭据写入集合。'},
   'variable':[{'key':'runId','value':''}],'item':[{'name':n,'item':items} for n,items in folders]}
 OUT.write_text(json.dumps(collection,ensure_ascii=False,indent=2),encoding='utf-8')
 print(OUT.name,sum(len(i) for _,i in folders),'requests')

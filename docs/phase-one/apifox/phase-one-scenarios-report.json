@@ -3,16 +3,16 @@
   "runner": "newman 6（Postman v2.1 集合，pm 脚本与 Apifox 兼容）",
   "target": "本机隔离 H2 实例 127.0.0.1:18091，phase-one 配置，三份虚构演示表",
   "requests": {
-    "total": 42,
+    "total": 49,
     "pending": 0,
     "failed": 0
   },
   "assertions": {
-    "total": 56,
+    "total": 65,
     "pending": 0,
     "failed": 0
   },
-  "durationMs": 4528,
+  "durationMs": 5300,
   "scenarios": [
     {
       "scenario": "AUTH-01 登录与密码策略",
@@ -403,7 +403,7 @@
               "passed": true
             },
             {
-              "name": "返回批次编号",
+              "name": "新建批次或识别为已导入",
               "passed": true
             }
           ]
@@ -632,6 +632,106 @@
             },
             {
               "name": "权限版本已增加",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "EXT-01 外部与临时人员有效期",
+      "requests": 7,
+      "assertions": 9,
+      "failed": 0,
+      "steps": [
+        {
+          "name": "计算日期",
+          "method": "GET",
+          "path": "/api/platform/self",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "管理员身份有效",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "超过 90 天的临时人员（反向）",
+          "method": "POST",
+          "path": "/api/platform/external-users",
+          "status": 400,
+          "assertions": [
+            {
+              "name": "EXT-01 临时人员超过 90 天返回 400",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "创建 3 天后到期的临时人员",
+          "method": "POST",
+          "path": "/api/platform/external-users",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "EXT-01 创建成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "到期提醒列表",
+          "method": "GET",
+          "path": "/api/platform/external-users",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "列表可读",
+              "passed": true
+            },
+            {
+              "name": "EXT-01 标为即将到期",
+              "passed": true
+            },
+            {
+              "name": "剩余 3 天",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "普通用户不能查看（反向）",
+          "method": "GET",
+          "path": "/api/platform/external-users",
+          "status": 403,
+          "assertions": [
+            {
+              "name": "EXT-01 普通用户返回 403",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "续期到 30 天后",
+          "method": "PUT",
+          "path": "/api/platform/external-users/6/expiry",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "EXT-01 续期成功",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "临时人员登录",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200,
+          "assertions": [
+            {
+              "name": "EXT-01 有效期内可登录",
               "passed": true
             }
           ]

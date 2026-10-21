@@ -76,7 +76,7 @@ usecase_diagram('req-usecase-auth.png','用例图 1  认证、单点登录与自
 
 usecase_diagram('req-usecase-admin.png','用例图 2  授权与平台管理',['部门管理员','超级管理员'],['接入应用'],[
     ('UC-B01','应用注册','done'),('UC-B02','应用接入配置','part'),('UC-B03','权限点注册与维护','part'),('UC-B04','角色管理','done'),
-    ('UC-B05','用户-角色分配','done'),('UC-B06','角色-权限分配','done'),('UC-C05','外部人员自建与有效期','todo'),('UC-A11','强制下线','done'),
+    ('UC-B05','用户-角色分配','done'),('UC-B06','角色-权限分配','done'),('UC-C05','外部人员自建与有效期','done'),('UC-A11','强制下线','done'),
     ('UC-F04','审计日志查询','part'),('UC-F05','权限复核','todo'),('扩展','三表导入预览与提交','done'),('扩展2','任命部门管理员与委派上限','done')],
     [('超级管理员',c) for c in ['UC-B01','UC-B02','UC-B03','UC-B04','UC-B05','UC-B06','UC-C05','UC-A11','UC-F04','UC-F05','扩展','扩展2']]
     +[('部门管理员',c) for c in ['UC-B05','UC-B06','UC-C05','UC-A11','UC-F04','UC-F05']]+[('接入应用','UC-B03')])
@@ -105,7 +105,7 @@ def domain():
         'ur':(2,1,'UserRole 用户角色',['user','role']),
         'perm':(3,1,'Permission 权限点',['code 应用:模块:操作','name 名称','menuPath 资源路径','~type 菜单/按钮/API']),
         'admin':(0,2,'AdminDepartment 管辖部门',['user 部门管理员','department']),
-        'policy':(1,2,'AccountPolicy 账号策略',['~personType 人员类型','~expiresAt 有效期','mustChangePassword','version 权限版本号']),
+        'policy':(1,2,'AccountPolicy 账号策略',['personType 人员类型','expiresAt 有效期','mustChangePassword','version 权限版本号']),
         'session':(2,2,'LoginSession 会话',['issuedAt','expiresAt','lastSeen']),
         'app':(3,2,'Application 应用',['code','name','baseUrl','enabled']),
     }

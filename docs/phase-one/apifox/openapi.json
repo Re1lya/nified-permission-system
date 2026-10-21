@@ -1835,6 +1835,101 @@
       }
     },
     "/api/permissions/{permissionId}": {
+      "delete": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "delete · /api/permissions/{permissionId}",
+        "operationId": "delete_api_permissions_permissionId",
+        "parameters": [
+          {
+            "name": "permissionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "操作成功，无响应体"
+          }
+        }
+      },
       "put": {
         "tags": [
           "permissions"
@@ -1942,101 +2037,6 @@
                 "$ref": "#/components/schemas/UpdatePermissionRequest"
               }
             }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "permissions"
-        ],
-        "summary": "delete · /api/permissions/{permissionId}",
-        "operationId": "delete_api_permissions_permissionId",
-        "parameters": [
-          {
-            "name": "permissionId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "输入校验失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "登录、令牌或会话失效",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "身份、管理范围或业务权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "业务键、引用或幂等内容冲突",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "操作成功，无响应体"
           }
         }
       }
@@ -2663,6 +2663,321 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DictionaryEntry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/platform/external-users": {
+      "get": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "list · /api/platform/external-users",
+        "operationId": "get_api_platform_external_users",
+        "parameters": [
+          {
+            "name": "remindDays",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 14
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功；响应字段见对应业务契约",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "create · /api/platform/external-users",
+        "operationId": "post_api_platform_external_users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功；响应字段见对应业务契约",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Creation"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/platform/external-users/{id}/expiry": {
+      "put": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "renew · /api/platform/external-users/{id}/expiry",
+        "operationId": "put_api_platform_external_users_id_expiry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功；响应字段见对应业务契约",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Renewal"
               }
             }
           }
@@ -4933,6 +5248,96 @@
       }
     },
     "/api/roles": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "list · /api/roles",
+        "operationId": "get_api_roles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "操作成功；响应字段见对应业务契约",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "roles"
@@ -5032,23 +5437,27 @@
             }
           }
         }
-      },
-      "get": {
+      }
+    },
+    "/api/roles/{roleId}": {
+      "delete": {
         "tags": [
           "roles"
         ],
-        "summary": "list · /api/roles",
-        "operationId": "get_api_roles",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "操作成功；响应字段见对应业务契约",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
+        "summary": "delete · /api/roles/{roleId}",
+        "operationId": "delete_api_roles_roleId",
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
             }
-          },
+          }
+        ],
+        "responses": {
           "400": {
             "description": "输入校验失败",
             "content": {
@@ -5120,11 +5529,12 @@
                 }
               }
             }
+          },
+          "204": {
+            "description": "操作成功，无响应体"
           }
         }
-      }
-    },
-    "/api/roles/{roleId}": {
+      },
       "put": {
         "tags": [
           "roles"
@@ -5232,101 +5642,6 @@
                 "$ref": "#/components/schemas/UpdateRoleRequest"
               }
             }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "roles"
-        ],
-        "summary": "delete · /api/roles/{roleId}",
-        "operationId": "delete_api_roles_roleId",
-        "parameters": [
-          {
-            "name": "roleId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "输入校验失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "登录、令牌或会话失效",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "身份、管理范围或业务权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "业务键、引用或幂等内容冲突",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "操作成功，无响应体"
           }
         }
       }
@@ -5836,6 +6151,101 @@
       }
     },
     "/api/systems/{systemId}": {
+      "delete": {
+        "tags": [
+          "systems"
+        ],
+        "summary": "delete · /api/systems/{systemId}",
+        "operationId": "delete_api_systems_systemId",
+        "parameters": [
+          {
+            "name": "systemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "输入校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "登录、令牌或会话失效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "身份、管理范围或业务权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "业务键、引用或幂等内容冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "操作成功，无响应体"
+          }
+        }
+      },
       "put": {
         "tags": [
           "systems"
@@ -5945,25 +6355,25 @@
             }
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/api/users": {
+      "get": {
         "tags": [
-          "systems"
+          "users"
         ],
-        "summary": "delete · /api/systems/{systemId}",
-        "operationId": "delete_api_systems_systemId",
-        "parameters": [
-          {
-            "name": "systemId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
+        "summary": "list · /api/users",
+        "operationId": "get_api_users",
+        "parameters": [],
         "responses": {
+          "200": {
+            "description": "操作成功；响应字段见对应业务契约",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
           "400": {
             "description": "输入校验失败",
             "content": {
@@ -6035,14 +6445,9 @@
                 }
               }
             }
-          },
-          "204": {
-            "description": "操作成功，无响应体"
           }
         }
-      }
-    },
-    "/api/users": {
+      },
       "post": {
         "tags": [
           "users"
@@ -6138,96 +6543,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateUserRequest"
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "users"
-        ],
-        "summary": "list · /api/users",
-        "operationId": "get_api_users",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "操作成功；响应字段见对应业务契约",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "400": {
-            "description": "输入校验失败",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "登录、令牌或会话失效",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "身份、管理范围或业务权限不足",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "业务键、引用或幂等内容冲突",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
               }
             }
           }
@@ -7209,6 +7524,66 @@
           "category",
           "code",
           "name"
+        ]
+      },
+      "Creation": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "personType": {
+            "type": "string"
+          },
+          "expiresOn": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "postId": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "company": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "phone": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "displayName",
+          "personType",
+          "expiresOn",
+          "departmentId",
+          "postId",
+          "company",
+          "phone",
+          "password"
+        ]
+      },
+      "Renewal": {
+        "type": "object",
+        "properties": {
+          "expiresOn": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "expiresOn"
         ]
       },
       "Department": {

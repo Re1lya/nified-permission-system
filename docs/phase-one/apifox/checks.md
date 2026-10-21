@@ -31,6 +31,6 @@ pm.test('普通用户不能管理', () => pm.response.to.have.status(403));
 
 Apifox 运行完成后导出报告，并记录项目地址、运行时间、环境和通过数。运行证据以实际报告为准。
 
-以上 9 个场景已写成 phase-one-scenarios.postman_collection.json（由 scripts/build-acceptance-scenarios.py 生成），可导入 Apifox 或用 newman 运行；2026-10-21 的完整运行为 42 个请求、56 条断言全部通过，明细见 phase-one-scenarios-report.json。
+以上 9 个场景及 EXT-01 外部与临时人员有效期已写成 phase-one-scenarios.postman_collection.json（由 scripts/build-acceptance-scenarios.py 生成），可导入 Apifox 或用 newman 运行；2026-10-21 的完整运行为 49 个请求、65 条断言全部通过，明细见 phase-one-scenarios-report.json。
 
 官方参考：https://apifox.com/help/api-manage/import-api/intro/ ；https://docs.apifox.com/scripts
