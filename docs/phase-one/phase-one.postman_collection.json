@@ -1,0 +1,1169 @@
+{
+  "info": {
+    "name": "统一权限管理 一期接口目录",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "路由目录，不是无参数一键验收；先按 API 文档填写具体数据，使用 verify-phase-one.py 验证完整签名流程。"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18081"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "POST /api/auth/login",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/login",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": null,\n  \"password\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/auth/logout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/logout",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/auth/me",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/auth/me",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/company/catalog",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/catalog",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/company/departments",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/departments",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/company/employees",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/employees",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/company/imports",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/imports",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/company/imports/commit",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/company/imports/commit",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"previewId\": null,\n  \"acknowledgeWarnings\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/company/imports/preview",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/company/imports/preview",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/company/posts",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/posts",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/company/posts/{id}/template",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/company/posts/{{id}}/template",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/company/templates",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/company/templates",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/demo/expenses",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/demo/expenses",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/integration/{source}",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/integration/{{source}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": null,\n  \"username\": null,\n  \"displayName\": null,\n  \"userId\": null,\n  \"departmentId\": null,\n  \"postId\": null,\n  \"phone\": null,\n  \"company\": null,\n  \"roleIds\": null,\n  \"approvalId\": null,\n  \"decision\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/oidc/permissions/check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/oidc/permissions/check",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/permissions",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/permissions",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/permissions",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/permissions",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"systemId\": null,\n  \"code\": null,\n  \"name\": null,\n  \"menuPath\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/permissions/{permissionId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/permissions/{{permissionId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"menuPath\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/permissions/{permissionId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/permissions/{{permissionId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/platform/administrators/{id}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/administrators/{{id}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"departmentId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/platform/administrators/{id}/{department}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/platform/administrators/{{id}}/{{department}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/approvals",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/approvals",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/audit",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/audit",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/dictionary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/dictionary",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/dictionary",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/dictionary",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": null,\n  \"code\": null,\n  \"name\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/platform/integrations",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/integrations",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/organization/departments",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/organization/departments",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"parentId\": null,\n  \"managerId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/platform/organization/departments/{id}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/organization/departments/{{id}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"parentId\": null,\n  \"managerId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/platform/organization/grant-limits/{department}/{permission}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/organization/grant-limits/{{department}}/{{permission}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/organization/posts",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/organization/posts",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"code\": null,\n  \"departmentId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/platform/organization/roles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/organization/roles",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/platform/organization/roles/{role}/permissions/{permission}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/organization/roles/{{role}}/permissions/{{permission}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/platform/organization/roles/{role}/permissions/{permission}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/platform/organization/roles/{{role}}/permissions/{{permission}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/self",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/self",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/self/applications",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/self/applications",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/self/applications",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/self/applications",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"roleId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/platform/self/password",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/self/password",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"oldPassword\": null,\n  \"newPassword\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/platform/self/sso",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/self/sso",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/sessions",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/sessions",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/platform/sessions/{session}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/platform/sessions/{{session}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/platform/users",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/platform/users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/platform/users/{id}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/users/{id}/offline",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}/offline",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/platform/users/{id}/password",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}/password",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/platform/users/{id}/roles/{role}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}/roles/{{role}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/platform/users/{id}/roles/{role}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}/roles/{{role}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/platform/users/{id}/state",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/platform/users/{{id}}/state",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"enabled\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/roles",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/roles",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": null,\n  \"name\": null,\n  \"description\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/roles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/roles",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/roles/{roleId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"description\": null,\n  \"enabled\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/roles/{roleId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/roles/{roleId}/permissions",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}/permissions",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/roles/{roleId}/permissions/{permissionId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}/permissions/{{permissionId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/roles/{roleId}/permissions/{permissionId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/roles/{{roleId}}/permissions/{{permissionId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/systems",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/systems",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/systems",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/systems",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": null,\n  \"name\": null,\n  \"baseUrl\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/systems/{systemId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/systems/{{systemId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": null,\n  \"baseUrl\": null,\n  \"enabled\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/systems/{systemId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/systems/{{systemId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "POST /api/users",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": null,\n  \"displayName\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/users",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/users/{userId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/users/{{userId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"displayName\": null,\n  \"enabled\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/users/{userId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/users/{{userId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/users/{userId}/password",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/users/{{userId}}/password",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"password\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/users/{userId}/permissions",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{userId}}/permissions",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/users/{userId}/permissions/check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{userId}}/permissions/check",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "GET /api/users/{userId}/roles",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{userId}}/roles",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "PUT /api/users/{userId}/roles/{roleId}",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    },
+    {
+      "name": "DELETE /api/users/{userId}/roles/{roleId}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/users/{{userId}}/roles/{{roleId}}",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "description": "鉴权和请求字段请参见 API设计文档；集成端点需要脚本生成签名。"
+      }
+    }
+  ]
+}

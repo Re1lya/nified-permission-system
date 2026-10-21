@@ -51,3 +51,6 @@ mvn clean verify
 - [CloneFactory](docs/clonefactory.md)：必须先安装内置依赖，生成代码不能手工修改。
 
 管理员标记独立于业务角色，仅由服务启动初始化写入。不存在通过创建一个同名角色获得管理员权限的行为；管理员也不会自动拥有 `expense:list`。登录/注销采用 JWT + 数据库会话，角色回收影响后续请求，注销和账号停用使旧 JWT 失效。
+# 一期推进版本入口
+
+新增的 Vue 管理界面、三表导入、部门范围、OIDC 与 OA/HR 本地演示及四份 Word，见 [一期材料](docs/phase-one/README.md)。启动地址为 `http://127.0.0.1:18081/ui/index.html`。本地一期采用 Vue3 + TypeScript + Tailwind，配套需求 Spec、Apifox 接口契约、ER 图和 SQL。以下原有说明保留作为第一次检查基线。

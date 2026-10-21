@@ -1,0 +1,1093 @@
+[
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "login",
+    "parameters": [
+      {
+        "type": "LoginRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "username"
+          },
+          {
+            "type": "String",
+            "name": "password"
+          }
+        ]
+      }
+    ],
+    "path": "/api/auth/login"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "logout",
+    "parameters": [],
+    "path": "/api/auth/logout"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "me",
+    "parameters": [],
+    "path": "/api/auth/me"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "catalog",
+    "parameters": [
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "0",
+        "name": "page"
+      },
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "25",
+        "name": "size"
+      },
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "q"
+      }
+    ],
+    "path": "/api/company/catalog"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "departments",
+    "parameters": [],
+    "path": "/api/company/departments"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "employees",
+    "parameters": [
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "0",
+        "name": "page"
+      },
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "25",
+        "name": "size"
+      },
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "q"
+      },
+      {
+        "type": "Long",
+        "kind": "query",
+        "required": false,
+        "default": "",
+        "name": "departmentId"
+      }
+    ],
+    "path": "/api/company/employees"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "batches",
+    "parameters": [],
+    "path": "/api/company/imports"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "commit",
+    "parameters": [
+      {
+        "type": "Confirmation",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "previewId"
+          },
+          {
+            "type": "boolean",
+            "name": "acknowledgeWarnings"
+          }
+        ]
+      }
+    ],
+    "path": "/api/company/imports/commit"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "preview",
+    "parameters": [
+      {
+        "type": "MultipartFile",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "departments"
+      },
+      {
+        "type": "MultipartFile",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "employees"
+      },
+      {
+        "type": "MultipartFile",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "permissions"
+      }
+    ],
+    "path": "/api/company/imports/preview"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "posts",
+    "parameters": [],
+    "path": "/api/company/posts"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "template",
+    "parameters": [
+      {
+        "type": "TemplateRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          }
+        ]
+      }
+    ],
+    "path": "/api/company/posts/{id}/template"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "templates",
+    "parameters": [],
+    "path": "/api/company/templates"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [],
+    "path": "/api/demo/expenses"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "accept",
+    "parameters": [
+      {
+        "type": "String",
+        "kind": "body",
+        "fields": [
+          {
+            "name": "action",
+            "type": "String"
+          },
+          {
+            "name": "username",
+            "type": "String"
+          },
+          {
+            "name": "displayName",
+            "type": "String"
+          },
+          {
+            "name": "userId",
+            "type": "Long"
+          },
+          {
+            "name": "departmentId",
+            "type": "Long"
+          },
+          {
+            "name": "postId",
+            "type": "Long"
+          },
+          {
+            "name": "phone",
+            "type": "String"
+          },
+          {
+            "name": "company",
+            "type": "String"
+          },
+          {
+            "name": "roleIds",
+            "type": "List"
+          },
+          {
+            "name": "approvalId",
+            "type": "Long"
+          },
+          {
+            "name": "decision",
+            "type": "String"
+          }
+        ]
+      }
+    ],
+    "path": "/api/integration/{source}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "check",
+    "parameters": [
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "code"
+      },
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "clientId"
+      }
+    ],
+    "path": "/api/oidc/permissions/check"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [
+      {
+        "type": "Long",
+        "kind": "query",
+        "required": false,
+        "default": "",
+        "name": "systemId"
+      }
+    ],
+    "path": "/api/permissions"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "create",
+    "parameters": [
+      {
+        "type": "CreatePermissionRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "Long",
+            "name": "systemId"
+          },
+          {
+            "type": "String",
+            "name": "code"
+          },
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "menuPath"
+          }
+        ]
+      }
+    ],
+    "path": "/api/permissions"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "update",
+    "parameters": [
+      {
+        "type": "UpdatePermissionRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "menuPath"
+          }
+        ]
+      }
+    ],
+    "path": "/api/permissions/{permissionId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "delete",
+    "parameters": [],
+    "path": "/api/permissions/{permissionId}"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "bind",
+    "parameters": [
+      {
+        "type": "Binding",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "long",
+            "name": "departmentId"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/administrators/{id}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "unbind",
+    "parameters": [],
+    "path": "/api/platform/administrators/{id}/{department}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "approvals",
+    "parameters": [],
+    "path": "/api/platform/approvals"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "audit",
+    "parameters": [
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "0",
+        "name": "page"
+      },
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "25",
+        "name": "size"
+      },
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "kind"
+      }
+    ],
+    "path": "/api/platform/audit"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "dictionary",
+    "parameters": [],
+    "path": "/api/platform/dictionary"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "dictionary",
+    "parameters": [
+      {
+        "type": "DictionaryEntry",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "category"
+          },
+          {
+            "type": "String",
+            "name": "code"
+          },
+          {
+            "type": "String",
+            "name": "name"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/dictionary"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "integrations",
+    "parameters": [],
+    "path": "/api/platform/integrations"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "department",
+    "parameters": [
+      {
+        "type": "Department",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "Long",
+            "name": "parentId"
+          },
+          {
+            "type": "Long",
+            "name": "managerId"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/organization/departments"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "department",
+    "parameters": [
+      {
+        "type": "Department",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "Long",
+            "name": "parentId"
+          },
+          {
+            "type": "Long",
+            "name": "managerId"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/organization/departments/{id}"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "limit",
+    "parameters": [],
+    "path": "/api/platform/organization/grant-limits/{department}/{permission}"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "post",
+    "parameters": [
+      {
+        "type": "Post",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "code"
+          },
+          {
+            "type": "Long",
+            "name": "departmentId"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/organization/posts"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "roles",
+    "parameters": [],
+    "path": "/api/platform/organization/roles"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "grant",
+    "parameters": [],
+    "path": "/api/platform/organization/roles/{role}/permissions/{permission}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "revoke",
+    "parameters": [],
+    "path": "/api/platform/organization/roles/{role}/permissions/{permission}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "self",
+    "parameters": [],
+    "path": "/api/platform/self"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "myApplications",
+    "parameters": [],
+    "path": "/api/platform/self/applications"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "application",
+    "parameters": [
+      {
+        "type": "Application",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "long",
+            "name": "roleId"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/self/applications"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "changePassword",
+    "parameters": [
+      {
+        "type": "PasswordChange",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "oldPassword"
+          },
+          {
+            "type": "String",
+            "name": "newPassword"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/self/password"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "bridge",
+    "parameters": [],
+    "path": "/api/platform/self/sso"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "sessions",
+    "parameters": [],
+    "path": "/api/platform/sessions"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "session",
+    "parameters": [],
+    "path": "/api/platform/sessions/{session}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "0",
+        "name": "page"
+      },
+      {
+        "type": "int",
+        "kind": "query",
+        "required": true,
+        "default": "25",
+        "name": "size"
+      }
+    ],
+    "path": "/api/platform/users"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "delete",
+    "parameters": [],
+    "path": "/api/platform/users/{id}"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "offline",
+    "parameters": [],
+    "path": "/api/platform/users/{id}/offline"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "reset",
+    "parameters": [
+      {
+        "type": "Reset",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "password"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/users/{id}/password"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "grant",
+    "parameters": [],
+    "path": "/api/platform/users/{id}/roles/{role}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "revoke",
+    "parameters": [],
+    "path": "/api/platform/users/{id}/roles/{role}"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "state",
+    "parameters": [
+      {
+        "type": "State",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "boolean",
+            "name": "enabled"
+          }
+        ]
+      }
+    ],
+    "path": "/api/platform/users/{id}/state"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "create",
+    "parameters": [
+      {
+        "type": "CreateRoleRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "code"
+          },
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "description"
+          }
+        ]
+      }
+    ],
+    "path": "/api/roles"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [],
+    "path": "/api/roles"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "update",
+    "parameters": [
+      {
+        "type": "UpdateRoleRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "description"
+          },
+          {
+            "type": "Boolean",
+            "name": "enabled"
+          }
+        ]
+      }
+    ],
+    "path": "/api/roles/{roleId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "delete",
+    "parameters": [],
+    "path": "/api/roles/{roleId}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "listPermissions",
+    "parameters": [],
+    "path": "/api/roles/{roleId}/permissions"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "assignPermission",
+    "parameters": [],
+    "path": "/api/roles/{roleId}/permissions/{permissionId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "removePermission",
+    "parameters": [],
+    "path": "/api/roles/{roleId}/permissions/{permissionId}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [],
+    "path": "/api/systems"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "create",
+    "parameters": [
+      {
+        "type": "CreateSystemRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "code"
+          },
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "baseUrl"
+          }
+        ]
+      }
+    ],
+    "path": "/api/systems"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "update",
+    "parameters": [
+      {
+        "type": "UpdateSystemRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "name"
+          },
+          {
+            "type": "String",
+            "name": "baseUrl"
+          },
+          {
+            "type": "Boolean",
+            "name": "enabled"
+          }
+        ]
+      }
+    ],
+    "path": "/api/systems/{systemId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "delete",
+    "parameters": [],
+    "path": "/api/systems/{systemId}"
+  },
+  {
+    "methods": [
+      "POST"
+    ],
+    "handler": "create",
+    "parameters": [
+      {
+        "type": "CreateUserRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "username"
+          },
+          {
+            "type": "String",
+            "name": "displayName"
+          }
+        ]
+      }
+    ],
+    "path": "/api/users"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "list",
+    "parameters": [],
+    "path": "/api/users"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "update",
+    "parameters": [
+      {
+        "type": "UpdateUserRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "displayName"
+          },
+          {
+            "type": "Boolean",
+            "name": "enabled"
+          }
+        ]
+      }
+    ],
+    "path": "/api/users/{userId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "delete",
+    "parameters": [],
+    "path": "/api/users/{userId}"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "setPassword",
+    "parameters": [
+      {
+        "type": "SetPasswordRequest",
+        "kind": "body",
+        "fields": [
+          {
+            "type": "String",
+            "name": "password"
+          }
+        ]
+      }
+    ],
+    "path": "/api/users/{userId}/password"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "listPermissions",
+    "parameters": [],
+    "path": "/api/users/{userId}/permissions"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "checkPermission",
+    "parameters": [
+      {
+        "type": "String",
+        "kind": "query",
+        "required": true,
+        "default": "",
+        "name": "code"
+      }
+    ],
+    "path": "/api/users/{userId}/permissions/check"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "listRoles",
+    "parameters": [],
+    "path": "/api/users/{userId}/roles"
+  },
+  {
+    "methods": [
+      "PUT"
+    ],
+    "handler": "assignRole",
+    "parameters": [],
+    "path": "/api/users/{userId}/roles/{roleId}"
+  },
+  {
+    "methods": [
+      "DELETE"
+    ],
+    "handler": "removeRole",
+    "parameters": [],
+    "path": "/api/users/{userId}/roles/{roleId}"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "consent",
+    "parameters": [],
+    "path": "/consent"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "hello",
+    "parameters": [],
+    "path": "/hello"
+  },
+  {
+    "methods": [
+      "GET"
+    ],
+    "handler": "login",
+    "parameters": [],
+    "path": "/login"
+  }
+]

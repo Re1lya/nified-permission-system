@@ -1,0 +1,5 @@
+counts={systems=18, departments=111, employees=10000, posts=54, modules=115, functions=359}
+warnings=5
+result={message=导入成功；新员工无密码、无角色，已有账号状态及授权保持不变, reused=false, batchId=1, unresolvedManagers=1, createdUsers=10000, createdPermissions=797}
+rolesAssigned=0
+repeat=reused

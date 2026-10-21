@@ -1,0 +1,184 @@
+erDiagram
+  account_policy {
+    boolean deleted
+    boolean must_change_password
+    timestamp expires_at
+    bigint user_id
+    bigint version
+    string person_type
+  }
+  admin_department {
+    bigint department_id FK
+    bigint id PK
+    bigint user_id FK
+  }
+  approval_record {
+    timestamp created_at
+    bigint id PK
+    bigint role_id FK
+    bigint user_id FK
+    string decision
+    string request_id
+  }
+  audit_event {
+    bigint actor_id
+    timestamp created_at
+    bigint department_id
+    bigint id PK
+    string result
+    string kind
+    string target
+  }
+  biz_system {
+    boolean enabled
+    bigint id PK
+    string code
+    string name
+    string base_url
+  }
+  company_import_batch {
+    integer departments
+    integer employees
+    integer functions
+    bigint actor_id
+    timestamp created_at
+    bigint id PK
+    string fingerprint
+  }
+  data_dictionary {
+    bigint id PK
+    string category
+    string code
+    string name
+  }
+  department_permission {
+    bigint department_id FK
+    bigint id PK
+    bigint permission_id FK
+  }
+  employee_profile {
+    bigint department_id FK
+    bigint id PK
+    bigint post_id FK
+    bigint user_id FK
+    string phone
+    string company
+  }
+  integration_event {
+    timestamp created_at
+    bigint id PK
+    bigint user_id
+    string source
+    string result
+    string digest
+    string request_id
+  }
+  login_attempt {
+    integer failures
+    timestamp locked_until
+    string username
+  }
+  managed_role {
+    bigint department_id FK
+    bigint role_id
+  }
+  permission_detail {
+    bigint function_id FK
+    bigint id PK
+    bigint permission_id FK
+    string action
+  }
+  permission_template {
+    bigint id PK
+    bigint permission_id FK
+    string name
+  }
+  session_activity {
+    timestamp last_seen
+    string session_id
+  }
+  sys_department {
+    bigint id PK
+    bigint manager_id FK
+    bigint parent_id FK
+    string manager_name
+    string name
+  }
+  sys_function {
+    bigint id PK
+    bigint module_id FK
+    string name
+    string description
+  }
+  sys_login_session {
+    timestamp expires_at
+    timestamp issued_at
+    bigint user_id FK
+    string id PK
+  }
+  sys_module {
+    bigint id PK
+    bigint system_id FK
+    string name
+  }
+  sys_permission {
+    bigint id PK
+    bigint system_id FK
+    string code
+    string name
+    string menu_path
+  }
+  sys_post {
+    bigint id PK
+    bigint role_id FK
+    string name
+  }
+  sys_role {
+    boolean enabled
+    bigint id PK
+    string code
+    string name
+    string description
+  }
+  sys_role_permission {
+    bigint id PK
+    bigint permission_id FK
+    bigint role_id FK
+  }
+  sys_user {
+    boolean administrator
+    boolean enabled
+    bigint id PK
+    string username
+    string display_name
+    string password_hash
+  }
+  sys_user_role {
+    bigint id PK
+    bigint role_id FK
+    bigint user_id FK
+  }
+  sys_role ||--o{ sys_user_role : "role_id"
+  sys_department ||--o{ department_permission : "department_id"
+  sys_post ||--o{ employee_profile : "post_id"
+  sys_department ||--o{ managed_role : "department_id"
+  sys_department |o--o{ sys_department : "parent_id"
+  sys_permission ||--o{ permission_template : "permission_id"
+  sys_permission ||--o{ sys_role_permission : "permission_id"
+  sys_function ||--o{ permission_detail : "function_id"
+  sys_role ||--o{ approval_record : "role_id"
+  biz_system ||--o{ sys_permission : "system_id"
+  sys_permission ||--o{ department_permission : "permission_id"
+  sys_user |o--o{ sys_department : "manager_id"
+  sys_department ||--o{ employee_profile : "department_id"
+  sys_module ||--o{ sys_function : "module_id"
+  biz_system ||--o{ sys_module : "system_id"
+  sys_department ||--o{ admin_department : "department_id"
+  sys_user ||--o{ admin_department : "user_id"
+  sys_user ||--o| employee_profile : "user_id"
+  sys_user ||--o{ approval_record : "user_id"
+  sys_role ||--o| sys_post : "role_id"
+  sys_user ||--o{ sys_login_session : "user_id"
+  sys_user ||--o{ sys_user_role : "user_id"
+  sys_permission ||--o| permission_detail : "permission_id"
+  sys_role ||--o{ sys_role_permission : "role_id"

@@ -1,0 +1,190 @@
+{
+  "apifoxCli": "1.1.0",
+  "item": [
+    {
+      "item": [
+        {
+          "id": "e80eeee5-8c66-4ef3-aea5-9cb01737a16f",
+          "name": "list · /api/demo/expenses",
+          "request": {
+            "url": {
+              "protocol": "http",
+              "port": "18081",
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ],
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "User-Agent",
+                "value": "Apifox/1.0.0 (https://apifox.com)"
+              }
+            ],
+            "method": "GET",
+            "baseUrl": "http://127.0.0.1:18081",
+            "body": {},
+            "auth": {
+              "type": "noauth",
+              "noauth": []
+            },
+            "type": "http"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('SESSION-01 未登录返回401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "responseDefinition": {
+            "id": "176133434",
+            "name": "",
+            "code": "401",
+            "contentType": "json",
+            "jsonSchema": {
+              "type": "object",
+              "required": [
+                "error",
+                "message"
+              ],
+              "properties": {
+                "error": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "itemSchema": {},
+            "description": "登录、令牌或会话失效",
+            "mediaType": "application/json",
+            "headers": [],
+            "oasExtensions": ""
+          },
+          "requestDefinition": {
+            "jsonSchema": {},
+            "examples": []
+          },
+          "overrideRequesterOptions": {
+            "strictSSL": true
+          },
+          "metaInfo": {
+            "blockId": "e80eeee5-8c66-4ef3-aea5-9cb01737a16f",
+            "id": "e80eeee5-8c66-4ef3-aea5-9cb01737a16f",
+            "type": "http",
+            "name": "list · /api/demo/expenses",
+            "projectId": 8955177,
+            "relatedId": 8875512,
+            "environmentId": 49825995,
+            "blockNumber": 1,
+            "tags": [],
+            "httpApiId": 527304617,
+            "httpApiCaseId": 423562057,
+            "httpApiName": "list · /api/demo/expenses",
+            "httpApiPath": "/api/demo/expenses",
+            "httpApiMethod": "get",
+            "httpApiCaseName": "",
+            "moduleId": 8752784,
+            "serverId": "default"
+          },
+          "type": "http",
+          "protocolProfileBehavior": {
+            "useWhatWGUrlParser": false,
+            "disableUrlEncoding": false,
+            "disabledSystemHeaders": {},
+            "disableCookies": false
+          }
+        }
+      ],
+      "name": "SESSION-01 未登录请求必须返回401"
+    }
+  ],
+  "info": {
+    "name": "SESSION-01 未登录请求必须返回401"
+  },
+  "dataSchemas": {},
+  "mockRules": {
+    "rules": [],
+    "enableSystemRule": true
+  },
+  "environment": {
+    "id": 49825995,
+    "name": "本地 H2 演示",
+    "baseUrl": "http://127.0.0.1:18081",
+    "baseUrls": {
+      "default": "http://127.0.0.1:18081"
+    },
+    "websocketBaseUrls": {},
+    "socketioBaseUrls": {},
+    "variable": {
+      "id": "db1b5571-e860-4e09-800d-7f68c8d2a42e",
+      "name": "本地 H2 演示",
+      "values": []
+    },
+    "advancedSettings": {},
+    "type": "normal",
+    "parameter": {
+      "header": [],
+      "query": [],
+      "body": [],
+      "cookie": []
+    }
+  },
+  "globals": {
+    "baseUrl": "",
+    "baseUrls": {},
+    "websocketBaseUrls": {},
+    "socketioBaseUrls": {},
+    "variable": {
+      "id": "616e5a94-cce8-4965-af89-525f4a6a0dd7",
+      "values": []
+    },
+    "parameter": {
+      "header": [],
+      "query": [],
+      "body": [],
+      "cookie": []
+    }
+  },
+  "moduleVariablesMap": {
+    "8752784": []
+  },
+  "defaultModuleId": 8752784,
+  "isServerBuild": false,
+  "isTestFlowControl": false,
+  "projectAssociationMap": {},
+  "projectOptions": {
+    "enableJsonc": false,
+    "enableBigint": false,
+    "responseValidate": true,
+    "isDefaultUrlEncoding": 2,
+    "enableTestScenarioSetting": false,
+    "enableYAPICompatScript": false,
+    "allowAutomationWriteAutomationCreatedSprintBranch": true,
+    "publishedDocUrlRules": {
+      "defaultRule": "RESOURCE_KEY_ONLY",
+      "resourceKeyStandard": "NEW",
+      "enableHierarchicalSlug": false
+    },
+    "mockSettings": {
+      "engine": "fakerjs"
+    },
+    "language": "zh-CN"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-21",
+  "command": "mvn clean verify (COMPANY_WORKBOOK_DIR set)",
+  "tests": {
+    "tests": 36,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "coverage": {
+    "INSTRUCTION": {
+      "covered": 6505,
+      "missed": 3120,
+      "percent": 67.58
+    },
+    "BRANCH": {
+      "covered": 329,
+      "missed": 333,
+      "percent": 49.7
+    },
+    "LINE": {
+      "covered": 951,
+      "missed": 217,
+      "percent": 81.42
+    },
+    "COMPLEXITY": {
+      "covered": 468,
+      "missed": 347,
+      "percent": 57.42
+    },
+    "METHOD": {
+      "covered": 370,
+      "missed": 113,
+      "percent": 76.6
+    },
+    "CLASS": {
+      "covered": 87,
+      "missed": 11,
+      "percent": 88.78
+    }
+  },
+  "database": "isolated H2"
+}

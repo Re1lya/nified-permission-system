@@ -1,0 +1,112 @@
+[
+  {
+    "id": "AUTH-01",
+    "title": "登录与密码策略",
+    "input": "账号或唯一手机号、密码",
+    "behavior": "认证成功返回 JWT 和身份；5 次失败锁定 5 分钟；首次重置后先改密",
+    "acceptance": "错误密码不能登录；首次改密后旧 JWT 返回 401",
+    "ui": "登录、个人中心",
+    "api": "/api/auth/login；/api/platform/self/password",
+    "tables": "sys_user、account_policy、login_attempt"
+  },
+  {
+    "id": "RBAC-01",
+    "title": "角色授权与权限并集",
+    "input": "管理员、用户、角色和权限编号",
+    "behavior": "有效权限为全部启用角色权限的并集；停用应用的权限不计入",
+    "acceptance": "两角色提供同权限，回收一个仍可访问；回收全部后同 JWT 返回 403",
+    "ui": "用户、角色、我的权限、报销演示",
+    "api": "/api/users/{id}/roles/{roleId}；/api/demo/expenses",
+    "tables": "sys_user_role、sys_role_permission"
+  },
+  {
+    "id": "SCOPE-01",
+    "title": "部门管理范围",
+    "input": "超管绑定的精确部门、委派权限",
+    "behavior": "后端同时核对操作身份、目标员工部门、受管角色和权限上限",
+    "acceptance": "跨部门重置密码返回 403；普通用户管理 API 返回 403",
+    "ui": "用户、角色；委派通过 API 配置",
+    "api": "/api/platform/administrators/{id}；/api/platform/organization",
+    "tables": "admin_department、managed_role、department_permission"
+  },
+  {
+    "id": "IMPORT-01",
+    "title": "三表校验预览与提交",
+    "input": "部门、员工、功能权限三个 XLSX",
+    "behavior": "先预览后确认；错误阻止提交；30 分钟预览仅创建者可用；单事务提交",
+    "acceptance": "111 部门、10000 员工、54 岗位、797 权限；初始员工授权 0；重复提交 reused=true",
+    "ui": "三表导入",
+    "api": "/api/company/imports/preview；/api/company/imports/commit",
+    "tables": "company_import_batch、employee_profile"
+  },
+  {
+    "id": "ORG-01",
+    "title": "组织岗位与目录",
+    "input": "部门父节点、岗位、应用模块功能",
+    "behavior": "部门不成环；岗位对应角色；模板明确应用后追加权限；岗位字段不自动授权",
+    "acceptance": "非法父节点被拒绝；应用模板不会自动增加员工角色",
+    "ui": "部门、岗位、功能目录",
+    "api": "/api/platform/organization/departments；/api/company/posts/{id}/template",
+    "tables": "sys_department、sys_post、sys_module、sys_function、permission_template"
+  },
+  {
+    "id": "SESSION-01",
+    "title": "会话与撤销",
+    "input": "当前 JWT 或会话编号",
+    "behavior": "保存数据库会话；本人可撤销；管理员可强制下线；空闲 30 分钟失效",
+    "acceptance": "注销或强制下线后旧 JWT 返回 401",
+    "ui": "在线会话、用户",
+    "api": "/api/auth/logout；/api/platform/sessions",
+    "tables": "sys_login_session、session_activity"
+  },
+  {
+    "id": "OIDC-01",
+    "title": "本地双客户端单点登录",
+    "input": "平台会话、client_id、redirect_uri、PKCE S256",
+    "behavior": "两个本地客户端用授权码登录；校验 state、nonce、签名及受众",
+    "acceptance": "第二客户端无需再输密码；授权码二次交换返回 400",
+    "ui": "应用门户、OA 与 HR 本地客户端",
+    "api": "/api/platform/self/sso；/oauth2/authorize；/oauth2/token",
+    "tables": "平台会话；OIDC 授权记录保存在内存"
+  },
+  {
+    "id": "OA-01",
+    "title": "申请与审批联动",
+    "input": "员工申请 roleId；OA 签名回调 approvalId、decision",
+    "behavior": "先创建 PENDING；审批锁定记录；只批准申请内的岗位角色",
+    "acceptance": "批准授予角色；拒绝不授予；同事件重试 reused=true",
+    "ui": "权限申请、审批记录",
+    "api": "/api/platform/self/applications；/api/integration/oa",
+    "tables": "approval_record、integration_event、sys_user_role"
+  },
+  {
+    "id": "HR-01",
+    "title": "入职调岗离职联动",
+    "input": "HR 签名事件 JOIN、TRANSFER、LEAVE",
+    "behavior": "入职无密码无授权；调岗事务替换组织和完整角色集合；离职停用撤权撤会话",
+    "acceptance": "同编号不同内容返回 409；离职旧 JWT 返回 401；HR 不自动变更管理员",
+    "ui": "同步记录、用户",
+    "api": "/api/integration/hr",
+    "tables": "employee_profile、integration_event、sys_user_role"
+  },
+  {
+    "id": "AUDIT-01",
+    "title": "操作记录与字典",
+    "input": "操作人、事件类型；字典分类编码名称",
+    "behavior": "记录登录及管理操作；管理范围控制查询；字典按分类编码存储",
+    "acceptance": "普通员工不能读取管理审计；分页返回 items 和 total",
+    "ui": "操作日志、登录日志、字典",
+    "api": "/api/platform/audit；/api/platform/dictionary",
+    "tables": "audit_event、data_dictionary"
+  },
+  {
+    "id": "UI-01",
+    "title": "中文交互与错误反馈",
+    "input": "浏览器操作与 API 响应",
+    "behavior": "Vue3 + TypeScript + Tailwind；必填校验；成功刷新；401 回登录、403 保持会话提示",
+    "acceptance": "真实页面截图展示导入、用户和登录失效；前端类型检查及构建成功",
+    "ui": "/ui/index.html",
+    "api": "复用以上业务 API",
+    "tables": "由业务 API 访问数据库"
+  }
+]
