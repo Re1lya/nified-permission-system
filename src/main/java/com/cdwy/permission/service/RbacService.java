@@ -83,7 +83,7 @@ public class RbacService {
     }
 
     public List<UserResponse> listUsers() {
-        return userRepository.findAll().stream().map(this::toUserResponse).toList();
+        return userRepository.findAll().stream().filter(u -> platform.count("select count(*) from account_policy where user_id=? and deleted=true",u.getId())==0).map(this::toUserResponse).toList();
     }
 
     @Transactional
@@ -106,7 +106,12 @@ public class RbacService {
         }
         jwtTokenService.revokeAll(userId);
         userRoleRepository.deleteAllByUser_Id(userId);
-        userRepository.deleteById(userId);
+        var user=getUserForUpdate(userId);
+        user.setEnabled(false);user.setUsername("deleted_"+userId+"_"+java.util.UUID.randomUUID().toString().replace("-",""));
+        user.setPasswordHash(null);platform.ensurePolicy(userId);
+        platform.db().update("update account_policy set deleted=true where user_id=?",userId);
+        platform.db().update("delete from admin_department where user_id=?",userId);
+        platform.changed(userId);userRepository.save(user);
     }
 
     @Transactional
@@ -123,7 +128,7 @@ public class RbacService {
         if(request.username()==null||request.username().isBlank()||request.username().length()>64||request.password()==null||request.password().length()>256)throw new AuthenticationFailedException();
         String username=request.username();
         if(!userRepository.existsByUsername(username)) {
-            var candidates=platform.rows("select u.username from employee_profile e join sys_user u on u.id=e.user_id where e.phone=?",username);
+            var candidates=platform.rows("select ac.username from employee_profile e join sys_user u on u.id=e.user_id join sys_account ac on ac.user_id=u.id where e.phone=?",username);
             if(candidates.size()==1) username=(String)candidates.getFirst().get("username");
         }
         // Count failures against the resolved account so username and phone attempts share one lockout.
@@ -148,7 +153,8 @@ public class RbacService {
         if (roleRepository.existsByCode(request.code())) {
             throw new ConflictException("角色编码已存在: " + request.code());
         }
-        Role role = roleRepository.save(new Role(request.code(), request.name(), request.description()));
+        Role role = roleRepository.saveAndFlush(new Role(request.code(), request.name(), request.description()));
+        platform.db().update("insert into sys_post(name,role_id,deleted) values(?,?,false)",request.name(),role.getId());
         return toRoleResponse(role);
     }
 
@@ -169,11 +175,14 @@ public class RbacService {
 
     @Transactional
     public void deleteRole(Long roleId) {
-        getRole(roleId);
-        if(platform.count("select count(*) from sys_user_role where role_id=?",roleId)>0||platform.count("select count(*) from sys_post where role_id=?",roleId)>0)throw new ConflictException("角色仍被员工或岗位引用，请先解除关联");
+        var role=getRole(roleId);
+        if(platform.count("select count(*) from sys_user_role where role_id=?",roleId)>0
+            ||platform.count("select count(*) from employee_profile e join sys_post p on p.id=e.post_id where p.role_id=?",roleId)>0)
+            throw new ConflictException("角色或岗位仍被员工引用，请先解除关联");
         rolePermissionRepository.deleteAllByRole_Id(roleId);
-        userRoleRepository.deleteAllByRole_Id(roleId);
-        roleRepository.deleteById(roleId);
+        platform.db().update("update sys_post set deleted=true,name=concat('deleted_post_',id) where role_id=?",roleId);
+        role.setEnabled(false);role.setDeleted(true);role.setCode("deleted_role_"+roleId);roleRepository.save(role);
+        platform.permissionsChanged();
     }
 
     @Transactional
@@ -210,9 +219,10 @@ public class RbacService {
         if (platform.count("select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.system_id=?", systemId) > 0) {
             throw new ConflictException("失效权限点仍被角色引用，请先回收授权");
         }
-        // Retiring the whole application removes its retired, ungranted permission points with it.
-        permissionRepository.deleteAll(permissions);
-        systemRepository.deleteById(systemId);
+        var system=getSystem(systemId);system.setEnabled(false);system.setDeleted(true);
+        system.setCode("deleted_system_"+systemId);systemRepository.save(system);
+        platform.db().update("update application_access set status='DISABLED' where system_id=?",systemId);
+        platform.permissionsChanged();
     }
 
     @Transactional

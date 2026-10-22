@@ -26,7 +26,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.http.MediaType;
 
-/** Local phase-one OIDC server. Runtime keys and grants deliberately expire on restart. */
+/** Persistent OIDC provider; business applications are registered through the onboarding API. */
 @Configuration
 public class OidcConfig {
     @Bean @Order(1) SecurityFilterChain authorizationServer(HttpSecurity http,com.cdwy.permission.service.JwtTokenService tokens,RbacService rbac,PlatformStore store) throws Exception {
@@ -35,6 +35,11 @@ public class OidcConfig {
             // UC-B08: userinfo carries the subject's current permission codes and the version they belong to.
             server.oidc(oidc->oidc.userInfoEndpoint(info->info.userInfoMapper(context->{
                 var authorization=context.getAuthorization();long user=Long.parseLong(authorization.getPrincipalName());
+                try {
+                    store.validAccount(user);
+                    Number version=(Number)authorization.getAccessToken().getClaims().get("permission_version");
+                    if(store.count("select count(*) from sys_user where id=? and enabled=true",user)!=1||version==null||version.longValue()!=store.version(user))throw new IllegalArgumentException();
+                }catch(RuntimeException invalid){throw new OAuth2AuthenticationException(new OAuth2Error("invalid_token","账号或权限版本已失效",null));}
                 var idToken=authorization.getToken(org.springframework.security.oauth2.core.oidc.OidcIdToken.class);
                 Map<String,Object> claims=new LinkedHashMap<>(idToken==null?Map.of("sub",Long.toString(user)):idToken.getToken().getClaims());
                 claims.put("permissions",rbac.effectivePermissions(user).stream().map(permission->permission.code()).toList());
@@ -80,29 +85,57 @@ public class OidcConfig {
      * Two loopback demo clients. Without a secret they are public PKCE clients. With PERMISSION_OIDC_CLIENT_SECRET (32+ chars)
      * they may also authenticate with that secret; only then does the server issue refresh tokens (UC-A07), as public clients never get one.
      */
-    @Bean RegisteredClientRepository clients(org.springframework.security.crypto.password.PasswordEncoder passwords,@org.springframework.beans.factory.annotation.Value("${permission.oidc.client-secret:}") String secret) {
-        if(!secret.isEmpty()&&secret.length()<32)throw new IllegalArgumentException("permission.oidc.client-secret 至少 32 个字符");
-        List<RegisteredClient> clients=new ArrayList<>();
-        for(String name:List.of("oa-demo","hr-demo")){
-            var client=RegisteredClient.withId(name).clientId(name)
+    @Bean @DependsOn("entityManagerFactory") RegisteredClientRepository clients(org.springframework.jdbc.core.JdbcTemplate db,
+            javax.sql.DataSource dataSource, org.springframework.security.crypto.password.PasswordEncoder passwords,
+            @org.springframework.beans.factory.annotation.Value("${permission.oidc.demo-clients:false}") boolean demos,
+            @org.springframework.beans.factory.annotation.Value("${permission.oidc.client-secret:}") String secret) throws Exception {
+        try(var connection=dataSource.getConnection()) {
+            // Production databases are migrated explicitly; ephemeral development H2 gets the same schema.
+            if(connection.getMetaData().getDatabaseProductName().equals("H2"))
+                new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(new org.springframework.core.io.ClassPathResource("oidc-schema.sql"),new org.springframework.core.io.ClassPathResource("session-schema-h2.sql")).execute(dataSource);
+        }
+        var repository=new JdbcRegisteredClientRepository(db);
+        if(demos) for(String name:List.of("oa-demo","hr-demo")) {
+            if(repository.findByClientId(name)!=null)continue;
+            var client=RegisteredClient.withId(name).clientId(name).clientName(name)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .redirectUri("http://127.0.0.1:"+(name.equals("oa-demo")?18101:18102)+"/callback")
                 .scope("openid").scope("profile")
-                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())
-                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(java.time.Duration.ofMinutes(5)).refreshTokenTimeToLive(java.time.Duration.ofHours(8)).reuseRefreshTokens(false).build());
-            if(!secret.isEmpty())client.clientSecret(passwords.encode(secret)).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);
-            clients.add(client.build());
+                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build());
+            if(!secret.isEmpty()) {
+                if(secret.length()<32)throw new IllegalArgumentException("客户端密钥至少 32 字符");
+                client.clientSecret(passwords.encode(secret)).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);
+            }
+            repository.save(client.build());
         }
-        return new InMemoryRegisteredClientRepository(clients);
+        return new RegisteredClientRepository() {
+            public void save(RegisteredClient client){repository.save(client);}
+            private RegisteredClient enabled(RegisteredClient client){
+                if(client==null)return null;
+                var entries=db.queryForList("select b.enabled,a.status from application_access a join biz_system b on b.id=a.system_id where a.client_id=?",client.getClientId());
+                if(entries.isEmpty())return demos&&Set.of("oa-demo","hr-demo").contains(client.getClientId())?client:null;
+                return Boolean.TRUE.equals(entries.getFirst().get("enabled"))&&"ACTIVE".equals(entries.getFirst().get("status"))?client:null;
+            }
+            public RegisteredClient findById(String id){return enabled(repository.findById(id));}
+            public RegisteredClient findByClientId(String id){return enabled(repository.findByClientId(id));}
+        };
     }
-    @Bean OAuth2AuthorizationService authorizations(){return new InMemoryOAuth2AuthorizationService();}
-    @Bean OAuth2AuthorizationConsentService consents(){return new InMemoryOAuth2AuthorizationConsentService();}
-    @Bean AuthorizationServerSettings authorizationSettings(){return AuthorizationServerSettings.builder().build();}
-    @Bean JWKSource<SecurityContext> jwks() throws Exception {
-        var generator=KeyPairGenerator.getInstance("RSA");generator.initialize(2048);var pair=generator.generateKeyPair();
-        var key=new com.nimbusds.jose.jwk.RSAKey.Builder((RSAPublicKey)pair.getPublic()).privateKey((RSAPrivateKey)pair.getPrivate()).keyID(UUID.randomUUID().toString()).build();
-        return new ImmutableJWKSet<>(new JWKSet(key));
+    @Bean OAuth2AuthorizationService authorizations(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){return new JdbcOAuth2AuthorizationService(db,clients);}
+    @Bean OAuth2AuthorizationConsentService consents(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){return new JdbcOAuth2AuthorizationConsentService(db,clients);}
+    @Bean AuthorizationServerSettings authorizationSettings(@org.springframework.beans.factory.annotation.Value("${permission.oidc.issuer:}") String issuer){
+        var settings=AuthorizationServerSettings.builder();if(!issuer.isBlank())settings.issuer(issuer);return settings.build();
+    }
+    @Bean @DependsOn("entityManagerFactory") JWKSource<SecurityContext> jwks(org.springframework.jdbc.core.JdbcTemplate db) throws Exception {
+        var saved=db.queryForList("select jwk from platform_signing_key where id='active'",String.class);
+        if(saved.isEmpty()) {
+            var generator=KeyPairGenerator.getInstance("RSA");generator.initialize(3072);var pair=generator.generateKeyPair();
+            var key=new com.nimbusds.jose.jwk.RSAKey.Builder((RSAPublicKey)pair.getPublic()).privateKey((RSAPrivateKey)pair.getPrivate()).keyID(UUID.randomUUID().toString()).build();
+            try{db.update("insert into platform_signing_key(id,jwk) values('active',?)",key.toJSONString());}
+            catch(org.springframework.dao.DuplicateKeyException race){/* Another instance created the shared key. */}
+        }
+        return new ImmutableJWKSet<>(new JWKSet(JWK.parse(db.queryForObject("select jwk from platform_signing_key where id='active'",String.class))));
     }
     @Bean JwtDecoder oidcDecoder(JWKSource<SecurityContext> keys){return OAuth2AuthorizationServerConfiguration.jwtDecoder(keys);}
     @Bean org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer<org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext> tokenClaims(PlatformStore store,com.cdwy.permission.service.JwtTokenService tokens){

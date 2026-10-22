@@ -1,187 +1,326 @@
 erDiagram
-  account_policy {
-    boolean deleted
-    boolean must_change_password
-    timestamp expires_at
-    bigint user_id
-    bigint version
-    string person_type
-  }
-  admin_department {
-    bigint department_id FK
-    bigint id PK
-    bigint user_id FK
-  }
-  approval_record {
-    timestamp created_at
-    bigint id PK
-    bigint role_id FK
-    bigint user_id FK
-    string decision
-    string request_id
-  }
-  audit_event {
-    bigint actor_id
-    timestamp created_at
-    bigint department_id
-    bigint id PK
-    bigint target_department_id
-    string result
-    string kind
-    string target
-  }
-  biz_system {
-    boolean enabled
-    bigint id PK
-    string code
-    string name
-    string base_url
-  }
-  company_import_batch {
-    integer departments
-    integer employees
-    integer functions
-    bigint actor_id
-    timestamp created_at
-    bigint id PK
-    string fingerprint
-  }
-  data_dictionary {
-    bigint id PK
-    string category
-    string code
-    string name
-  }
-  department_permission {
-    bigint department_id FK
-    bigint id PK
-    bigint permission_id FK
-  }
-  employee_profile {
-    bigint department_id FK
-    bigint id PK
-    bigint post_id FK
-    bigint user_id FK
-    string phone
-    string company
-  }
-  integration_event {
-    timestamp created_at
-    bigint id PK
-    bigint user_id
-    string source
-    string result
-    string digest
-    string request_id
-  }
-  login_attempt {
-    integer failures
-    timestamp locked_until
-    string username
-  }
-  managed_role {
-    bigint department_id FK
-    bigint role_id
-  }
-  permission_detail {
-    bigint function_id FK
-    bigint id PK
-    bigint permission_id FK
-    string action
-  }
-  permission_template {
-    bigint id PK
-    bigint permission_id FK
-    string name
-  }
-  session_activity {
-    timestamp last_seen
-    string session_id
-  }
-  sys_department {
-    bigint id PK
-    bigint manager_id FK
-    bigint parent_id FK
-    string manager_name
-    string name
-  }
-  sys_function {
-    bigint id PK
-    bigint module_id FK
-    string name
-    string description
-  }
-  sys_login_session {
-    timestamp expires_at
-    timestamp issued_at
-    bigint user_id FK
-    string id PK
-  }
-  sys_module {
-    bigint id PK
-    bigint system_id FK
-    string name
-  }
-  sys_permission {
-    boolean active
-    bigint id PK
-    bigint system_id FK
-    string type
-    string code
-    string name
-    string menu_path
-  }
-  sys_post {
-    bigint id PK
-    bigint role_id FK
-    string name
-  }
-  sys_role {
-    boolean enabled
-    bigint id PK
-    string code
-    string name
-    string description
-  }
-  sys_role_permission {
-    bigint id PK
-    bigint permission_id FK
-    bigint role_id FK
-  }
-  sys_user {
-    boolean administrator
-    boolean enabled
-    bigint id PK
-    string username
-    string display_name
-    string password_hash
-  }
-  sys_user_role {
-    bigint id PK
-    bigint role_id FK
-    bigint user_id FK
-  }
-  sys_role ||--o{ sys_user_role : "role_id"
-  sys_department ||--o{ department_permission : "department_id"
-  sys_post ||--o{ employee_profile : "post_id"
-  sys_department ||--o{ managed_role : "department_id"
-  sys_department |o--o{ sys_department : "parent_id"
-  sys_permission ||--o{ permission_template : "permission_id"
-  sys_permission ||--o{ sys_role_permission : "permission_id"
-  sys_function ||--o{ permission_detail : "function_id"
-  sys_role ||--o{ approval_record : "role_id"
-  biz_system ||--o{ sys_permission : "system_id"
-  sys_permission ||--o{ department_permission : "permission_id"
-  sys_user |o--o{ sys_department : "manager_id"
-  sys_department ||--o{ employee_profile : "department_id"
-  sys_module ||--o{ sys_function : "module_id"
-  biz_system ||--o{ sys_module : "system_id"
-  sys_department ||--o{ admin_department : "department_id"
-  sys_user ||--o{ admin_department : "user_id"
-  sys_user ||--o| employee_profile : "user_id"
-  sys_user ||--o{ approval_record : "user_id"
-  sys_role ||--o| sys_post : "role_id"
-  sys_user ||--o{ sys_login_session : "user_id"
-  sys_user ||--o{ sys_user_role : "user_id"
-  sys_permission ||--o| permission_detail : "permission_id"
-  sys_role ||--o{ sys_role_permission : "role_id"
+    account_policy {
+        bigint user_id
+        bit deleted
+        datetime expires_at
+        bit initial_password_issued
+        bit must_change_password
+        varchar person_type
+        bigint version
+    }
+    admin_department {
+        bigint id
+        bigint department_id
+        bigint user_id
+    }
+    application_access {
+        bigint system_id
+        varchar acceptance
+        varchar client_id
+        varchar compatibility_plan
+        varchar entry_url
+        varchar protocol
+        varchar status
+    }
+    approval_record {
+        bigint id
+        datetime created_at
+        varchar decision
+        varchar request_id
+        bigint role_id
+        bigint user_id
+    }
+    audit_archive {
+        bigint id
+        bigint actor_id
+        datetime archived_at
+        datetime created_at
+        bigint department_id
+        varchar kind
+        varchar result
+        varchar target
+        bigint target_department_id
+    }
+    audit_event {
+        bigint id
+        bigint actor_id
+        datetime created_at
+        bigint department_id
+        varchar kind
+        varchar result
+        varchar target
+        bigint target_department_id
+    }
+    biz_system {
+        bigint id
+        varchar base_url
+        varchar code
+        bit deleted
+        bit enabled
+        varchar name
+    }
+    company_import_batch {
+        bigint id
+        bigint actor_id
+        datetime created_at
+        integer departments
+        integer employees
+        varchar fingerprint
+        integer functions
+    }
+    data_dictionary {
+        bigint id
+        varchar category
+        varchar code
+        bit deleted
+        varchar name
+    }
+    department_permission {
+        bigint id
+        bigint department_id
+        bigint permission_id
+    }
+    employee_profile {
+        bigint id
+        varchar company
+        varchar phone
+        bigint department_id
+        bigint post_id
+        bigint user_id
+    }
+    hr_identity {
+        bigint id
+        varchar external_id
+        varchar kind
+        bigint local_id
+    }
+    integration_event {
+        bigint id
+        datetime created_at
+        varchar digest
+        varchar request_id
+        mediumtext response
+        varchar result
+        varchar source
+        bigint user_id
+    }
+    login_attempt {
+        varchar username
+        integer failures
+        datetime locked_until
+    }
+    managed_role {
+        bigint role_id
+        bigint department_id
+    }
+    permission_detail {
+        bigint id
+        varchar action
+        bigint function_id
+        bigint permission_id
+    }
+    permission_review {
+        bigint id
+        bigint actor_id
+        datetime created_at
+        varchar decision
+        varchar reason
+        bigint role_id
+        bigint user_id
+    }
+    permission_template {
+        bigint id
+        varchar name
+        bigint permission_id
+    }
+    platform_notification {
+        bigint id
+        datetime created_at
+        bigint department_id
+        varchar kind
+        varchar message
+        bigint user_id
+    }
+    platform_signing_key {
+        varchar id
+        varchar jwk
+    }
+    session_activity {
+        varchar session_id
+        datetime last_seen
+    }
+    sync_failure {
+        bigint id
+        datetime created_at
+        varchar digest
+        varchar error
+        varchar request_id
+        varchar resolution
+        varchar source
+        varchar status
+    }
+    sys_account {
+        varchar password_hash
+        varchar username
+        bigint user_id
+    }
+    sys_department {
+        bigint id
+        bit deleted
+        varchar manager_name
+        varchar name
+        bigint manager_id
+        bigint parent_id
+    }
+    sys_function {
+        bigint id
+        varchar description
+        varchar name
+        bigint module_id
+    }
+    sys_login_session {
+        varchar id
+        datetime expires_at
+        datetime issued_at
+        bigint user_id
+    }
+    sys_module {
+        bigint id
+        varchar name
+        bigint system_id
+    }
+    sys_permission {
+        bigint id
+        bit active
+        varchar code
+        varchar menu_path
+        varchar name
+        varchar type
+        bigint system_id
+    }
+    sys_post {
+        bigint id
+        bit deleted
+        varchar name
+        bigint role_id
+    }
+    sys_role {
+        bigint id
+        varchar code
+        bit deleted
+        varchar description
+        bit enabled
+        varchar name
+    }
+    sys_role_permission {
+        bigint id
+        bigint permission_id
+        bigint role_id
+    }
+    sys_user {
+        bigint id
+        bit administrator
+        bit built_in_administrator
+        varchar display_name
+        bit enabled
+    }
+    sys_user_role {
+        bigint id
+        bigint role_id
+        bigint user_id
+    }
+    oauth2_authorization {
+        varchar id
+        varchar registered_client_id
+        varchar principal_name
+        varchar authorization_grant_type
+        varchar authorized_scopes
+        blob attributes
+        varchar state
+        blob authorization_code_value
+        timestamp authorization_code_issued_at
+        timestamp authorization_code_expires_at
+        blob authorization_code_metadata
+        blob access_token_value
+        timestamp access_token_issued_at
+        timestamp access_token_expires_at
+        blob access_token_metadata
+        varchar access_token_type
+        varchar access_token_scopes
+        blob oidc_id_token_value
+        timestamp oidc_id_token_issued_at
+        timestamp oidc_id_token_expires_at
+        blob oidc_id_token_metadata
+        blob refresh_token_value
+        timestamp refresh_token_issued_at
+        timestamp refresh_token_expires_at
+        blob refresh_token_metadata
+        blob user_code_value
+        timestamp user_code_issued_at
+        timestamp user_code_expires_at
+        blob user_code_metadata
+        blob device_code_value
+        timestamp device_code_issued_at
+        timestamp device_code_expires_at
+        blob device_code_metadata
+    }
+    oauth2_authorization_consent {
+        varchar registered_client_id
+        varchar principal_name
+        varchar authorities
+    }
+    oauth2_registered_client {
+        varchar id
+        varchar client_id
+        timestamp client_id_issued_at
+        varchar client_secret
+        timestamp client_secret_expires_at
+        varchar client_name
+        varchar client_authentication_methods
+        varchar authorization_grant_types
+        varchar redirect_uris
+        varchar post_logout_redirect_uris
+        varchar scopes
+        varchar client_settings
+        varchar token_settings
+    }
+    SPRING_SESSION {
+        char primary_id
+        char session_id
+        bigint creation_time
+        bigint last_access_time
+        int max_inactive_interval
+        bigint expiry_time
+        varchar principal_name
+    }
+    SPRING_SESSION_ATTRIBUTES {
+        char session_primary_id
+        varchar attribute_name
+        blob attribute_bytes
+    }
+    sys_department ||--o{ admin_department : "department_id"
+    sys_user ||--o{ admin_department : "user_id"
+    sys_role ||--o{ approval_record : "role_id"
+    sys_user ||--o{ approval_record : "user_id"
+    sys_department ||--o{ department_permission : "department_id"
+    sys_permission ||--o{ department_permission : "permission_id"
+    sys_department ||--o{ employee_profile : "department_id"
+    sys_post ||--o{ employee_profile : "post_id"
+    sys_user ||--o{ employee_profile : "user_id"
+    sys_department ||--o{ managed_role : "department_id"
+    sys_function ||--o{ permission_detail : "function_id"
+    sys_permission ||--o{ permission_detail : "permission_id"
+    sys_permission ||--o{ permission_template : "permission_id"
+    sys_user ||--o{ sys_account : "user_id"
+    sys_user ||--o{ sys_department : "manager_id"
+    sys_department ||--o{ sys_department : "parent_id"
+    sys_module ||--o{ sys_function : "module_id"
+    sys_user ||--o{ sys_login_session : "user_id"
+    biz_system ||--o{ sys_module : "system_id"
+    biz_system ||--o{ sys_permission : "system_id"
+    sys_role ||--o{ sys_post : "role_id"
+    sys_permission ||--o{ sys_role_permission : "permission_id"
+    sys_role ||--o{ sys_role_permission : "role_id"
+    sys_role ||--o{ sys_user_role : "role_id"
+    sys_user ||--o{ sys_user_role : "user_id"
+    SPRING_SESSION ||--o{ SPRING_SESSION_ATTRIBUTES : "session_primary_id"

@@ -9,13 +9,15 @@ public final class CompanyData {
     @MappedSuperclass public static class Row {
         @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id;
     }
-    @Entity @Table(name="sys_department") public static class Department extends Row {
+    @Entity @Table(name="sys_department") @org.hibernate.annotations.SQLRestriction("deleted=false") public static class Department extends Row {
+        @Column(nullable=false) public boolean deleted;
         @Column(nullable=false,unique=true,length=128) public String name;
         @ManyToOne public Department parent;
         @Column(length=128) public String managerName;
         @ManyToOne public com.cdwy.permission.entity.UserAccount manager;
     }
-    @Entity @Table(name="sys_post") public static class Post extends Row {
+    @Entity @Table(name="sys_post") @org.hibernate.annotations.SQLRestriction("deleted=false") public static class Post extends Row {
+        @Column(nullable=false) public boolean deleted;
         @Column(nullable=false,unique=true,length=128) public String name;
         @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.Role role;
     }

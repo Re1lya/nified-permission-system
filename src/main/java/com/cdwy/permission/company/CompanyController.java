@@ -24,17 +24,17 @@ public class CompanyController {
     @PostMapping("/imports/commit")
     public Map<String,Object> commit(@RequestHeader("Authorization") String auth,@Valid @RequestBody Confirmation body){return imports.commit(tokens.requireUserId(auth),body.previewId(),body.acknowledgeWarnings());}
     @GetMapping("/imports") public List<Map<String,Object>> batches(){return rows("select * from company_import_batch order by id desc limit 50");}
-    @GetMapping("/departments") public List<Map<String,Object>> departments(){return rows("select d.id,d.name,d.parent_id,d.manager_name,u.username manager_username from sys_department d left join sys_user u on d.manager_id=u.id order by d.id");}
-    @GetMapping("/posts") public List<Map<String,Object>> posts(){return rows("select p.id,p.name,p.role_id,r.enabled from sys_post p join sys_role r on r.id=p.role_id order by p.id");}
+    @GetMapping("/departments") public List<Map<String,Object>> departments(){return rows("select d.id,d.name,d.parent_id,d.manager_id,d.manager_name,ac.username manager_username from sys_department d left join sys_user u on d.manager_id=u.id left join sys_account ac on ac.user_id=u.id where d.deleted=false order by d.id");}
+    @GetMapping("/posts") public List<Map<String,Object>> posts(){return rows("select p.id,p.name,p.role_id,r.enabled from sys_post p join sys_role r on r.id=p.role_id where p.deleted=false order by p.id");}
     @GetMapping("/employees") public Map<String,Object> employees(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="25") int size,@RequestParam(defaultValue="") String q,@RequestParam(required=false) Long departmentId){
         if(page<0||page>100000||size<1||size>100||q.length()>128)throw new IllegalArgumentException("分页或搜索参数不合法");
-        String where=" where (lower(u.username) like ? escape '!' or lower(u.display_name) like ? escape '!')";
+        String where=" where (lower(ac.username) like ? escape '!' or lower(u.display_name) like ? escape '!')";
         var args=new ArrayList<Object>();String term="%"+q.toLowerCase(Locale.ROOT).replace("!","!!").replace("%","!%").replace("_","!_")+"%";args.add(term);args.add(term);
         if(departmentId!=null){where+=" and e.department_id=?";args.add(departmentId);}
-        String from=" from sys_user u left join employee_profile e on e.user_id=u.id left join sys_department d on d.id=e.department_id left join sys_post p on p.id=e.post_id";
+        String from=" from sys_user u join sys_account ac on ac.user_id=u.id left join employee_profile e on e.user_id=u.id left join sys_department d on d.id=e.department_id left join sys_post p on p.id=e.post_id";
         Long count=db.queryForObject("select count(*)"+from+where,Long.class,args.toArray());
         args.add(size);args.add((long)page*size);
-        return Map.of("total",count,"page",page,"size",size,"items",rows("select u.id,u.username,u.display_name,u.enabled,u.administrator,e.company,e.phone,d.name department,p.name post"+from+where+" order by u.id limit ? offset ?",args.toArray()));
+        return Map.of("total",count,"page",page,"size",size,"items",rows("select u.id,ac.username,u.display_name,u.enabled,u.administrator,e.company,e.phone,d.name department,p.name post"+from+where+" order by u.id limit ? offset ?",args.toArray()));
     }
     @GetMapping("/catalog") public Map<String,Object> catalog(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="25") int size,@RequestParam(defaultValue="") String q){
         if(page<0||page>100000||size<1||size>100||q.length()>128)throw new IllegalArgumentException("分页或搜索参数不合法");

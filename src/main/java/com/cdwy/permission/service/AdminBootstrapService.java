@@ -36,6 +36,7 @@ public class AdminBootstrapService {
         }
         UserAccount admin = new UserAccount(username, "系统管理员");
         admin.setAdministrator(true);
+        admin.setBuiltInAdministrator(true);
         admin.setPasswordHash(encoder.encode(password));
         users.save(admin);
     }

@@ -9,22 +9,22 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "sys_user", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_sys_user_username", columnNames = "username")
-})
+@Table(name = "sys_user")
+@jakarta.persistence.SecondaryTable(name="sys_account", pkJoinColumns=@jakarta.persistence.PrimaryKeyJoinColumn(name="user_id"),
+    uniqueConstraints=@UniqueConstraint(name="uk_sys_account_username",columnNames="username"))
 public class UserAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 64)
+    @Column(table="sys_account", nullable = false, length = 64)
     private String username;
 
     @Column(nullable = false, length = 128)
     private String displayName;
 
-    @Column(length = 255)
+    @Column(table="sys_account", length = 255)
     private String passwordHash;
 
     @Column(nullable = false)
@@ -32,6 +32,9 @@ public class UserAccount {
 
     @Column(nullable = false)
     private boolean administrator = false;
+    @Column(nullable=false) private boolean builtInAdministrator=false;
+    public boolean isBuiltInAdministrator(){return builtInAdministrator;}
+    public void setBuiltInAdministrator(boolean value){builtInAdministrator=value;}
 
     public boolean isAdministrator() { return administrator; }
     public boolean getAdministrator() { return administrator; }

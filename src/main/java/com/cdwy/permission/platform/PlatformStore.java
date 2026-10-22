@@ -43,7 +43,7 @@ public class PlatformStore {
     public String managedUsers(long actor,String column){return superAdmin(actor)?"":" and "+column+" in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id="+actor+")";}
     public long version(long user){return rows("select version from account_policy where user_id=?",user).stream().mapToLong(r->((Number)r.get("version")).longValue()).findFirst().orElse(0);}
     // A plain count + insert: H2 reuses the result of a repeated INSERT ... SELECT ... WHERE NOT EXISTS within one transaction.
-    @Transactional public void ensurePolicy(long user){if(count("select count(*) from account_policy where user_id=?",user)==0)db.update("insert into account_policy(user_id,person_type,must_change_password,version,deleted) values(?,'EMPLOYEE',false,0,false)",user);}
+    @Transactional public void ensurePolicy(long user){if(count("select count(*) from account_policy where user_id=?",user)==0)db.update("insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',false,0,false,false)",user);}
     @Transactional public void changed(long user){ensurePolicy(user);db.update("update account_policy set version=version+1 where user_id=?",user);}
     @Transactional public void permissionsChanged(){db.update("update account_policy set version=version+1");}
     public void validAccount(long user){

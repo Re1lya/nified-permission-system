@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.*;
 public class SsoController {
     private final JwtTokenService tokens;private final PlatformStore store;private final RbacService rbac;private final JwtDecoder decoder;
     private final org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizations;
-    public SsoController(JwtTokenService tokens,PlatformStore store,RbacService rbac,JwtDecoder decoder,org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizations){this.tokens=tokens;this.store=store;this.rbac=rbac;this.decoder=decoder;this.authorizations=authorizations;}
+    private final org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository clients;
+    public SsoController(JwtTokenService tokens,PlatformStore store,RbacService rbac,JwtDecoder decoder,org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizations,org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository clients){this.clients=clients;this.tokens=tokens;this.store=store;this.rbac=rbac;this.decoder=decoder;this.authorizations=authorizations;}
     @PostMapping("/api/platform/self/sso") public Map<String,String> bridge(@RequestHeader("Authorization")String bearer,HttpServletRequest request,HttpServletResponse response){
         long id=tokens.requireUserId(bearer);if(store.mustChange(id))throw new ForbiddenException("请先修改初始密码");
         if(request.getSession(false)!=null)request.changeSessionId();
@@ -25,7 +26,7 @@ public class SsoController {
     }
     /** Validate an OIDC access token issued to clientId and return its subject; shared by every client-facing API. */
     private long verify(String bearer,String clientId){
-        if(!Set.of("oa-demo","hr-demo").contains(clientId))throw new IllegalArgumentException("未知本地客户端");
+        if(clients.findByClientId(clientId)==null)throw new IllegalArgumentException("未知本地客户端");
         try{
             if(bearer==null||!bearer.startsWith("Bearer "))throw new AuthenticationFailedException();
             var jwt=decoder.decode(bearer.substring(7));if(!jwt.getAudience().contains(clientId))throw new AuthenticationFailedException();
@@ -50,13 +51,13 @@ public class SsoController {
     /** UC-D02: organisation data for integrated applications; contact details are not part of the directory. */
     @GetMapping("/api/oidc/directory/departments") public List<Map<String,Object>> departments(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String clientId){
         verify(bearer,clientId);
-        return store.rows("select id,name,parent_id from sys_department order by id");
+        return store.rows("select id,name,parent_id from sys_department where deleted=false order by id");
     }
     @GetMapping("/api/oidc/directory/users") public Map<String,Object> users(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String clientId,@RequestParam(required=false) Long departmentId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="100") int size){
         verify(bearer,clientId);
         if(page<0||size<1||size>500)throw new IllegalArgumentException("分页参数错误");
-        String where=" from sys_user u join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where (p.deleted is null or p.deleted=false)"+(departmentId==null?"":" and e.department_id="+departmentId);
+        String where=" from sys_user u join sys_account ac on ac.user_id=u.id join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where (p.deleted is null or p.deleted=false)"+(departmentId==null?"":" and e.department_id="+departmentId);
         return Map.of("total",store.count("select count(*)"+where),"page",page,"size",size,
-            "items",store.rows("select u.id,u.username,u.display_name,u.enabled,e.department_id,e.post_id,coalesce(p.person_type,'EMPLOYEE') person_type"+where+" order by u.id limit ? offset ?",size,(long)page*size));
+            "items",store.rows("select u.id,ac.username,u.display_name,u.enabled,e.department_id,e.post_id,coalesce(p.person_type,'EMPLOYEE') person_type"+where+" order by u.id limit ? offset ?",size,(long)page*size));
     }
 }

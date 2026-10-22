@@ -17,6 +17,7 @@ public final class PlatformData {
         @Column(nullable=false,length=24) public String personType="EMPLOYEE";
         public Instant expiresAt;
         @Column(nullable=false) public boolean mustChangePassword;
+        @Column(nullable=false) public boolean initialPasswordIssued;
         @Column(nullable=false) public long version;
         @Column(nullable=false) public boolean deleted;
     }
@@ -40,6 +41,7 @@ public final class PlatformData {
         @Column(nullable=false,length=64) public String requestId;
         @Column(nullable=false,length=64) public String digest;
         @Column(nullable=false,length=32) public String result;
+        @Column(length=2000000) public String response;
         @Column(nullable=false) public Instant createdAt;
         public Long userId;
     }
@@ -52,6 +54,7 @@ public final class PlatformData {
     }
     @Entity @Table(name="data_dictionary",uniqueConstraints=@UniqueConstraint(columnNames={"category","code"}))
     public static class Dictionary extends CompanyData.Row {
+        @Column(nullable=false) public boolean deleted;
         @Column(nullable=false,length=64) public String category;
         @Column(nullable=false,length=64) public String code;
         @Column(nullable=false,length=128) public String name;

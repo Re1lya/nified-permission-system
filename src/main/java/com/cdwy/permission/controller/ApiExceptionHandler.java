@@ -20,6 +20,11 @@ public class ApiExceptionHandler {
         return response(HttpStatus.NOT_FOUND, exception.getMessage());
     }
 
+    @ExceptionHandler(org.springframework.dao.EmptyResultDataAccessException.class)
+    public ResponseEntity<Map<String, String>> missingRow(Exception exception) {
+        return response(HttpStatus.NOT_FOUND, "记录不存在或已删除");
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, String>> conflict(ConflictException exception) {
         return response(HttpStatus.CONFLICT, exception.getMessage());

@@ -12,7 +12,11 @@ import jakarta.persistence.UniqueConstraint;
 @Table(name = "sys_role", uniqueConstraints = {
         @UniqueConstraint(name = "uk_sys_role_code", columnNames = "code")
 })
+@org.hibernate.annotations.SQLRestriction("deleted=false")
 public class Role {
+    @Column(nullable=false) private boolean deleted;
+    public boolean isDeleted(){return deleted;}
+    public void setDeleted(boolean value){deleted=value;}
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

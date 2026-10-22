@@ -48,7 +48,7 @@ class ExternalPersonService {
 
     @Transactional public Map<String,Object> create(long actor,ExternalPersonController.Creation body){
         admin(actor);s.requireDepartment(actor,body.departmentId());validity(body.personType(),body.expiresOn());
-        if(s.count("select count(*) from sys_department where id=?",body.departmentId())!=1||s.count("select count(*) from sys_post where id=?",body.postId())!=1)throw new IllegalArgumentException("部门或岗位不存在");
+        if(s.count("select count(*) from sys_department where id=? and deleted=false",body.departmentId())!=1||s.count("select count(*) from sys_post where id=? and deleted=false",body.postId())!=1)throw new IllegalArgumentException("部门或岗位不存在");
         long id=rbac.createUser(new CreateUserRequest(body.username(),body.displayName())).id();
         s.ensurePolicy(id);
         rbac.setPassword(id,new SetPasswordRequest(body.password()));
@@ -73,7 +73,7 @@ class ExternalPersonService {
     public List<Map<String,Object>> list(long actor,int remindDays){
         admin(actor);if(remindDays<1||remindDays>90)throw new IllegalArgumentException("提醒天数应在 1 到 90 之间");
         String scope=s.superAdmin(actor)?"":" and e.department_id in(select department_id from admin_department where user_id="+actor+")";
-        var rows=s.rows("select u.id,u.username,u.display_name,u.enabled,p.person_type,p.expires_at,e.company,e.department_id,e.post_id from account_policy p join sys_user u on u.id=p.user_id left join employee_profile e on e.user_id=u.id where p.person_type in('EXTERNAL','TEMPORARY') and p.deleted=false"+scope+" order by p.expires_at,u.id");
+        var rows=s.rows("select u.id,ac.username,u.display_name,u.enabled,p.person_type,p.expires_at,e.company,e.department_id,e.post_id from account_policy p join sys_user u on u.id=p.user_id left join employee_profile e on e.user_id=u.id where p.person_type in('EXTERNAL','TEMPORARY') and p.deleted=false"+scope+" order by p.expires_at,u.id");
         LocalDate today=LocalDate.now(ZONE);
         for(var row:rows){
             Object value=row.remove("expires_at");

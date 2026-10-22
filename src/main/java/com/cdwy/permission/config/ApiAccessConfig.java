@@ -33,13 +33,14 @@ public class ApiAccessConfig implements WebMvcConfigurer {
             }
             @Override public void afterCompletion(HttpServletRequest request,HttpServletResponse response,Object handler,Exception error){
                 if(!java.util.Set.of("GET","HEAD","OPTIONS").contains(request.getMethod())&&response.getStatus()<400&&request.getHeader("Authorization")!=null&&!request.getRequestURI().startsWith("/api/integration/")){
-                    try{long actor=tokens.requireUserId(request.getHeader("Authorization"));platform.audit(actor,"HTTP_"+request.getMethod(),request.getRequestURI(),"SUCCESS");}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}
+                    try{long actor=request.getAttribute("audit.actor") instanceof Long saved?saved:tokens.requireUserId(request.getHeader("Authorization"));platform.audit(actor,"HTTP_"+request.getMethod(),request.getRequestURI(),"SUCCESS");}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}
                 }
             }
         }).addPathPatterns("/api/**");
         registry.addInterceptor(new HandlerInterceptor(){
             @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler){
                 long id=tokens.requireUserId(request.getHeader("Authorization"));
+                request.setAttribute("audit.actor",id);
                 if(platform.mustChange(id)&&!java.util.Set.of("/api/platform/self","/api/platform/self/password").contains(request.getRequestURI()))throw new ForbiddenException("请先修改初始密码");return true;
             }
         }).addPathPatterns("/api/**").excludePathPatterns("/api/auth/login","/api/auth/logout","/api/auth/refresh","/api/auth/me","/api/integration/**","/api/oidc/**");

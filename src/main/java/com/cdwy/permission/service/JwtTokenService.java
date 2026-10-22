@@ -61,6 +61,7 @@ public class JwtTokenService {
         String tokenId = UUID.randomUUID().toString();
         String token = Jwts.builder()
                 .id(tokenId)
+                .claim("permission_version", platform.version(userId))
                 .subject(userId.toString())
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
@@ -75,6 +76,8 @@ public class JwtTokenService {
         Claims claims = parse(extractToken(authorizationHeader));
         Long userId = subject(claims);
         platform.validAccount(userId);
+        Number version=claims.get("permission_version",Number.class);
+        if(version==null||version.longValue()!=platform.version(userId))throw new AuthenticationFailedException("权限版本已变化，请刷新令牌");
         LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
                 .orElseThrow(JwtTokenService::invalidToken);
         if (!session.getUser().isEnabled()
@@ -116,6 +119,7 @@ public class JwtTokenService {
     public void revokeAll(Long userId) {
         // Account commands hold the user lock until both changes commit.
         sessionRepository.deleteAllForUser(userId);
+        platform.db().update("delete from oauth2_authorization where principal_name=?",userId.toString());
         platform.changed(userId);
     }
 

@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-10-22T14:29:12+08:00",
+  "baselineCommit": "01b94f06beab568afc6931c28ff04c8a53c62c85",
+  "scope": "一期需求对齐的实现与设计修订；本记录不代表运行验收通过",
+  "checks": [
+    {
+      "command": "mvn -B -ntp -Dmaven.test.skip=true compile",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build (frontend; vue-tsc --noEmit + vite build)",
+      "result": "PASS"
+    },
+    {
+      "command": "mvn -B -ntp -Dmaven.test.skip=true package",
+      "result": "PASS",
+      "testExecution": "SKIPPED as requested"
+    },
+    {
+      "command": "ExportSchema / ExportApi / local contract integrity",
+      "result": "PASS",
+      "tableCount": 38,
+      "uniqueControllerOperationCount": 99,
+      "openApiLocalReferences": "resolved",
+      "requirementBaseline": "byte-for-byte preserved"
+    },
+    {
+      "command": "Word render and visual review",
+      "result": "PASS",
+      "pageCounts": {
+        "01": 8,
+        "02": 4,
+        "03": 9,
+        "04": 16
+      },
+      "pagesReviewed": 37,
+      "notes": "字体配置修复后检查中文、分页、表格和长接口路径；修改后的需求第7页已复查"
+    }
+  ],
+  "projectTestsExecuted": false,
+  "httpAcceptanceExecuted": false,
+  "databaseMigrationExecuted": false,
+  "serverDeploymentPerformed": false,
+  "databasePublicAccessChanged": false,
+  "pendingAcceptance": [
+    "新旧数据库结构及数据迁移",
+    "账号、部门边界与撤权的运行场景",
+    "真实 OA/HR 和 OIDC 应用联调",
+    "多实例、容量、可用性与非功能要求"
+  ],
+  "artifacts": {
+    "01-需求分析文档.docx": "b3fa545bbbba6295b26cedca916f6e6521cc68938172461b372094ae937c925f",
+    "02-界面原型文档.docx": "ae7b84cd23036288b5c485f3737fa6c8a65a8a69000cb3a3024c2188f3b6bfa1",
+    "03-API设计文档.docx": "b25a2c2a07b47967113661c759c4dc91169bfe426d6903d9fa6e93c38c524dde",
+    "04-数据库设计文档.docx": "b5035270535d005f653d5f9db084441cb21019bd48c20a2927d50c32c8c09102"
+  },
+  "packageSha256": "bd338d37c6e7bab430c58d9b89dba3ddb30a46b98e86cd2cd80b12811770dff3"
+}

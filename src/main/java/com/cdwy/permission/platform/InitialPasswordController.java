@@ -33,18 +33,18 @@ class InitialPasswordService {
     InitialPasswordService(PlatformStore s,RbacService rbac){this.s=s;this.rbac=rbac;}
 
     private void scope(long actor,long department){if(!s.superAdmin(actor)&&!s.departmentAdmin(actor))throw new ForbiddenException("需要管理权限");s.requireDepartment(actor,department);}
-    private static final String WITHOUT_PASSWORD=" from sys_user u join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where e.department_id=? and u.password_hash is null and u.enabled=true and u.administrator=false and (p.deleted is null or p.deleted=false)";
+    private static final String WITHOUT_PASSWORD=" from sys_user u join sys_account ac on ac.user_id=u.id join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where e.department_id=? and (ac.password_hash is null or (p.must_change_password=true and p.initial_password_issued=false)) and u.enabled=true and u.administrator=false and (p.deleted is null or p.deleted=false)";
 
     public Map<String,Object> pending(long actor,long department){scope(actor,department);return Map.of("departmentId",department,"pending",s.count("select count(*)"+WITHOUT_PASSWORD,department));}
 
     @Transactional public Map<String,Object> issue(long actor,long department,int limit){
         scope(actor,department);
-        var rows=s.rows("select u.id,u.username,u.display_name"+WITHOUT_PASSWORD+" order by u.id limit ?",department,limit);
+        var rows=s.rows("select u.id,ac.username,u.display_name"+WITHOUT_PASSWORD+" order by u.id limit ?",department,limit);
         List<Map<String,Object>> issued=new ArrayList<>();
         for(var row:rows){
             long id=((Number)row.get("id")).longValue();String password=generate();
             s.ensurePolicy(id);rbac.setPassword(id,new SetPasswordRequest(password));
-            s.db().update("update account_policy set must_change_password=true where user_id=?",id);
+            s.db().update("update account_policy set must_change_password=true,initial_password_issued=true where user_id=?",id);
             issued.add(Map.of("username",row.get("username"),"displayName",row.get("display_name"),"initialPassword",password));
         }
         // The audit records how many accounts were initialised, never the passwords themselves.
