@@ -1,0 +1,154 @@
+[
+  {
+    "name": "account_policy",
+    "ddl": "user_id bigint not null,\n        deleted bit not null,\n        expires_at datetime(6),\n        initial_password_issued bit not null,\n        must_change_password bit not null,\n        person_type varchar(24) not null,\n        version bigint not null,\n        primary key (user_id)"
+  },
+  {
+    "name": "admin_department",
+    "ddl": "id bigint not null auto_increment,\n        department_id bigint not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "application_access",
+    "ddl": "system_id bigint not null,\n        acceptance varchar(2000),\n        client_id varchar(100) not null,\n        compatibility_plan varchar(2000),\n        entry_url varchar(2048) not null,\n        protocol varchar(16) not null,\n        status varchar(16) not null,\n        primary key (system_id)"
+  },
+  {
+    "name": "approval_record",
+    "ddl": "id bigint not null auto_increment,\n        created_at datetime(6) not null,\n        decision varchar(16) not null,\n        request_id varchar(64) not null,\n        role_id bigint not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "audit_archive",
+    "ddl": "id bigint not null,\n        actor_id bigint,\n        archived_at datetime(6) not null,\n        created_at datetime(6) not null,\n        department_id bigint,\n        kind varchar(64) not null,\n        result varchar(32) not null,\n        target varchar(255) not null,\n        target_department_id bigint,\n        primary key (id)"
+  },
+  {
+    "name": "audit_event",
+    "ddl": "id bigint not null auto_increment,\n        actor_id bigint,\n        created_at datetime(6) not null,\n        department_id bigint,\n        kind varchar(64) not null,\n        result varchar(32) not null,\n        target varchar(255) not null,\n        target_department_id bigint,\n        primary key (id)"
+  },
+  {
+    "name": "biz_system",
+    "ddl": "id bigint not null auto_increment,\n        base_url varchar(255),\n        code varchar(64) not null,\n        deleted bit not null,\n        enabled bit not null,\n        name varchar(128) not null,\n        primary key (id)"
+  },
+  {
+    "name": "company_import_batch",
+    "ddl": "id bigint not null auto_increment,\n        actor_id bigint not null,\n        created_at datetime(6) not null,\n        departments integer not null,\n        employees integer not null,\n        fingerprint varchar(64) not null,\n        functions integer not null,\n        primary key (id)"
+  },
+  {
+    "name": "data_dictionary",
+    "ddl": "id bigint not null auto_increment,\n        category varchar(64) not null,\n        code varchar(64) not null,\n        deleted bit not null,\n        name varchar(128) not null,\n        primary key (id)"
+  },
+  {
+    "name": "department_permission",
+    "ddl": "id bigint not null auto_increment,\n        department_id bigint not null,\n        permission_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "employee_profile",
+    "ddl": "id bigint not null auto_increment,\n        company varchar(128) not null,\n        phone varchar(32) not null,\n        department_id bigint not null,\n        post_id bigint not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "hr_identity",
+    "ddl": "id bigint not null auto_increment,\n        external_id varchar(128) not null,\n        kind varchar(16) not null,\n        local_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "integration_event",
+    "ddl": "id bigint not null auto_increment,\n        created_at datetime(6) not null,\n        digest varchar(64) not null,\n        request_id varchar(64) not null,\n        response mediumtext,\n        result varchar(32) not null,\n        source varchar(16) not null,\n        user_id bigint,\n        primary key (id)"
+  },
+  {
+    "name": "login_attempt",
+    "ddl": "username varchar(64) not null,\n        failures integer not null,\n        locked_until datetime(6),\n        primary key (username)"
+  },
+  {
+    "name": "managed_role",
+    "ddl": "role_id bigint not null,\n        department_id bigint not null,\n        primary key (role_id)"
+  },
+  {
+    "name": "permission_detail",
+    "ddl": "id bigint not null auto_increment,\n        action varchar(32) not null,\n        function_id bigint not null,\n        permission_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "permission_review",
+    "ddl": "id bigint not null auto_increment,\n        actor_id bigint not null,\n        created_at datetime(6) not null,\n        decision varchar(16) not null,\n        reason varchar(1000) not null,\n        role_id bigint not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "permission_template",
+    "ddl": "id bigint not null auto_increment,\n        name varchar(64) not null,\n        permission_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "platform_notification",
+    "ddl": "id bigint not null auto_increment,\n        created_at datetime(6) not null,\n        department_id bigint not null,\n        kind varchar(64) not null,\n        message varchar(1000) not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "platform_signing_key",
+    "ddl": "id varchar(64) not null,\n        jwk varchar(8000) not null,\n        primary key (id)"
+  },
+  {
+    "name": "session_activity",
+    "ddl": "session_id varchar(36) not null,\n        last_seen datetime(6) not null,\n        primary key (session_id)"
+  },
+  {
+    "name": "sync_failure",
+    "ddl": "id bigint not null auto_increment,\n        created_at datetime(6) not null,\n        digest varchar(64) not null,\n        error varchar(1000) not null,\n        request_id varchar(64) not null,\n        resolution varchar(1000),\n        source varchar(16) not null,\n        status varchar(16) not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_account",
+    "ddl": "password_hash varchar(255),\n        username varchar(64) not null,\n        user_id bigint not null,\n        primary key (user_id)"
+  },
+  {
+    "name": "sys_department",
+    "ddl": "id bigint not null auto_increment,\n        deleted bit not null,\n        manager_name varchar(128),\n        name varchar(128) not null,\n        manager_id bigint,\n        parent_id bigint,\n        primary key (id)"
+  },
+  {
+    "name": "sys_function",
+    "ddl": "id bigint not null auto_increment,\n        description varchar(2000) not null,\n        name varchar(128) not null,\n        module_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_login_session",
+    "ddl": "id varchar(36) not null,\n        expires_at datetime(6) not null,\n        issued_at datetime(6) not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_module",
+    "ddl": "id bigint not null auto_increment,\n        name varchar(128) not null,\n        system_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_permission",
+    "ddl": "id bigint not null auto_increment,\n        active bit not null,\n        code varchar(128) not null,\n        menu_path varchar(255) not null,\n        name varchar(128) not null,\n        type varchar(16) not null,\n        system_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_post",
+    "ddl": "id bigint not null auto_increment,\n        deleted bit not null,\n        name varchar(128) not null,\n        role_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_role",
+    "ddl": "id bigint not null auto_increment,\n        code varchar(64) not null,\n        deleted bit not null,\n        description varchar(255),\n        enabled bit not null,\n        name varchar(128) not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_role_permission",
+    "ddl": "id bigint not null auto_increment,\n        permission_id bigint not null,\n        role_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_user",
+    "ddl": "id bigint not null auto_increment,\n        administrator bit not null,\n        built_in_administrator bit not null,\n        display_name varchar(128) not null,\n        enabled bit not null,\n        primary key (id)"
+  },
+  {
+    "name": "sys_user_role",
+    "ddl": "id bigint not null auto_increment,\n        role_id bigint not null,\n        user_id bigint not null,\n        primary key (id)"
+  },
+  {
+    "name": "oauth2_authorization",
+    "ddl": "id varchar(100) NOT NULL,\n    registered_client_id varchar(100) NOT NULL,\n    principal_name varchar(200) NOT NULL,\n    authorization_grant_type varchar(100) NOT NULL,\n    authorized_scopes varchar(1000) DEFAULT NULL,\n    attributes blob DEFAULT NULL,\n    state varchar(500) DEFAULT NULL,\n    authorization_code_value blob DEFAULT NULL,\n    authorization_code_issued_at timestamp DEFAULT NULL,\n    authorization_code_expires_at timestamp DEFAULT NULL,\n    authorization_code_metadata blob DEFAULT NULL,\n    access_token_value blob DEFAULT NULL,\n    access_token_issued_at timestamp DEFAULT NULL,\n    access_token_expires_at timestamp DEFAULT NULL,\n    access_token_metadata blob DEFAULT NULL,\n    access_token_type varchar(100) DEFAULT NULL,\n    access_token_scopes varchar(1000) DEFAULT NULL,\n    oidc_id_token_value blob DEFAULT NULL,\n    oidc_id_token_issued_at timestamp DEFAULT NULL,\n    oidc_id_token_expires_at timestamp DEFAULT NULL,\n    oidc_id_token_metadata blob DEFAULT NULL,\n    refresh_token_value blob DEFAULT NULL,\n    refresh_token_issued_at timestamp DEFAULT NULL,\n    refresh_token_expires_at timestamp DEFAULT NULL,\n    refresh_token_metadata blob DEFAULT NULL,\n    user_code_value blob DEFAULT NULL,\n    user_code_issued_at timestamp DEFAULT NULL,\n    user_code_expires_at timestamp DEFAULT NULL,\n    user_code_metadata blob DEFAULT NULL,\n    device_code_value blob DEFAULT NULL,\n    device_code_issued_at timestamp DEFAULT NULL,\n    device_code_expires_at timestamp DEFAULT NULL,\n    device_code_metadata blob DEFAULT NULL,\n    PRIMARY KEY (id)"
+  },
+  {
+    "name": "oauth2_authorization_consent",
+    "ddl": "registered_client_id varchar(100) NOT NULL,\n    principal_name varchar(200) NOT NULL,\n    authorities varchar(1000) NOT NULL,\n    PRIMARY KEY (registered_client_id, principal_name)"
+  },
+  {
+    "name": "oauth2_registered_client",
+    "ddl": "id varchar(100) NOT NULL,\n    client_id varchar(100) NOT NULL,\n    client_id_issued_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,\n    client_secret varchar(200) DEFAULT NULL,\n    client_secret_expires_at timestamp DEFAULT NULL,\n    client_name varchar(200) NOT NULL,\n    client_authentication_methods varchar(1000) NOT NULL,\n    authorization_grant_types varchar(1000) NOT NULL,\n    redirect_uris varchar(1000) DEFAULT NULL,\n    post_logout_redirect_uris varchar(1000) DEFAULT NULL,\n    scopes varchar(1000) NOT NULL,\n    client_settings varchar(2000) NOT NULL,\n    token_settings varchar(2000) NOT NULL,\n    PRIMARY KEY (id)"
+  },
+  {
+    "name": "SPRING_SESSION",
+    "ddl": "PRIMARY_ID CHAR(36) NOT NULL,\n\tSESSION_ID CHAR(36) NOT NULL,\n\tCREATION_TIME BIGINT NOT NULL,\n\tLAST_ACCESS_TIME BIGINT NOT NULL,\n\tMAX_INACTIVE_INTERVAL INT NOT NULL,\n\tEXPIRY_TIME BIGINT NOT NULL,\n\tPRINCIPAL_NAME VARCHAR(100),\n\tCONSTRAINT SPRING_SESSION_PK PRIMARY KEY (PRIMARY_ID)"
+  },
+  {
+    "name": "SPRING_SESSION_ATTRIBUTES",
+    "ddl": "SESSION_PRIMARY_ID CHAR(36) NOT NULL,\n\tATTRIBUTE_NAME VARCHAR(200) NOT NULL,\n\tATTRIBUTE_BYTES BLOB NOT NULL,\n\tCONSTRAINT SPRING_SESSION_ATTRIBUTES_PK PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),\n\tCONSTRAINT SPRING_SESSION_ATTRIBUTES_FK FOREIGN KEY (SESSION_PRIMARY_ID) REFERENCES SPRING_SESSION(PRIMARY_ID) ON DELETE CASCADE"
+  }
+]

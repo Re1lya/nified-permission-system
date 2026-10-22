@@ -84,6 +84,7 @@ class AuthenticationHttpIntegrationTests {
         for (var role : rbacService.listRoles()) {
             rbacService.deleteRole(role.id());
         }
+        for(var permission:rbacService.listPermissions(null))rbacService.deletePermission(permission.id());
         for (var system : rbacService.listSystems()) {
             rbacService.deleteSystem(system.id());
         }

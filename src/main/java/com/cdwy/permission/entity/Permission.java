@@ -34,6 +34,14 @@ public class Permission {
     @JoinColumn(name = "system_id", nullable = false)
     private BusinessSystem system;
 
+    /** MENU, BUTTON or API (requirement 6.2); a button and its API may share one code. */
+    @Column(nullable = false, length = 16)
+    private String type = "API";
+
+    /** Retired permissions are marked inactive instead of deleted (UC-B03): grants stay, but no longer take effect. */
+    @Column(nullable = false)
+    private boolean active = true;
+
     protected Permission() {
     }
 
@@ -42,6 +50,11 @@ public class Permission {
         this.name = name;
         this.menuPath = menuPath;
         this.system = system;
+    }
+
+    public Permission(String code, String name, String menuPath, BusinessSystem system, String type) {
+        this(code, name, menuPath, system);
+        this.type = type;
     }
 
     public Long getId() {
@@ -86,5 +99,26 @@ public class Permission {
 
     public void setSystem(BusinessSystem system) {
         this.system = system;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    /** CloneFactory copies through get-prefixed accessors, as UserAccount.getEnabled does. */
+    public boolean getActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

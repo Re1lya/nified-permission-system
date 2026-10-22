@@ -1,0 +1,117 @@
+{
+  "scope": "real HTTPS / MySQL / contract callers; no external OA/HR product",
+  "run": "17b00d52",
+  "checks": [
+    {
+      "check": "Public HTTPS / MySQL login / anonymous denial / v2 envelope",
+      "result": "PASS"
+    },
+    {
+      "check": "HR FULL dependency mapping / pinyin account / no implicit role / signed idempotency and mismatch rejection",
+      "result": "PASS"
+    },
+    {
+      "check": "HR failed batch rolls back / durable failure queue / reconciliation",
+      "result": "PASS"
+    },
+    {
+      "check": "Department initial password issued once / forced change / revoked old session / ordinary-user boundary",
+      "result": "PASS"
+    },
+    {
+      "check": "OA application/status/approval/rejection/cancellation / role-version refresh / old platform POST removed, GET retained",
+      "result": "PASS"
+    },
+    {
+      "check": "Permission review KEEP / transactional REVOKE / review history",
+      "result": "PASS"
+    },
+    {
+      "check": "External-person MySQL account join / UTC expiry conversion / three-day reminder",
+      "result": "PASS"
+    },
+    {
+      "check": "Department administrator cross-department denial / referenced role deletion blocked",
+      "result": "PASS"
+    },
+    {
+      "check": "cdwy-oa-check PKCE / consent / state / nonce / RSA signature / audience isolation / userinfo",
+      "result": "PASS"
+    },
+    {
+      "check": "cdwy-hr-check PKCE / consent / state / nonce / RSA signature / audience isolation / userinfo",
+      "result": "PASS"
+    },
+    {
+      "check": "Two deployed OIDC callers complete real callback and second-application SSO without password re-entry",
+      "result": "PASS"
+    },
+    {
+      "check": "Authorization code replay rejected and issued access revoked",
+      "result": "PASS"
+    },
+    {
+      "check": "Confidential client BASIC authentication / refresh-token rotation and replay rejection",
+      "result": "PASS"
+    },
+    {
+      "check": "cdwy-hr-check PKCE / consent / state / nonce / RSA signature / audience isolation / userinfo",
+      "result": "PASS"
+    },
+    {
+      "check": "Service restart preserves platform login, JDBC browser session, OIDC authorizations and signing key",
+      "result": "PASS"
+    },
+    {
+      "check": "Transfer atomically removes roles / old tokens invalid / refreshed claims current / forced offline revokes refresh",
+      "result": "PASS"
+    },
+    {
+      "check": "HR leave disables account and invalidates all sessions",
+      "result": "PASS"
+    },
+    {
+      "check": "Completed application acceptance evidence persisted",
+      "result": "PASS"
+    },
+    {
+      "check": "Scheduled twelve-month audit archival preserves the synthetic event and removes only the online copy",
+      "result": "PASS"
+    },
+    {
+      "check": "Unregistered callback and incorrect PKCE verifier rejected",
+      "result": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "date": "2026-10-22",
+  "sourceBase": "4448b3af7e11078f398b4741ba6b505234926a41",
+  "jarSha256": "e5ba7ac544a1d29c1e252ff9e8b17152e5a1601801b7d046ff103c1c600b4d6c",
+  "migration": {
+    "status": "PASS",
+    "oldTables": 25,
+    "newTables": 38,
+    "preservedCredentials": 2,
+    "rolePostCount": 2,
+    "permissionVersion": 5,
+    "preservedUserRoleLinks": 1,
+    "builtinAdministratorMarked": true,
+    "baselineFixtureCorrection": "Removed H2 NULLS FIRST syntax from four legacy index declarations before upgrade.",
+    "backup": "/var/backups/unified-permission/20261022-before/rbac-old-schema-with-fixtures.sql"
+  },
+  "projectTestSuitesRun": false,
+  "apifoxCloudSync": "Deferred by user; local contracts updated",
+  "limitations": [
+    "No external OA/HR products",
+    "Self-signed TLS with explicit CA trust",
+    "No performance, multi-instance failover or backup-restore drill",
+    "No complete browser UI walkthrough"
+  ],
+  "documentReview": {
+    "wordDocuments": 4,
+    "pages": 37,
+    "rendered": true,
+    "reviewedChangedPages": 18,
+    "unchangedPagesMatchedPreviouslyReviewedRenders": 19
+  }
+}

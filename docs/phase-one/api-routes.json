@@ -1,0 +1,2518 @@
+[ {
+  "path" : "/api/company/imports/preview",
+  "method" : "POST",
+  "handler" : "CompanyController.preview",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "object"
+    },
+    "name" : "departments"
+  }, {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "object"
+    },
+    "name" : "employees"
+  }, {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "object"
+    },
+    "name" : "permissions"
+  } ]
+}, {
+  "path" : "/api/company/departments",
+  "method" : "GET",
+  "handler" : "CompanyController.departments",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/company/employees",
+  "method" : "GET",
+  "handler" : "CompanyController.employees",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "q"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "departmentId"
+  } ]
+}, {
+  "path" : "/api/company/imports",
+  "method" : "GET",
+  "handler" : "CompanyController.batches",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/company/templates",
+  "method" : "GET",
+  "handler" : "CompanyController.templates",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/company/posts",
+  "method" : "GET",
+  "handler" : "CompanyController.posts",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/company/posts/{id}/template",
+  "method" : "POST",
+  "handler" : "CompanyController.template",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/company/imports/commit",
+  "method" : "POST",
+  "handler" : "CompanyController.commit",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "previewId" : {
+        "type" : "string"
+      },
+      "acknowledgeWarnings" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object",
+    "required" : [ "previewId" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/company/catalog",
+  "method" : "GET",
+  "handler" : "CompanyController.catalog",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "q"
+  } ]
+}, {
+  "path" : "/api/auth/refresh",
+  "method" : "POST",
+  "handler" : "AuthController.refresh",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/auth/login",
+  "method" : "POST",
+  "handler" : "AuthController.login",
+  "response" : {
+    "properties" : {
+      "accessToken" : {
+        "type" : "string"
+      },
+      "userId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      },
+      "permissions" : {
+        "items" : {
+          "properties" : {
+            "id" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "systemId" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "systemCode" : {
+              "type" : "string"
+            },
+            "code" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "menuPath" : {
+              "type" : "string"
+            },
+            "type" : {
+              "type" : "string"
+            },
+            "active" : {
+              "type" : "boolean"
+            }
+          },
+          "type" : "object"
+        },
+        "type" : "array"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "username" : {
+        "type" : "string"
+      },
+      "password" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "username", "password" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/auth/logout",
+  "method" : "POST",
+  "handler" : "AuthController.logout",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/systems/{systemId}",
+  "method" : "PUT",
+  "handler" : "BusinessSystemController.update",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "baseUrl" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "baseUrl" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name", "enabled" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "systemId"
+  } ]
+}, {
+  "path" : "/api/systems",
+  "method" : "GET",
+  "handler" : "BusinessSystemController.list",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "baseUrl" : {
+          "type" : "string"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/systems/{systemId}",
+  "method" : "DELETE",
+  "handler" : "BusinessSystemController.delete",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "systemId"
+  } ]
+}, {
+  "path" : "/api/systems",
+  "method" : "POST",
+  "handler" : "BusinessSystemController.create",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "baseUrl" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 201,
+  "request" : {
+    "properties" : {
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "baseUrl" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "code", "name" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/auth/me",
+  "method" : "GET",
+  "handler" : "CurrentUserController.me",
+  "response" : {
+    "properties" : {
+      "userId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      },
+      "administrator" : {
+        "type" : "boolean"
+      },
+      "permissions" : {
+        "items" : {
+          "properties" : {
+            "id" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "systemId" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "systemCode" : {
+              "type" : "string"
+            },
+            "code" : {
+              "type" : "string"
+            },
+            "name" : {
+              "type" : "string"
+            },
+            "menuPath" : {
+              "type" : "string"
+            },
+            "type" : {
+              "type" : "string"
+            },
+            "active" : {
+              "type" : "boolean"
+            }
+          },
+          "type" : "object"
+        },
+        "type" : "array"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/demo/expenses",
+  "method" : "GET",
+  "handler" : "DemoExpenseController.list",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/permissions/{permissionId}",
+  "method" : "PUT",
+  "handler" : "PermissionController.update",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "systemId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "systemCode" : {
+        "type" : "string"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "menuPath" : {
+        "type" : "string"
+      },
+      "type" : {
+        "type" : "string"
+      },
+      "active" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "menuPath" : {
+        "type" : "string"
+      },
+      "type" : {
+        "type" : "string"
+      },
+      "active" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name", "menuPath" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permissionId"
+  } ]
+}, {
+  "path" : "/api/permissions",
+  "method" : "GET",
+  "handler" : "PermissionController.list",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemId" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemCode" : {
+          "type" : "string"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "menuPath" : {
+          "type" : "string"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "active" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "systemId"
+  } ]
+}, {
+  "path" : "/api/permissions/{permissionId}",
+  "method" : "DELETE",
+  "handler" : "PermissionController.delete",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permissionId"
+  } ]
+}, {
+  "path" : "/api/permissions",
+  "method" : "POST",
+  "handler" : "PermissionController.create",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "systemId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "systemCode" : {
+        "type" : "string"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "menuPath" : {
+        "type" : "string"
+      },
+      "type" : {
+        "type" : "string"
+      },
+      "active" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 201,
+  "request" : {
+    "properties" : {
+      "systemId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "menuPath" : {
+        "type" : "string"
+      },
+      "type" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "systemId", "code", "name", "menuPath" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/roles/{roleId}/permissions",
+  "method" : "GET",
+  "handler" : "RoleController.listPermissions",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemId" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemCode" : {
+          "type" : "string"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "menuPath" : {
+          "type" : "string"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "active" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  } ]
+}, {
+  "path" : "/api/roles/{roleId}/permissions/{permissionId}",
+  "method" : "PUT",
+  "handler" : "RoleController.assignPermission",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permissionId"
+  } ]
+}, {
+  "path" : "/api/roles/{roleId}/permissions/{permissionId}",
+  "method" : "DELETE",
+  "handler" : "RoleController.removePermission",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permissionId"
+  } ]
+}, {
+  "path" : "/api/roles/{roleId}",
+  "method" : "PUT",
+  "handler" : "RoleController.update",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "description" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "description" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name", "enabled" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  } ]
+}, {
+  "path" : "/api/roles",
+  "method" : "GET",
+  "handler" : "RoleController.list",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/roles/{roleId}",
+  "method" : "DELETE",
+  "handler" : "RoleController.delete",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  } ]
+}, {
+  "path" : "/api/roles",
+  "method" : "POST",
+  "handler" : "RoleController.create",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "description" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 201,
+  "request" : {
+    "properties" : {
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      },
+      "description" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "code", "name" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/users/{userId}/permissions",
+  "method" : "GET",
+  "handler" : "UserController.listPermissions",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemId" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "systemCode" : {
+          "type" : "string"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "menuPath" : {
+          "type" : "string"
+        },
+        "type" : {
+          "type" : "string"
+        },
+        "active" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  } ]
+}, {
+  "path" : "/api/users/{userId}/roles",
+  "method" : "GET",
+  "handler" : "UserController.listRoles",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "code" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  } ]
+}, {
+  "path" : "/api/users/{userId}/password",
+  "method" : "PUT",
+  "handler" : "UserController.setPassword",
+  "response" : { },
+  "successStatus" : 204,
+  "request" : {
+    "properties" : {
+      "password" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "password" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  } ]
+}, {
+  "path" : "/api/users/{userId}/roles/{roleId}",
+  "method" : "PUT",
+  "handler" : "UserController.assignRole",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  } ]
+}, {
+  "path" : "/api/users/{userId}/roles/{roleId}",
+  "method" : "DELETE",
+  "handler" : "UserController.removeRole",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "roleId"
+  } ]
+}, {
+  "path" : "/api/users/{userId}",
+  "method" : "PUT",
+  "handler" : "UserController.update",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      },
+      "administrator" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "displayName" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object",
+    "required" : [ "displayName", "enabled" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  } ]
+}, {
+  "path" : "/api/users",
+  "method" : "GET",
+  "handler" : "UserController.list",
+  "response" : {
+    "items" : {
+      "properties" : {
+        "id" : {
+          "format" : "int64",
+          "type" : "integer"
+        },
+        "username" : {
+          "type" : "string"
+        },
+        "displayName" : {
+          "type" : "string"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        },
+        "administrator" : {
+          "type" : "boolean"
+        }
+      },
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/users/{userId}/permissions/check",
+  "method" : "GET",
+  "handler" : "UserController.checkPermission",
+  "response" : {
+    "properties" : {
+      "userId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "permissionCode" : {
+        "type" : "string"
+      },
+      "allowed" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  }, {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "code"
+  } ]
+}, {
+  "path" : "/api/users/{userId}",
+  "method" : "DELETE",
+  "handler" : "UserController.delete",
+  "response" : { },
+  "successStatus" : 204,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "userId"
+  } ]
+}, {
+  "path" : "/api/users",
+  "method" : "POST",
+  "handler" : "UserController.create",
+  "response" : {
+    "properties" : {
+      "id" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      },
+      "enabled" : {
+        "type" : "boolean"
+      },
+      "administrator" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "successStatus" : 201,
+  "request" : {
+    "properties" : {
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "username", "displayName" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/super-administrators/{id}",
+  "method" : "PUT",
+  "handler" : "AdministrationController.membership",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "administrator" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/read-only",
+  "method" : "GET",
+  "handler" : "AdministrationController.organization",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/users/{id}/profile",
+  "method" : "PUT",
+  "handler" : "AdministrationController.profile",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "displayName" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "displayName" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/administrators",
+  "method" : "GET",
+  "handler" : "AdministrationController.list",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/self/portal",
+  "method" : "GET",
+  "handler" : "ApplicationController.portal",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/applications",
+  "method" : "GET",
+  "handler" : "ApplicationController.list",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/applications/{id}/acceptance",
+  "method" : "POST",
+  "handler" : "ApplicationController.accept",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "login" : {
+        "type" : "boolean"
+      },
+      "callback" : {
+        "type" : "boolean"
+      },
+      "permission" : {
+        "type" : "boolean"
+      },
+      "revocation" : {
+        "type" : "boolean"
+      },
+      "isolation" : {
+        "type" : "boolean"
+      },
+      "evidence" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "evidence" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/applications/{id}/config",
+  "method" : "GET",
+  "handler" : "ApplicationController.config",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/applications/{id}/config",
+  "method" : "PUT",
+  "handler" : "ApplicationController.configure",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "clientId" : {
+        "type" : "string"
+      },
+      "entryUrl" : {
+        "type" : "string"
+      },
+      "protocol" : {
+        "type" : "string"
+      },
+      "redirectUris" : {
+        "items" : {
+          "type" : "string"
+        },
+        "type" : "array"
+      },
+      "clientSecret" : {
+        "type" : "string"
+      },
+      "compatibilityPlan" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "clientId", "entryUrl", "protocol" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/reviews",
+  "method" : "GET",
+  "handler" : "AuditLifecycle.reviews",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  } ]
+}, {
+  "path" : "/api/platform/notifications",
+  "method" : "GET",
+  "handler" : "AuditLifecycle.notifications",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/reviews",
+  "method" : "POST",
+  "handler" : "AuditLifecycle.review",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "userId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "roleId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "decision" : {
+        "type" : "string"
+      },
+      "reason" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "decision", "reason" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/reviews/candidates",
+  "method" : "GET",
+  "handler" : "AuditLifecycle.candidates",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  } ]
+}, {
+  "path" : "/api/platform/audit/search",
+  "method" : "GET",
+  "handler" : "AuditLifecycle.search",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "boolean"
+    },
+    "name" : "archived"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "date-time",
+      "type" : "string"
+    },
+    "name" : "from"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "date-time",
+      "type" : "string"
+    },
+    "name" : "until"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "actorId"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "kind"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  } ]
+}, {
+  "path" : "/api/platform/external-users/{id}/expiry",
+  "method" : "PUT",
+  "handler" : "ExternalPersonController.renew",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "expiresOn" : {
+        "format" : "date",
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "expiresOn" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/external-users",
+  "method" : "GET",
+  "handler" : "ExternalPersonController.list",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "remindDays"
+  } ]
+}, {
+  "path" : "/api/platform/external-users",
+  "method" : "POST",
+  "handler" : "ExternalPersonController.create",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "username" : {
+        "type" : "string"
+      },
+      "displayName" : {
+        "type" : "string"
+      },
+      "personType" : {
+        "type" : "string"
+      },
+      "expiresOn" : {
+        "format" : "date",
+        "type" : "string"
+      },
+      "departmentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "postId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "company" : {
+        "type" : "string"
+      },
+      "phone" : {
+        "type" : "string"
+      },
+      "password" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "username", "displayName", "personType", "expiresOn", "departmentId", "postId", "company", "phone", "password" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/initial-passwords",
+  "method" : "POST",
+  "handler" : "InitialPasswordController.issue",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "departmentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "limit" : {
+        "format" : "int64",
+        "type" : "integer"
+      }
+    },
+    "type" : "object",
+    "required" : [ "departmentId" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/initial-passwords",
+  "method" : "GET",
+  "handler" : "InitialPasswordController.pending",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "departmentId"
+  } ]
+}, {
+  "path" : "/api/integration/{source}",
+  "method" : "POST",
+  "handler" : "IntegrationController.accept",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "type" : "string"
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "source"
+  }, {
+    "in" : "header",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "X-Request-Id"
+  }, {
+    "in" : "header",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "X-Timestamp"
+  }, {
+    "in" : "header",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "X-Signature"
+  } ]
+}, {
+  "path" : "/api/platform/organization/roles",
+  "method" : "GET",
+  "handler" : "OrganizationController.roles",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/organization/departments/{id}",
+  "method" : "PUT",
+  "handler" : "OrganizationController.department",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "parentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "managerId" : {
+        "format" : "int64",
+        "type" : "integer"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/departments",
+  "method" : "POST",
+  "handler" : "OrganizationController.department",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "parentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      },
+      "managerId" : {
+        "format" : "int64",
+        "type" : "integer"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/organization/roles/{role}/permissions/{permission}",
+  "method" : "PUT",
+  "handler" : "OrganizationController.grant",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "role"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permission"
+  } ]
+}, {
+  "path" : "/api/platform/organization/roles/{role}/permissions/{permission}",
+  "method" : "DELETE",
+  "handler" : "OrganizationController.revoke",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "role"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permission"
+  } ]
+}, {
+  "path" : "/api/platform/organization/grant-limits/{department}/{permission}",
+  "method" : "PUT",
+  "handler" : "OrganizationController.limit",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "department"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "permission"
+  } ]
+}, {
+  "path" : "/api/platform/organization/posts",
+  "method" : "POST",
+  "handler" : "OrganizationController.post",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "departmentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name", "code" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/organization/departments/{id}",
+  "method" : "DELETE",
+  "handler" : "OrganizationMaintenance.department",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/posts/{id}",
+  "method" : "DELETE",
+  "handler" : "OrganizationMaintenance.post",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/posts/{id}",
+  "method" : "PUT",
+  "handler" : "OrganizationMaintenance.post",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "name" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "name" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/dictionary/{id}",
+  "method" : "PUT",
+  "handler" : "OrganizationMaintenance.dictionary",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "category" : {
+        "type" : "string"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "category", "code", "name" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/organization/dictionary/{id}",
+  "method" : "DELETE",
+  "handler" : "OrganizationMaintenance.dictionary",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/users/{id}/roles/{role}",
+  "method" : "PUT",
+  "handler" : "PlatformController.grant",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "role"
+  } ]
+}, {
+  "path" : "/api/platform/audit",
+  "method" : "GET",
+  "handler" : "PlatformController.audit",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "kind"
+  } ]
+}, {
+  "path" : "/api/platform/users/{id}/roles/{role}",
+  "method" : "DELETE",
+  "handler" : "PlatformController.revoke",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "role"
+  } ]
+}, {
+  "path" : "/api/platform/administrators/{id}/{department}",
+  "method" : "DELETE",
+  "handler" : "PlatformController.unbind",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  }, {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "department"
+  } ]
+}, {
+  "path" : "/api/platform/self/password",
+  "method" : "POST",
+  "handler" : "PlatformController.changePassword",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "oldPassword" : {
+        "type" : "string"
+      },
+      "newPassword" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "oldPassword", "newPassword" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/sessions",
+  "method" : "GET",
+  "handler" : "PlatformController.sessions",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "scope"
+  } ]
+}, {
+  "path" : "/api/platform/users/{id}/offline",
+  "method" : "POST",
+  "handler" : "PlatformController.offline",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/integrations",
+  "method" : "GET",
+  "handler" : "PlatformController.integrations",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/approvals",
+  "method" : "GET",
+  "handler" : "PlatformController.approvals",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/self/applications",
+  "method" : "GET",
+  "handler" : "PlatformController.myApplications",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/users/{id}/password",
+  "method" : "POST",
+  "handler" : "PlatformController.reset",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "password" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "password" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/users",
+  "method" : "GET",
+  "handler" : "PlatformController.list",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  } ]
+}, {
+  "path" : "/api/platform/users/{id}",
+  "method" : "DELETE",
+  "handler" : "PlatformController.delete",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/users/{id}/state",
+  "method" : "PUT",
+  "handler" : "PlatformController.state",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "enabled" : {
+        "type" : "boolean"
+      }
+    },
+    "type" : "object"
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/self",
+  "method" : "GET",
+  "handler" : "PlatformController.self",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/sessions/{session}",
+  "method" : "DELETE",
+  "handler" : "PlatformController.session",
+  "response" : { },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "session"
+  } ]
+}, {
+  "path" : "/api/platform/administrators/{id}",
+  "method" : "PUT",
+  "handler" : "PlatformController.bind",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "departmentId" : {
+        "format" : "int64",
+        "type" : "integer"
+      }
+    },
+    "type" : "object"
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+}, {
+  "path" : "/api/platform/dictionary",
+  "method" : "POST",
+  "handler" : "PlatformController.dictionary",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "category" : {
+        "type" : "string"
+      },
+      "code" : {
+        "type" : "string"
+      },
+      "name" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "category", "code", "name" ]
+  },
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/dictionary",
+  "method" : "GET",
+  "handler" : "PlatformController.dictionary",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/oidc/directory/departments",
+  "method" : "GET",
+  "handler" : "SsoController.departments",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "clientId"
+  } ]
+}, {
+  "path" : "/api/oidc/directory/users",
+  "method" : "GET",
+  "handler" : "SsoController.users",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "clientId"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "departmentId"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "size"
+  } ]
+}, {
+  "path" : "/api/platform/self/sso",
+  "method" : "POST",
+  "handler" : "SsoController.bridge",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/oidc/permissions",
+  "method" : "GET",
+  "handler" : "SsoController.permissions",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "clientId"
+  } ]
+}, {
+  "path" : "/api/oidc/permissions/check",
+  "method" : "GET",
+  "handler" : "SsoController.check",
+  "response" : {
+    "type" : "object"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "code"
+  }, {
+    "in" : "query",
+    "required" : true,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "clientId"
+  } ]
+}, {
+  "path" : "/api/platform/sync/failures",
+  "method" : "GET",
+  "handler" : "SyncAdministration.failures",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ ]
+}, {
+  "path" : "/api/platform/sync/identities",
+  "method" : "GET",
+  "handler" : "SyncAdministration.identities",
+  "response" : {
+    "items" : {
+      "type" : "object"
+    },
+    "type" : "array"
+  },
+  "successStatus" : 200,
+  "parameters" : [ {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "type" : "string"
+    },
+    "name" : "kind"
+  }, {
+    "in" : "query",
+    "required" : false,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "page"
+  } ]
+}, {
+  "path" : "/api/platform/sync/failures/{id}/resolve",
+  "method" : "POST",
+  "handler" : "SyncAdministration.resolve",
+  "response" : { },
+  "successStatus" : 200,
+  "request" : {
+    "properties" : {
+      "reason" : {
+        "type" : "string"
+      }
+    },
+    "type" : "object",
+    "required" : [ "reason" ]
+  },
+  "parameters" : [ {
+    "in" : "path",
+    "required" : true,
+    "schema" : {
+      "format" : "int64",
+      "type" : "integer"
+    },
+    "name" : "id"
+  } ]
+} ]

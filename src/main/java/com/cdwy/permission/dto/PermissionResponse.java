@@ -12,6 +12,8 @@ public class PermissionResponse {
     private String code;
     private String name;
     private String menuPath;
+    private String type;
+    private boolean active;
 
     public PermissionResponse() {
     }
@@ -43,4 +45,10 @@ public class PermissionResponse {
     public String menuPath() { return menuPath; }
     public String getMenuPath() { return menuPath; }
     public void setMenuPath(String menuPath) { this.menuPath = menuPath; }
+    public String type() { return type; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+    public boolean active() { return active; }
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 }

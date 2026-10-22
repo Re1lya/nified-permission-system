@@ -19,9 +19,13 @@ public class AuthController {
     private final RbacService rbacService;
     private final JwtTokenService jwtTokenService;
 
-    public AuthController(RbacService rbacService, JwtTokenService jwtTokenService) {
+    private final com.cdwy.permission.platform.PlatformStore platform;
+
+    public AuthController(RbacService rbacService, JwtTokenService jwtTokenService,
+            com.cdwy.permission.platform.PlatformStore platform) {
         this.rbacService = rbacService;
         this.jwtTokenService = jwtTokenService;
+        this.platform = platform;
     }
 
     @PostMapping("/login")
@@ -29,11 +33,22 @@ public class AuthController {
         return rbacService.login(request);
     }
 
+    @PostMapping("/refresh")
+    public java.util.Map<String, String> refresh(
+            @org.springframework.web.bind.annotation.RequestHeader(
+                    value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        return java.util.Map.of("accessToken", jwtTokenService.refresh(authorization));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @org.springframework.web.bind.annotation.RequestHeader(
                     value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        Long userId = jwtTokenService.subjectIfValid(authorization);
         jwtTokenService.revoke(authorization);
+        if (userId != null) {
+            platform.audit(userId, "LOGOUT", Long.toString(userId), "SUCCESS", userId);
+        }
         return ResponseEntity.noContent().build();
     }
 }

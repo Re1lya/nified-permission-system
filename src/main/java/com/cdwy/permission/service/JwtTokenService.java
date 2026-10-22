@@ -23,16 +23,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class JwtTokenService {
 
+    static final long IDLE_SECONDS = 1800;
+
     private final SecretKey signingKey;
     private final long expirationSeconds;
     private final UserAccountRepository userRepository;
     private final LoginSessionRepository sessionRepository;
+    private final com.cdwy.permission.platform.PlatformStore platform;
 
     public JwtTokenService(
             @Value("${permission.jwt.secret}") String secret,
             @Value("${permission.jwt.expiration-seconds:7200}") long expirationSeconds,
             UserAccountRepository userRepository,
-            LoginSessionRepository sessionRepository) {
+            LoginSessionRepository sessionRepository, com.cdwy.permission.platform.PlatformStore platform) {
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (secretBytes.length > 0 && secretBytes.length < 32) {
             throw new IllegalArgumentException("permission.jwt.secret 至少需要 32 个字节");
@@ -44,6 +47,7 @@ public class JwtTokenService {
         this.expirationSeconds = expirationSeconds;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
+        this.platform = platform;
     }
 
     @Transactional
@@ -57,6 +61,7 @@ public class JwtTokenService {
         String tokenId = UUID.randomUUID().toString();
         String token = Jwts.builder()
                 .id(tokenId)
+                .claim("permission_version", platform.version(userId))
                 .subject(userId.toString())
                 .issuedAt(Date.from(issuedAt))
                 .expiration(Date.from(expiresAt))
@@ -66,9 +71,13 @@ public class JwtTokenService {
         return token;
     }
 
+    @Transactional
     public Long requireUserId(String authorizationHeader) {
         Claims claims = parse(extractToken(authorizationHeader));
         Long userId = subject(claims);
+        platform.validAccount(userId);
+        Number version=claims.get("permission_version",Number.class);
+        if(version==null||version.longValue()!=platform.version(userId))throw new AuthenticationFailedException("权限版本已变化，请刷新令牌");
         LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
                 .orElseThrow(JwtTokenService::invalidToken);
         if (!session.getUser().isEnabled()
@@ -77,6 +86,9 @@ public class JwtTokenService {
                 || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {
             throw invalidToken();
         }
+        if(lastSeen(claims.getId(),session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now()))throw invalidToken();
+        platform.db().update("insert into session_activity(session_id,last_seen) select ?,? where not exists(select 1 from session_activity where session_id=?)",claims.getId(),Instant.now(),claims.getId());
+        platform.db().update("update session_activity set last_seen=? where session_id=?",Instant.now(),claims.getId());
         return userId;
     }
 
@@ -93,16 +105,63 @@ public class JwtTokenService {
         }
     }
 
+    /** The user behind a still-valid bearer, or null; used to attribute logout without failing it. */
+    @Transactional
+    public Long subjectIfValid(String authorizationHeader) {
+        try {
+            return requireUserId(authorizationHeader);
+        } catch (AuthenticationFailedException exception) {
+            return null;
+        }
+    }
+
     @Transactional
     public void revokeAll(Long userId) {
         // Account commands hold the user lock until both changes commit.
         sessionRepository.deleteAllForUser(userId);
+        platform.db().update("delete from oauth2_authorization where principal_name=?",userId.toString());
+        platform.changed(userId);
     }
 
+    /**
+     * Rotate a platform JWT. The presented token may already be expired, but its session must still exist,
+     * the account must be usable and the last activity must lie within the 30-minute idle window (BR-17).
+     */
+    @Transactional
+    public String refresh(String authorizationHeader) {
+        Claims claims = parse(extractToken(authorizationHeader), IDLE_SECONDS);
+        Long userId = subject(claims);
+        platform.validAccount(userId);
+        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
+                .orElseThrow(JwtTokenService::invalidToken);
+        if (!session.getUser().isEnabled() || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())) {
+            throw invalidToken();
+        }
+        if (lastSeen(claims.getId(), session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now())) {
+            throw invalidToken();
+        }
+        sessionRepository.deleteSession(claims.getId(), userId);
+        return issue(userId);
+    }
+
+    private Instant lastSeen(String sessionId, Instant issuedAt) {
+        var activity = platform.db().query("select last_seen from session_activity where session_id=?",
+                (rs, row) -> rs.getTimestamp("last_seen", java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))).toInstant(), sessionId);
+        return activity.isEmpty() ? issuedAt : activity.getFirst();
+    }
+
+    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}
+    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}
+
     private Claims parse(String token) {
+        return parse(token, 0);
+    }
+
+    private Claims parse(String token, long allowedExpirySeconds) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(signingKey)
+                    .clockSkewSeconds(allowedExpirySeconds)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

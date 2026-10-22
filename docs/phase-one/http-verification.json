@@ -1,0 +1,46 @@
+[
+  {
+    "check": "oa-demo userinfo permissions, permission set and directory delivery (no contact data, token required)",
+    "result": "PASS"
+  },
+  {
+    "check": "oa-demo refresh token after permission version change; old access 401, renewed token valid, refresh replay rejected",
+    "result": "PASS"
+  },
+  {
+    "check": "OIDC OA PKCE, ID-token signature and code replay rejection",
+    "result": "PASS"
+  },
+  {
+    "check": "hr-demo userinfo permissions, permission set and directory delivery (no contact data, token required)",
+    "result": "PASS"
+  },
+  {
+    "check": "hr-demo refresh token after permission version change; old access 401, renewed token valid, refresh replay rejected",
+    "result": "PASS"
+  },
+  {
+    "check": "OIDC HR second-client SSO without password re-entry",
+    "result": "PASS"
+  },
+  {
+    "check": "HR join and replay idempotency",
+    "result": "PASS"
+  },
+  {
+    "check": "Initial password change gate and re-login",
+    "result": "PASS"
+  },
+  {
+    "check": "OA approved callback grants requested role",
+    "result": "PASS"
+  },
+  {
+    "check": "HR transfer atomically replaces grants",
+    "result": "PASS"
+  },
+  {
+    "check": "HR leave disables account and revokes JWT session",
+    "result": "PASS"
+  }
+]

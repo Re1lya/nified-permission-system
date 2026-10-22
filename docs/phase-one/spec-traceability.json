@@ -1,0 +1,294 @@
+{
+  "baseline": "需求分析基线-V1.0.md",
+  "date": "2026-10-22",
+  "verification": "本次不执行项目测试，不能以历史报告证明本次变更通过",
+  "useCases": [
+    {
+      "id": "UC-A01",
+      "name": "账号密码登录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "统一错误提示，失败记录日志，达阈值锁定"
+    },
+    {
+      "id": "UC-A02",
+      "name": "手机号密码登录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "手机号重复时不能用它登录"
+    },
+    {
+      "id": "UC-A03",
+      "name": "SSO 免登",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "OidcConfig / ApplicationController / SsoController",
+      "behavior": "可配置 OIDC 客户端、持久化授权与密钥、共享 HTTP 会话；门户展示已验收且有权限的应用"
+    },
+    {
+      "id": "UC-A04",
+      "name": "登出",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "登出后旧 JWT 返回 401，并写 LOGOUT 审计"
+    },
+    {
+      "id": "UC-A05",
+      "name": "令牌签发",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "平台 JWT 与 OIDC 令牌"
+    },
+    {
+      "id": "UC-A06",
+      "name": "令牌校验",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "校验签名、受众、会话与权限版本"
+    },
+    {
+      "id": "UC-A07",
+      "name": "令牌刷新",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "平台 JWT 轮换；机密客户端获得 OIDC 刷新令牌并轮换"
+    },
+    {
+      "id": "UC-A08",
+      "name": "令牌撤销",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "会话撤销、强制下线、OIDC revoke 端点"
+    },
+    {
+      "id": "UC-A09",
+      "name": "会话超时与续期",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "30 分钟无操作失效，请求自动续期"
+    },
+    {
+      "id": "UC-A10",
+      "name": "本人修改密码",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "改密后旧会话失效"
+    },
+    {
+      "id": "UC-A11",
+      "name": "强制下线",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "部门管理员仅限本部门普通员工"
+    },
+    {
+      "id": "UC-B01",
+      "name": "应用注册",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "/api/systems"
+    },
+    {
+      "id": "UC-B02",
+      "name": "应用接入配置",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "ApplicationController",
+      "behavior": "配置精确回调、入口、客户端密钥；配置变化撤销旧授权并重新验收"
+    },
+    {
+      "id": "UC-B03",
+      "name": "权限点注册与维护",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "类型、失效标记、编码规范校验、清单导入"
+    },
+    {
+      "id": "UC-B04",
+      "name": "角色管理",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "有引用时拒绝删除"
+    },
+    {
+      "id": "UC-B05",
+      "name": "用户-角色分配",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "含部门范围校验"
+    },
+    {
+      "id": "UC-B06",
+      "name": "角色-权限分配",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "部门管理员受委派上限约束"
+    },
+    {
+      "id": "UC-B07",
+      "name": "鉴权决策",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "返回判定依据；拒绝写 ACCESS_DENIED 审计"
+    },
+    {
+      "id": "UC-B08",
+      "name": "权限集合下发",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "/api/oidc/permissions 与 userinfo 携带权限与版本号"
+    },
+    {
+      "id": "UC-B09",
+      "name": "权限变更记录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "授权和回收均写审计"
+    },
+    {
+      "id": "UC-C01",
+      "name": "HR 员工信息同步",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "IntegrationController / HrSynchronization",
+      "behavior": "FULL / INCREMENTAL 有界批次；员工入职、资料更新、调岗、离职在签名事务中处理"
+    },
+    {
+      "id": "UC-C02",
+      "name": "部门信息同步",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "HrSynchronization.department",
+      "behavior": "以外部编号同步部门，上级必须先存在，拒绝形成环"
+    },
+    {
+      "id": "UC-C03",
+      "name": "岗位信息同步",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "HrSynchronization.post",
+      "behavior": "以外部编号同步岗位，同步同名角色，不覆盖授权"
+    },
+    {
+      "id": "UC-C04",
+      "name": "账号自动创建",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "AccountNaming / HrSynchronization / CompanyImportService",
+      "behavior": "拼音首字母、手机号后四位、序号；多音字及再次冲突通知人工；随机初始密码与强制改密"
+    },
+    {
+      "id": "UC-C05",
+      "name": "外部人员自建与有效期",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "外部人员 ≤ 365 天、临时人员 ≤ 90 天；到期失效；列表提醒与续期"
+    },
+    {
+      "id": "UC-C06",
+      "name": "离职禁用",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "停用、回收角色、撤销会话、版本加一"
+    },
+    {
+      "id": "UC-C07",
+      "name": "调岗权限回收与再分配",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "IntegrationController.hr",
+      "behavior": "调岗在一个事务中回收旧角色、分配新角色，通知原部门和新部门"
+    },
+    {
+      "id": "UC-C08",
+      "name": "同步异常处理与对账",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "SyncAdministration / HrSynchronization.reconcile",
+      "behavior": "独立记录失败摘要，支持处理记录、原请求重试与外部编号对账"
+    },
+    {
+      "id": "UC-D01",
+      "name": "应用协议接入",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "ApplicationProtocol / OidcConfig",
+      "behavior": "一期实现 OIDC；其他协议保留适配边界和能力对照"
+    },
+    {
+      "id": "UC-D02",
+      "name": "用户与部门数据下发",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "/api/oidc/directory/departments、/users，不含联系方式"
+    },
+    {
+      "id": "UC-D03",
+      "name": "应用接入验收",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "ApplicationController.accept",
+      "behavior": "登录、回调、鉴权、撤权、隔离五项验收及证据登记，未通过不启用"
+    },
+    {
+      "id": "UC-D04",
+      "name": "无法改造系统的兼容处理",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "ApplicationController.configure",
+      "behavior": "LEGACY 隔离入口和兼容方案；不伪装成已实现统一免登"
+    },
+    {
+      "id": "UC-E01",
+      "name": "审批结果回调处理",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "IntegrationController.oa",
+      "behavior": "OA 签名登记申请、通过或驳回或取消；相同结论重复回调幂等"
+    },
+    {
+      "id": "UC-E02",
+      "name": "审批记录查询",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "本人、本部门管理员与超级管理员分别可查"
+    },
+    {
+      "id": "UC-E03",
+      "name": "申请单状态同步",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "IntegrationController",
+      "behavior": "OA QUERY_APPLICATION_STATUS 查询状态；平台本人和管理员按范围查询"
+    },
+    {
+      "id": "UC-F01",
+      "name": "登录日志记录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "成功与失败均记录"
+    },
+    {
+      "id": "UC-F02",
+      "name": "操作日志记录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "原有实现，参见控制器接口清单",
+      "behavior": "写请求自动留痕"
+    },
+    {
+      "id": "UC-F03",
+      "name": "权限变更日志记录",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "ApiAccessConfig / PlatformController / OrganizationController",
+      "behavior": "授权及回收记录操作人、对象与结果"
+    },
+    {
+      "id": "UC-F04",
+      "name": "审计日志查询",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "AuditLifecycle.search",
+      "behavior": "按时间、操作人、类型分页查询在线及归档日志，均限制部门范围"
+    },
+    {
+      "id": "UC-F05",
+      "name": "权限复核",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "AuditLifecycle.review",
+      "behavior": "按员工角色逐项复核，KEEP / REVOKE，理由必填并留存结果"
+    },
+    {
+      "id": "UC-F06",
+      "name": "日志归档",
+      "implementation": "代码已提供，运行验收待执行",
+      "source": "AuditRetention",
+      "behavior": "超过十二个日历月的日志按批次事务归档，不提供日志修改删除接口"
+    }
+  ]
+}

@@ -154,6 +154,8 @@ class AdminAccessIntegrationTests {
         call(delete("/api/roles/{r}/permissions/{p}",r,p),admin,null,204);
         assertEquals(0,call(get("/api/users/{id}/permissions",userId),admin,null,200).size());
         call(delete("/api/permissions/{id}",p),admin,null,204);
+        call(delete("/api/roles/{id}",r),admin,null,409);
+        call(delete("/api/users/{u}/roles/{r}",userId,r),admin,null,204);
         call(delete("/api/roles/{id}",r),admin,null,204);
         call(delete("/api/systems/{id}",s),admin,null,204);
     }

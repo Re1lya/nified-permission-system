@@ -1,4 +1,12 @@
-# 统一权限管理系统 · RBAC0
+# 统一权限管理系统
+
+当前一期版本以 [原始需求及实现说明](docs/phase-one/README.md) 为准，包含 RBAC0、OIDC、OA 签名审批接口、HR 组织和员工同步、三表导入及 Vue 管理门户。
+
+当前设计材料为 [四份 Word 与接口数据库设计](docs/phase-one/README.md)。2026 年 10 月 22 日云端部署和数据库升级验证记录见 [部署联调说明](docs/phase-one/cloud-deployment.md)。外部 OA/HR 暂不存在，本轮使用接口契约调用端；不宣称完成企业产品接入。
+
+## 早期第一次检查基线
+
+以下为早期版本的历史说明和测试记录，不代表当前一期范围或当前验证结果。
 
 第一次检查的本地可运行版本：Spring Boot 4 / Java 21 / JPA / CloneFactory，原生中文管理网页与后端同源发布。管理 API 需要管理员身份，普通用户只能访问自己的身份/有效权限和受保护业务示例。
 
@@ -51,3 +59,6 @@ mvn clean verify
 - [CloneFactory](docs/clonefactory.md)：必须先安装内置依赖，生成代码不能手工修改。
 
 管理员标记独立于业务角色，仅由服务启动初始化写入。不存在通过创建一个同名角色获得管理员权限的行为；管理员也不会自动拥有 `expense:list`。登录/注销采用 JWT + 数据库会话，角色回收影响后续请求，注销和账号停用使旧 JWT 失效。
+# 一期推进版本入口
+
+新增的 Vue 管理界面、三表导入、部门范围、OIDC 与 OA/HR 本地演示及四份 Word，见 [一期材料](docs/phase-one/README.md)。启动地址为 `http://127.0.0.1:18081/ui/index.html`。本地一期采用 Vue3 + TypeScript + Tailwind，配套需求 Spec、Apifox 接口契约、ER 图和 SQL。以下原有说明保留作为第一次检查基线。
