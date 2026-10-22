@@ -33,6 +33,13 @@ public class AuthController {
         return rbacService.login(request);
     }
 
+    @PostMapping("/refresh")
+    public java.util.Map<String, String> refresh(
+            @org.springframework.web.bind.annotation.RequestHeader(
+                    value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        return java.util.Map.of("accessToken", jwtTokenService.refresh(authorization));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @org.springframework.web.bind.annotation.RequestHeader(

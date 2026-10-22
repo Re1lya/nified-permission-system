@@ -42,6 +42,8 @@ def oidc(client,admin_token):
     assert status==302,(status,text[:200]);callback=parse_qs(urlparse(headers['Location']).query);assert callback['state'][0]==state
     code=callback['code'][0]
     payload={'grant_type':'authorization_code','client_id':client,'redirect_uri':redirect,'code':code,'code_verifier':verifier}
+    secret=os.environ.get('PERMISSION_OIDC_CLIENT_SECRET')
+    if secret:payload['client_secret']=secret  # confidential mode: only then are refresh tokens issued
     status,text,_,_=http('/oauth2/token','POST',payload,form=True)
     assert status==200,(status,text[:200]);tokens=json.loads(text)
     import importlib.util
@@ -49,6 +51,20 @@ def oidc(client,admin_token):
     module.ISSUER=BASE;metadata=api('/.well-known/openid-configuration');claims=module.verify(tokens['id_token'],client,nonce,metadata)
     assert claims['sub']
     api('/api/oidc/permissions/check?'+urlencode({'code':'ungranted:demo:view','clientId':client}),token=tokens['access_token'],expect=403)
+    if secret:
+        assert tokens.get('refresh_token'),'confidential client must receive a refresh token'
+        me=api('/api/platform/self',token=admin_token)['id']
+        role=api('/api/roles','POST',{'code':'refresh_'+secrets.token_hex(4),'name':'刷新验证角色','description':'版本号变更'},admin_token,expect=201)['id']
+        api(f'/api/users/{me}/roles/{role}','PUT',None,admin_token,expect=204)
+        check='/api/oidc/permissions/check?'+urlencode({'code':'ungranted:demo:view','clientId':client})
+        api(check,token=tokens['access_token'],expect=401)
+        refresh={'grant_type':'refresh_token','client_id':client,'client_secret':secret,'refresh_token':tokens['refresh_token']}
+        status,text,_,_=http('/oauth2/token','POST',refresh,form=True);assert status==200,(status,text[:200]);renewed=json.loads(text)
+        api(check,token=renewed['access_token'],expect=403)
+        assert http('/oauth2/token','POST',refresh,form=True)[0]==400,'used refresh token must not be reusable'
+        api(f'/api/users/{me}/roles/{role}','DELETE',None,admin_token,expect=204)
+        record(client+' refresh token after permission version change; old access 401, renewed token valid, refresh replay rejected')
+    # Replaying the code revokes every token issued from it (RFC 6749 4.1.2), so this runs last.
     replay=http('/oauth2/token','POST',payload,form=True)[0];assert replay==400
     return tokens['access_token']
 def signed(source,event,request_id):

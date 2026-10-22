@@ -68,15 +68,24 @@ public class OidcConfig {
             public boolean supports(Class<?> type){return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);}
         };
     }
-    @Bean RegisteredClientRepository clients() {
+    /**
+     * Two loopback demo clients. Without a secret they are public PKCE clients. With PERMISSION_OIDC_CLIENT_SECRET (32+ chars)
+     * they may also authenticate with that secret; only then does the server issue refresh tokens (UC-A07), as public clients never get one.
+     */
+    @Bean RegisteredClientRepository clients(org.springframework.security.crypto.password.PasswordEncoder passwords,@org.springframework.beans.factory.annotation.Value("${permission.oidc.client-secret:}") String secret) {
+        if(!secret.isEmpty()&&secret.length()<32)throw new IllegalArgumentException("permission.oidc.client-secret 至少 32 个字符");
         List<RegisteredClient> clients=new ArrayList<>();
-        for(String name:List.of("oa-demo","hr-demo"))clients.add(RegisteredClient.withId(name).clientId(name)
-            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
-            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .redirectUri("http://127.0.0.1:"+(name.equals("oa-demo")?18101:18102)+"/callback")
-            .scope("openid").scope("profile")
-            .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())
-            .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(java.time.Duration.ofMinutes(5)).build()).build());
+        for(String name:List.of("oa-demo","hr-demo")){
+            var client=RegisteredClient.withId(name).clientId(name)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("http://127.0.0.1:"+(name.equals("oa-demo")?18101:18102)+"/callback")
+                .scope("openid").scope("profile")
+                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())
+                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(java.time.Duration.ofMinutes(5)).refreshTokenTimeToLive(java.time.Duration.ofHours(8)).reuseRefreshTokens(false).build());
+            if(!secret.isEmpty())client.clientSecret(passwords.encode(secret)).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);
+            clients.add(client.build());
+        }
         return new InMemoryRegisteredClientRepository(clients);
     }
     @Bean OAuth2AuthorizationService authorizations(){return new InMemoryOAuth2AuthorizationService();}
@@ -91,7 +100,14 @@ public class OidcConfig {
     @Bean org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer<org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext> tokenClaims(PlatformStore store,com.cdwy.permission.service.JwtTokenService tokens){
         return context->{
             var principal=context.getPrincipal();
-            if(principal.getDetails() instanceof String bearer){
+            if(AuthorizationGrantType.REFRESH_TOKEN.equals(context.getAuthorizationGrantType())){
+                // The platform session behind the original login may have rotated; re-check the account itself.
+                long user=Long.parseLong(principal.getName());
+                try{store.validAccount(user);}catch(com.cdwy.permission.exception.AuthenticationFailedException e){throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,"账号已停用或过期",null));}
+                if(store.count("select count(*) from sys_user where id=? and enabled=true",user)!=1)throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,"账号已停用",null));
+                context.getClaims().claim("permission_version",store.version(user));
+            }
+            else if(principal.getDetails() instanceof String bearer){
                 long user=tokens.requireUserId(bearer);
                 context.getClaims().claim("permission_version",store.version(user)).claim("sid",tokens.sessionId(bearer));
             }

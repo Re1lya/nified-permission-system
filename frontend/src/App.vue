@@ -34,9 +34,14 @@ const screen=computed(()=>screens.find(s=>s.id===screenId.value)||screens.find(s
 const visible=computed(()=>screens.filter(s=>s.group!=='状态'&&(!s.super||identity.value.superAdmin)&&(!s.admin||identity.value.superAdmin||identity.value.departmentAdmin)));
 const allowed=computed(()=>(!screen.value.super||identity.value.superAdmin)&&(!screen.value.admin||identity.value.superAdmin||identity.value.departmentAdmin));
 function notify(text:string,bad=false){message.value=text;error.value=bad;}
-async function api(path:string,method='GET',body?:any){
+// Platform JWTs live 15 minutes; rotate after 10 minutes of use, or once after a 401, so 30 minutes of idleness still applies.
+function issuedAt(t:string){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).iat*1000}catch{return 0}}
+async function rotate(){const r=await fetch('/api/auth/refresh',{method:'POST',headers:{Authorization:`Bearer ${token.value}`}});if(!r.ok)return false;token.value=(await r.json()).accessToken;sessionStorage.setItem('permission-token',token.value);return true;}
+async function api(path:string,method='GET',body?:any,retried=false){
+ if(token.value&&!path.startsWith('/api/auth/')&&Date.now()-issuedAt(token.value)>600_000)await rotate();
  const response=await fetch(path,{method,headers:{...(token.value?{Authorization:`Bearer ${token.value}`} :{}),...(body&&!(body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body instanceof FormData?body:body?JSON.stringify(body):undefined});
  const data=response.status===204?null:await response.text().then(t=>{try{return t?JSON.parse(t):null}catch{return null}});
+ if(response.status===401&&token.value&&!retried&&!path.startsWith('/api/auth/')&&await rotate())return api(path,method,body,true);
  if(!response.ok){if(response.status===401){token.value='';sessionStorage.removeItem('permission-token');identity.value={};}throw new Error((response.status===401?'登录失效，请重新登录。':response.status===403?'无权执行此操作。':'')+(data?.message||`请求失败（${response.status}）`));}return data;
 }
 async function run(action:()=>Promise<void>){busy.value=true;try{await action()}catch(e){notify(e instanceof Error?e.message:'操作失败，请重试',true)}finally{busy.value=false}}

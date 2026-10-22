@@ -31,9 +31,10 @@ public class SsoController {
             var authorization=authorizations.findByToken(jwt.getTokenValue(),org.springframework.security.oauth2.server.authorization.OAuth2TokenType.ACCESS_TOKEN);
             if(authorization==null||authorization.getAccessToken()==null||!authorization.getAccessToken().isActive())throw new AuthenticationFailedException();
             long user=Long.parseLong(jwt.getSubject());store.validAccount(user);
-            if(store.count("select count(*) from sys_user u join sys_login_session s on s.user_id=u.id where u.id=? and u.enabled=true and s.id=? and s.expires_at>?",user,jwt.getClaimAsString("sid"),Instant.now())!=1)throw new AuthenticationFailedException();
-            Number version=jwt.getClaim("permission_version");if(version==null||version.longValue()!=store.version(user))throw new AuthenticationFailedException("权限版本已改变，请重新获取令牌");
-            rbac.assertPermission(user,code);return Map.of("allowed",true,"userId",user,"code",code);
+            // Forced offline, disable, leave and password change all bump the version, so the version alone decides validity.
+            if(store.count("select count(*) from sys_user where id=? and enabled=true",user)!=1)throw new AuthenticationFailedException();
+            Number version=jwt.getClaim("permission_version");if(version==null||version.longValue()!=store.version(user))throw new AuthenticationFailedException("权限版本已改变，请刷新或重新获取令牌");
+            rbac.assertPermission(user,code);return Map.of("allowed",true,"userId",user,"code",code,"grantedBy",rbac.grantingRoles(user,code),"permissionVersion",version.longValue());
         }catch(ForbiddenException|AuthenticationFailedException e){throw e;}catch(Exception e){throw new AuthenticationFailedException();}
     }
 }

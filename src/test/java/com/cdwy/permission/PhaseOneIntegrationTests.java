@@ -131,6 +131,23 @@ class PhaseOneIntegrationTests {
   mvc.perform(post("/api/auth/logout").header("Authorization",managerToken)).andExpect(status().isNoContent());
   assertEquals(1,db.queryForObject("select count(*) from audit_event where kind='LOGOUT' and actor_id=?",Integer.class,manager));
  }
+ @Test void refreshRotatesTokenWithinIdleWindow() throws Exception {
+  String fresh="Bearer "+json.readTree(body(mvc.perform(post("/api/auth/refresh").header("Authorization",userToken)).andExpect(status().isOk()))).get("accessToken").asText();
+  mvc.perform(get("/api/platform/self").header("Authorization",userToken)).andExpect(status().isUnauthorized());
+  mvc.perform(get("/api/platform/self").header("Authorization",fresh)).andExpect(status().isOk());
+  db.update("update session_activity set last_seen=? where session_id in(select id from sys_login_session where user_id=?)",Instant.now().minusSeconds(1801),user);
+  mvc.perform(post("/api/auth/refresh").header("Authorization",fresh)).andExpect(status().isUnauthorized());
+ }
+ @Test void denialIsAuditedAndAllowHasBasis() throws Exception {
+  mvc.perform(get("/api/demo/expenses").header("Authorization",userToken)).andExpect(status().isForbidden());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where kind='ACCESS_DENIED' and actor_id=? and target='expense:list'",Integer.class,user));
+  long system=rbac.createSystem(new CreateSystemRequest("sys"+suffix,"系统",null)).id();long permission=rbac.createPermission(new CreatePermissionRequest(system,"p"+suffix,"权限","/test")).id();
+  rbac.assignPermission(role,permission);rbac.assignRole(user,role);
+  assertEquals(List.of("role"+suffix),rbac.grantingRoles(user,"p"+suffix));
+  long before=db.queryForObject("select version from account_policy where user_id=?",Long.class,user);
+  request("/api/platform/users/"+user+"/offline","{}",managerToken,200);
+  assertTrue(db.queryForObject("select version from account_policy where user_id=?",Long.class,user)>before,"强制下线应使 OIDC 令牌的权限版本失效");
+ }
  String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
  long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
  @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {

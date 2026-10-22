@@ -42,7 +42,7 @@ public class ApiAccessConfig implements WebMvcConfigurer {
                 long id=tokens.requireUserId(request.getHeader("Authorization"));
                 if(platform.mustChange(id)&&!java.util.Set.of("/api/platform/self","/api/platform/self/password").contains(request.getRequestURI()))throw new ForbiddenException("请先修改初始密码");return true;
             }
-        }).addPathPatterns("/api/**").excludePathPatterns("/api/auth/login","/api/auth/logout","/api/auth/me","/api/integration/**","/api/oidc/**");
+        }).addPathPatterns("/api/**").excludePathPatterns("/api/auth/login","/api/auth/logout","/api/auth/refresh","/api/auth/me","/api/integration/**","/api/oidc/**");
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -53,6 +53,6 @@ public class ApiAccessConfig implements WebMvcConfigurer {
                 return true;
             }
         }).addPathPatterns("/api/**")
-          .excludePathPatterns("/api/auth/login", "/api/auth/logout", "/api/auth/me", "/api/demo/expenses", "/api/platform/**", "/api/integration/**", "/api/oidc/**");
+          .excludePathPatterns("/api/auth/login", "/api/auth/logout", "/api/auth/refresh", "/api/auth/me", "/api/demo/expenses", "/api/platform/**", "/api/integration/**", "/api/oidc/**");
     }
 }

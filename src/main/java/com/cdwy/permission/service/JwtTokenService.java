@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class JwtTokenService {
 
+    static final long IDLE_SECONDS = 1800;
+
     private final SecretKey signingKey;
     private final long expirationSeconds;
     private final UserAccountRepository userRepository;
@@ -81,10 +83,7 @@ public class JwtTokenService {
                 || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {
             throw invalidToken();
         }
-        var activity=platform.rows("select last_seen from session_activity where session_id=?",claims.getId());
-        Object stored=activity.isEmpty()?null:activity.getFirst().get("last_seen");
-        Instant last=stored==null?session.getIssuedAt():stored instanceof java.time.OffsetDateTime offset?offset.toInstant():((java.sql.Timestamp)stored).toInstant();
-        if(last.plusSeconds(1800).isBefore(Instant.now()))throw invalidToken();
+        if(lastSeen(claims.getId(),session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now()))throw invalidToken();
         platform.db().update("insert into session_activity(session_id,last_seen) select ?,? where not exists(select 1 from session_activity where session_id=?)",claims.getId(),Instant.now(),claims.getId());
         platform.db().update("update session_activity set last_seen=? where session_id=?",Instant.now(),claims.getId());
         return userId;
@@ -117,15 +116,48 @@ public class JwtTokenService {
     public void revokeAll(Long userId) {
         // Account commands hold the user lock until both changes commit.
         sessionRepository.deleteAllForUser(userId);
+        platform.changed(userId);
+    }
+
+    /**
+     * Rotate a platform JWT. The presented token may already be expired, but its session must still exist,
+     * the account must be usable and the last activity must lie within the 30-minute idle window (BR-17).
+     */
+    @Transactional
+    public String refresh(String authorizationHeader) {
+        Claims claims = parse(extractToken(authorizationHeader), IDLE_SECONDS);
+        Long userId = subject(claims);
+        platform.validAccount(userId);
+        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)
+                .orElseThrow(JwtTokenService::invalidToken);
+        if (!session.getUser().isEnabled() || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())) {
+            throw invalidToken();
+        }
+        if (lastSeen(claims.getId(), session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now())) {
+            throw invalidToken();
+        }
+        sessionRepository.deleteSession(claims.getId(), userId);
+        return issue(userId);
+    }
+
+    private Instant lastSeen(String sessionId, Instant issuedAt) {
+        var activity = platform.rows("select last_seen from session_activity where session_id=?", sessionId);
+        Object stored = activity.isEmpty() ? null : activity.getFirst().get("last_seen");
+        return stored == null ? issuedAt : stored instanceof java.time.OffsetDateTime offset ? offset.toInstant() : ((java.sql.Timestamp) stored).toInstant();
     }
 
     public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}
     public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}
 
     private Claims parse(String token) {
+        return parse(token, 0);
+    }
+
+    private Claims parse(String token, long allowedExpirySeconds) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(signingKey)
+                    .clockSkewSeconds(allowedExpirySeconds)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

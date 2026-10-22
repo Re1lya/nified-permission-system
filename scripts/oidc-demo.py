@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import hashes
 
 ISSUER = os.environ.get('OIDC_ISSUER', 'http://127.0.0.1:18081')
+SECRET = os.environ.get('PERMISSION_OIDC_CLIENT_SECRET')  # optional; enables the refresh-token demonstration
 if urlparse(ISSUER).hostname not in ('127.0.0.1', 'localhost'):
     raise SystemExit('This demonstration only accepts a loopback issuer')
 def b64(value): return base64.urlsafe_b64encode(value).rstrip(b'=').decode()
@@ -53,12 +54,18 @@ def handler(client, port):
                     params=parse_qs(path.query)
                     if not session or not secrets.compare_digest(params.get('state',[''])[0],session['state']): raise ValueError('Invalid or expired state')
                     state=session.pop('state')  # one-time callback
-                    result=fetch(session['metadata']['token_endpoint'],{'grant_type':'authorization_code','client_id':client,'code':params['code'][0],'redirect_uri':f'http://127.0.0.1:{port}/callback','code_verifier':session.pop('verifier')})
+                    exchange={'grant_type':'authorization_code','client_id':client,'code':params['code'][0],'redirect_uri':f'http://127.0.0.1:{port}/callback','code_verifier':session.pop('verifier')}
+                    if SECRET:exchange['client_secret']=SECRET
+                    result=fetch(session['metadata']['token_endpoint'],exchange);session['refresh']=result.get('refresh_token')
                     claims=verify(result['id_token'],client,session.pop('nonce'),session['metadata']);session['subject']=claims['sub'];session['expires']=claims['exp']
                     self.send_response(302);self.send_header('Location','/');self.end_headers();return
+                if path.path=='/refresh' and session and session.get('refresh'):
+                    result=fetch(session['metadata']['token_endpoint'],{'grant_type':'refresh_token','client_id':client,'client_secret':SECRET,'refresh_token':session['refresh']})
+                    session['refresh']=result.get('refresh_token');claims=json.loads(decode(result['access_token'].split('.')[1]))
+                    self.page(client+' 令牌已刷新','<p>使用刷新令牌换取了新的访问令牌，旧刷新令牌已作废。</p><p>当前权限版本号：'+html.escape(str(claims.get('permission_version')))+'</p><a href="/">返回</a>');return
                 if path.path!='/': self.page('页面不存在','<a href="/">返回首页</a>',404);return
                 if session and 'subject' in session:
-                    self.page(client+' 登录成功','<p>已验证授权码、PKCE、签名、issuer、audience、nonce 与有效期。</p><p>统一账号编号：'+html.escape(str(session['subject']))+'</p><p>这里仅展示认证结果，不代表已获业务权限。</p><a href="http://127.0.0.1:'+str(18102 if port==18101 else 18101)+'/">打开另一个演示客户端验证免登</a>')
+                    self.page(client+' 登录成功','<p>已验证授权码、PKCE、签名、issuer、audience、nonce 与有效期。</p><p>统一账号编号：'+html.escape(str(session['subject']))+'</p><p>这里仅展示认证结果，不代表已获业务权限。</p><a href="http://127.0.0.1:'+str(18102 if port==18101 else 18101)+'/">打开另一个演示客户端验证免登</a>'+('<p><a href="/refresh">使用刷新令牌更新访问令牌</a></p>' if session.get('refresh') else ''))
                 else:self.page(client,'<p>通过统一认证中心登录本地演示客户端。不会连接真实 OA 或 HR。</p><a href="/login">使用统一账号登录</a>')
             except Exception:
                 self.page('认证未完成','<p>状态已失效、授权被拒绝或验证失败。请重新发起登录。</p><a href="/login">重新登录</a>',400)

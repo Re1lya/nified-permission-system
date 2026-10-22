@@ -321,8 +321,15 @@ public class RbacService {
 
     public void assertPermission(Long userId, String permissionCode) {
         if (!hasPermission(userId, permissionCode)) {
+            platform.audit(userId, "ACCESS_DENIED", permissionCode, "DENIED", userId);
             throw new ForbiddenException("用户没有权限: " + permissionCode);
         }
+    }
+
+    /** Enabled roles of the user that currently carry the permission through an enabled system; the basis of an allow decision. */
+    public List<String> grantingRoles(Long userId, String permissionCode) {
+        return platform.rows("select distinct r.code from sys_user_role ur join sys_role r on r.id=ur.role_id join sys_role_permission rp on rp.role_id=r.id join sys_permission p on p.id=rp.permission_id join biz_system s on s.id=p.system_id where ur.user_id=? and p.code=? and r.enabled=true and s.enabled=true order by r.code", userId, permissionCode)
+                .stream().map(row -> (String) row.get("code")).toList();
     }
 
     public Long requirePermission(String authorizationHeader, String permissionCode) {
