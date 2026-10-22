@@ -2,41 +2,41 @@
   "date": "2026-10-21",
   "command": "mvn clean verify (COMPANY_WORKBOOK_DIR set)",
   "tests": {
-    "tests": 38,
+    "tests": 44,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
   "coverage": {
     "INSTRUCTION": {
-      "covered": 7102,
-      "missed": 3058,
-      "percent": 69.9
+      "covered": 7948,
+      "missed": 3236,
+      "percent": 71.07
     },
     "BRANCH": {
-      "covered": 370,
-      "missed": 322,
-      "percent": 53.47
+      "covered": 417,
+      "missed": 343,
+      "percent": 54.87
     },
     "LINE": {
-      "covered": 999,
-      "missed": 215,
-      "percent": 82.29
+      "covered": 1099,
+      "missed": 244,
+      "percent": 81.83
     },
     "COMPLEXITY": {
-      "covered": 508,
-      "missed": 338,
-      "percent": 60.05
+      "covered": 561,
+      "missed": 364,
+      "percent": 60.65
     },
     "METHOD": {
-      "covered": 386,
-      "missed": 113,
-      "percent": 77.35
+      "covered": 424,
+      "missed": 120,
+      "percent": 77.94
     },
     "CLASS": {
-      "covered": 92,
+      "covered": 95,
       "missed": 11,
-      "percent": 89.32
+      "percent": 89.62
     }
   },
   "database": "isolated H2"

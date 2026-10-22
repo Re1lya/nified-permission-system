@@ -39,6 +39,14 @@
     ]
   },
   {
+    "path": "/api/auth/refresh",
+    "parameters": [],
+    "handler": "refresh",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
     "path": "/api/company/catalog",
     "parameters": [
       {
@@ -277,6 +285,75 @@
     ]
   },
   {
+    "path": "/api/oidc/directory/departments",
+    "parameters": [
+      {
+        "name": "clientId",
+        "default": "",
+        "required": true,
+        "kind": "query",
+        "type": "String"
+      }
+    ],
+    "handler": "departments",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/oidc/directory/users",
+    "parameters": [
+      {
+        "name": "clientId",
+        "default": "",
+        "required": true,
+        "kind": "query",
+        "type": "String"
+      },
+      {
+        "name": "departmentId",
+        "default": "",
+        "required": false,
+        "kind": "query",
+        "type": "Long"
+      },
+      {
+        "name": "page",
+        "default": "0",
+        "required": true,
+        "kind": "query",
+        "type": "int"
+      },
+      {
+        "name": "size",
+        "default": "100",
+        "required": true,
+        "kind": "query",
+        "type": "int"
+      }
+    ],
+    "handler": "users",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/oidc/permissions",
+    "parameters": [
+      {
+        "name": "clientId",
+        "default": "",
+        "required": true,
+        "kind": "query",
+        "type": "String"
+      }
+    ],
+    "handler": "permissions",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
     "path": "/api/oidc/permissions/check",
     "parameters": [
       {
@@ -335,6 +412,10 @@
           {
             "type": "String",
             "name": "menuPath"
+          },
+          {
+            "type": "String",
+            "name": "type"
           }
         ],
         "kind": "body",
@@ -344,14 +425,6 @@
     "handler": "create",
     "methods": [
       "POST"
-    ]
-  },
-  {
-    "path": "/api/permissions/{permissionId}",
-    "parameters": [],
-    "handler": "delete",
-    "methods": [
-      "DELETE"
     ]
   },
   {
@@ -366,6 +439,14 @@
           {
             "type": "String",
             "name": "menuPath"
+          },
+          {
+            "type": "String",
+            "name": "type"
+          },
+          {
+            "type": "Boolean",
+            "name": "active"
           }
         ],
         "kind": "body",
@@ -375,6 +456,14 @@
     "handler": "update",
     "methods": [
       "PUT"
+    ]
+  },
+  {
+    "path": "/api/permissions/{permissionId}",
+    "parameters": [],
+    "handler": "delete",
+    "methods": [
+      "DELETE"
     ]
   },
   {
@@ -444,14 +533,6 @@
   },
   {
     "path": "/api/platform/dictionary",
-    "parameters": [],
-    "handler": "dictionary",
-    "methods": [
-      "GET"
-    ]
-  },
-  {
-    "path": "/api/platform/dictionary",
     "parameters": [
       {
         "fields": [
@@ -475,6 +556,14 @@
     "handler": "dictionary",
     "methods": [
       "POST"
+    ]
+  },
+  {
+    "path": "/api/platform/dictionary",
+    "parameters": [],
+    "handler": "dictionary",
+    "methods": [
+      "GET"
     ]
   },
   {
@@ -561,6 +650,45 @@
     "handler": "renew",
     "methods": [
       "PUT"
+    ]
+  },
+  {
+    "path": "/api/platform/initial-passwords",
+    "parameters": [
+      {
+        "name": "departmentId",
+        "default": "",
+        "required": true,
+        "kind": "query",
+        "type": "long"
+      }
+    ],
+    "handler": "pending",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/api/platform/initial-passwords",
+    "parameters": [
+      {
+        "fields": [
+          {
+            "type": "Long",
+            "name": "departmentId"
+          },
+          {
+            "type": "Integer",
+            "name": "limit"
+          }
+        ],
+        "kind": "body",
+        "type": "Batch"
+      }
+    ],
+    "handler": "issue",
+    "methods": [
+      "POST"
     ]
   },
   {
@@ -671,31 +799,23 @@
   {
     "path": "/api/platform/organization/roles/{role}/permissions/{permission}",
     "parameters": [],
-    "handler": "grant",
-    "methods": [
-      "PUT"
-    ]
-  },
-  {
-    "path": "/api/platform/organization/roles/{role}/permissions/{permission}",
-    "parameters": [],
     "handler": "revoke",
     "methods": [
       "DELETE"
     ]
   },
   {
-    "path": "/api/platform/self",
+    "path": "/api/platform/organization/roles/{role}/permissions/{permission}",
     "parameters": [],
-    "handler": "self",
+    "handler": "grant",
     "methods": [
-      "GET"
+      "PUT"
     ]
   },
   {
-    "path": "/api/platform/self/applications",
+    "path": "/api/platform/self",
     "parameters": [],
-    "handler": "myApplications",
+    "handler": "self",
     "methods": [
       "GET"
     ]
@@ -717,6 +837,14 @@
     "handler": "application",
     "methods": [
       "POST"
+    ]
+  },
+  {
+    "path": "/api/platform/self/applications",
+    "parameters": [],
+    "handler": "myApplications",
+    "methods": [
+      "GET"
     ]
   },
   {
@@ -752,7 +880,15 @@
   },
   {
     "path": "/api/platform/sessions",
-    "parameters": [],
+    "parameters": [
+      {
+        "name": "scope",
+        "default": "self",
+        "required": true,
+        "kind": "query",
+        "type": "String"
+      }
+    ],
     "handler": "sessions",
     "methods": [
       "GET"
@@ -827,17 +963,17 @@
   {
     "path": "/api/platform/users/{id}/roles/{role}",
     "parameters": [],
-    "handler": "grant",
+    "handler": "revoke",
     "methods": [
-      "PUT"
+      "DELETE"
     ]
   },
   {
     "path": "/api/platform/users/{id}/roles/{role}",
     "parameters": [],
-    "handler": "revoke",
+    "handler": "grant",
     "methods": [
-      "DELETE"
+      "PUT"
     ]
   },
   {
@@ -940,25 +1076,17 @@
   {
     "path": "/api/roles/{roleId}/permissions/{permissionId}",
     "parameters": [],
-    "handler": "assignPermission",
-    "methods": [
-      "PUT"
-    ]
-  },
-  {
-    "path": "/api/roles/{roleId}/permissions/{permissionId}",
-    "parameters": [],
     "handler": "removePermission",
     "methods": [
       "DELETE"
     ]
   },
   {
-    "path": "/api/systems",
+    "path": "/api/roles/{roleId}/permissions/{permissionId}",
     "parameters": [],
-    "handler": "list",
+    "handler": "assignPermission",
     "methods": [
-      "GET"
+      "PUT"
     ]
   },
   {
@@ -986,6 +1114,14 @@
     "handler": "create",
     "methods": [
       "POST"
+    ]
+  },
+  {
+    "path": "/api/systems",
+    "parameters": [],
+    "handler": "list",
+    "methods": [
+      "GET"
     ]
   },
   {
@@ -1025,14 +1161,6 @@
   },
   {
     "path": "/api/users",
-    "parameters": [],
-    "handler": "list",
-    "methods": [
-      "GET"
-    ]
-  },
-  {
-    "path": "/api/users",
     "parameters": [
       {
         "fields": [
@@ -1052,6 +1180,14 @@
     "handler": "create",
     "methods": [
       "POST"
+    ]
+  },
+  {
+    "path": "/api/users",
+    "parameters": [],
+    "handler": "list",
+    "methods": [
+      "GET"
     ]
   },
   {
@@ -1139,17 +1275,17 @@
   {
     "path": "/api/users/{userId}/roles/{roleId}",
     "parameters": [],
-    "handler": "assignRole",
+    "handler": "removeRole",
     "methods": [
-      "PUT"
+      "DELETE"
     ]
   },
   {
     "path": "/api/users/{userId}/roles/{roleId}",
     "parameters": [],
-    "handler": "removeRole",
+    "handler": "assignRole",
     "methods": [
-      "DELETE"
+      "PUT"
     ]
   },
   {

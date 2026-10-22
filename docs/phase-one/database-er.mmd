@@ -25,6 +25,7 @@ erDiagram
     timestamp created_at
     bigint department_id
     bigint id PK
+    bigint target_department_id
     string result
     string kind
     string target
@@ -122,8 +123,10 @@ erDiagram
     string name
   }
   sys_permission {
+    boolean active
     bigint id PK
     bigint system_id FK
+    string type
     string code
     string name
     string menu_path

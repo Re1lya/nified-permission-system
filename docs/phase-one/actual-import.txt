@@ -1,5 +1,5 @@
-counts={employees=10000, departments=111, systems=18, functions=359, modules=115, posts=54}
+counts={systems=18, functions=359, modules=115, posts=54, employees=10000, departments=111}
 warnings=5
-result={batchId=1, reused=false, message=导入成功；新员工无密码、无角色，已有账号状态及授权保持不变, createdPermissions=797, createdUsers=10000, unresolvedManagers=1}
+result={reused=false, message=导入成功；新员工无密码、无角色，已有账号状态及授权保持不变, createdPermissions=797, createdUsers=10000, unresolvedManagers=1, batchId=1}
 rolesAssigned=0
 repeat=reused

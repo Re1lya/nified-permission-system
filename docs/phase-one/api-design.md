@@ -17,7 +17,23 @@
 
 通用业务错误返回 `error` 和 `message`。OIDC 使用标准 OAuth 错误结构。部分框架级 400 和上传限制错误仍为框架返回，界面有状态码兜底。列表 page 从 0 开始、默认 size 为 25、最大 100；并非所有旧接口已有分页。
 
+### 1.1 错误响应格式与业务含义
+
+业务错误统一返回 JSON：`{"error":"<HTTP 状态短语>","message":"<中文原因>"}`。前端按状态码决定动作，按 message 向用户解释原因。下表列出各状态码的业务含义与典型 message。
+
+| 状态 | error | 业务含义 | 典型 message |
+| --- | --- | --- | --- |
+| 400 | Bad Request | 字段校验失败、导入有错误、有效期或编码格式不合法、集成事件内容不完整 | 权限编码格式为 应用:模块:操作…；临时人员有效期最长 90 天 |
+| 401 | Unauthorized | 未登录、令牌无效或过期、会话被撤销、账号停用或过期、权限版本已变化 | 登录状态无效或已过期，请重新登录；权限版本已改变，请刷新或重新获取令牌 |
+| 403 | Forbidden | 身份有效但越权、超出部门范围、初始密码未修改、集成签名错误或过期 | 管理接口仅允许管理员访问；只能管理绑定部门的员工；请先修改初始密码 |
+| 404 | Not Found | 资源不存在 | 账号不存在 |
+| 409 | Conflict | 唯一键或外键冲突、仍被引用、幂等事件同编号不同内容、权限点已失效 | 角色仍被员工或岗位引用；同一请求编号不能对应不同内容 |
+
+**与需求的偏离：** 原需求第 11 节要求“统一响应体包含业务码、消息与数据三段，HTTP 状态码仅表达协议语义”。一期沿用第一次检查已交付的契约，用 HTTP 状态码区分业务结果、成功时直接返回数据。原因是前端、Postman 集合与 9 个串联场景都依赖现有状态码；改为统一包装需要版本化迁移（例如新增 /api/v2 前缀），列入后续工作。
+
 ## 2 登录与自助接口
+
+平台 JWT 默认有效期 15 分钟。POST `/api/auth/refresh` 携带当前令牌换取新令牌：只要会话仍存在、账号可用且最近 30 分钟内有操作，即使令牌刚过期也可以轮换，旧会话随即作废。管理界面在令牌使用超过 10 分钟或收到 401 时自动轮换一次。登录失败次数按解析后的真实账号累计，账号和手机号交替输错共享 5 次上限。
 
 POST `/api/auth/login` 接收 username、password，成功返回 accessToken、userId、username、displayName、permissions。username 可填既有用户名或唯一手机号。返回令牌仅用于平台 Bearer API，不与 OIDC access token 混用。
 
@@ -42,6 +58,12 @@ PUT `/api/platform/administrators/{id}` 接收 departmentId，仅超级管理员
 用户密码重置、状态变更、角色分配、回收及强制下线均位于 `/api/platform/users/{id}` 下。新用户删除接口采用逻辑停用，回收角色并撤销会话。旧 `/api/users/{id}` 删除仍有物理删除语义，新旧接口的删除语义按本节分别使用。
 
 POST `/api/platform/organization/posts` 同时创建岗位和同名角色。指定 departmentId 时形成受管角色。超级管理员通过 grant-limits 接口指定部门可授予的权限；部门管理员修改角色权限时，同时检查角色归属和委派上限。共享岗位角色只能由超级管理员维护。
+
+GET `/api/platform/sessions?scope=managed` 返回管理范围内普通员工的有效会话（超级管理员为全部，部门管理员为绑定部门），撤销沿用 DELETE `/api/platform/sessions/{id}`；默认 scope=self 只返回本人会话。GET `/api/platform/approvals` 对部门管理员开放，只返回绑定部门员工的审批记录。审计事件同时记录操作人部门与被操作员工部门，部门管理员可看到超级管理员对本部门员工的操作；kind 过滤按前缀匹配并转义通配符。
+
+POST `/api/platform/initial-passwords` 请求体 departmentId、可选 limit（≤ 200），为该部门从未设置密码的员工生成随机初始密码（12 位，含四类字符），标记首次登录须修改，并只在本响应中返回一次；GET 同路径加 departmentId 返回待生成人数。审计只记录数量（BR-03）。
+
+权限点增加 type（MENU / BUTTON / API，默认 API）与 active。编码须为小写、冒号分隔、最多三段（如 oa:leave:approve），否则 400。DELETE `/api/permissions/{id}` 改为标记失效：既有授权保留但不再生效，失效权限点不能再授予（409），PUT 同路径带 active=true 可恢复。删除业务系统前须其权限点全部失效且无角色引用（BR-16）。
 
 ## 5 OA 和 HR 签名
 
@@ -79,11 +101,11 @@ OA 回调请求体包含 approvalId 和 decision。decision 只允许 APPROVED �
 
 发现文档 `/.well-known/openid-configuration`，授权端点 `/oauth2/authorize`，令牌端点 `/oauth2/token`，密钥端点 `/oauth2/jwks`，用户信息端点 `/userinfo`，撤销和内省端点由标准授权服务器提供。可通过发现文档核对实际端点。
 
-本地固定两个 public client：oa-demo 回调为 http://127.0.0.1:18101/callback，hr-demo 回调为 http://127.0.0.1:18102/callback。使用 authorization_code，要求 PKCE S256、精确回调、openid/profile scope。客户端校验 state、nonce、RS256 签名、issuer、audience 和 exp。授权码只能消费一次。
+本地固定两个客户端：oa-demo 回调为 http://127.0.0.1:18101/callback，hr-demo 回调为 http://127.0.0.1:18102/callback。默认是 public client，使用 authorization_code + PKCE S256、精确回调、openid/profile scope；客户端校验 state、nonce、RS256 签名、issuer、audience 和 exp，授权码只能消费一次。配置 PERMISSION_OIDC_CLIENT_SECRET（至少 32 字符）后，两个客户端还可用 client_secret_post / client_secret_basic 认证，此时授权服务器签发 refresh_token（8 小时，每次刷新轮换、旧刷新令牌作废）；按 OAuth 规范，public client 不签发刷新令牌（UC-A07）。
 
-服务运行时生成 RSA 密钥。当前客户端、授权记录、同意记录、签名密钥均为进程内保存，重启即失效。OIDC 授权后的业务请求仍需独立检查 RBAC0 权限。
+服务运行时生成 RSA 密钥。客户端、授权记录、同意记录、签名密钥均为进程内保存，重启即失效，未开放动态注册。刷新时重新检查账号是否停用或过期，并写入当前 permission_version。授权码被重放时，服务器撤销该授权码签发的全部令牌。OIDC 授权后的业务请求仍需独立检查 RBAC0 权限。
 
-GET `/api/oidc/permissions/check?code=...&clientId=...` 使用 OIDC Bearer，检查 access token 类型、audience、签名、有效期、平台账号、关联会话和 permission_version 后再判断权限。与旧平台 JWT 的实时数据库检查不同，版本不一致时返回 401，客户端需要重新获取令牌。当前普通平台鉴权仍保持“回收角色后同 JWT 返回 403”的演示契约。
+GET `/api/oidc/permissions/check?code=...&clientId=...` 使用 OIDC Bearer，检查 access token 的签名、audience、有效期、授权记录、账号状态和 permission_version，再判断权限；允许时返回 grantedBy（提供该权限的启用角色）与 permissionVersion，拒绝时写 ACCESS_DENIED 审计（UC-B07）。强制下线、停用、离职、改密都会使权限版本号加一，因此旧 OIDC 令牌在下一次校验时返回 401，应用用刷新令牌或重新授权获取新令牌。GET `/api/oidc/permissions` 返回本人权限编码集合；`/userinfo` 同样携带 permissions 与 permission_version（UC-B08）。GET `/api/oidc/directory/departments` 与 `/api/oidc/directory/users`（分页，可按 departmentId 过滤）向接入应用下发组织数据，不含电话等联系方式（UC-D02）。
 
 ## 9 调用流程与事务
 
@@ -100,6 +122,70 @@ POST /api/platform/external-users 由超级管理员或绑定部门的部门管�
 PUT /api/platform/external-users/{id}/expiry 请求体 expiresOn，按原人员类型重新校验上限；对正式员工返回 400。续期使权限版本号加一并写审计 EXTERNAL_RENEW。
 
 GET /api/platform/external-users?remindDays=14 返回管理范围内的外部与临时人员：id、username、display_name、person_type、company、department_id、post_id、enabled、expires_on、days_left、status（ACTIVE / EXPIRING / EXPIRED）。有效期截止为到期日次日 0 点（Asia/Shanghai），到期后登录和已有令牌都返回 401。
+
+### 9.2 主要接口响应示例
+
+以下示例来自本机演示实例，编号与令牌已替换为示意值。
+
+登录成功（POST /api/auth/login，200）：
+
+```
+{"accessToken":"eyJ…","userId":3,"username":"demo_li","displayName":"演示李","permissions":[{"id":7,"code":"expense:list","name":"查看报销","type":"MENU","active":true,"systemId":2}]}
+```
+
+令牌轮换（POST /api/auth/refresh，200；旧令牌随即失效）：
+
+```
+{"accessToken":"eyJ…"}
+```
+
+越权（普通用户 GET /api/users，403）：
+
+```
+{"error":"Forbidden","message":"管理接口仅允许管理员访问"}
+```
+
+权限点格式错误（POST /api/permissions，400）：
+
+```
+{"error":"Bad Request","message":"code: 权限编码格式为 应用:模块:操作，小写字母、数字、下划线或连字符，最多三段"}
+```
+
+外部人员创建（POST /api/platform/external-users，200）与到期提醒（GET /api/platform/external-users）：
+
+```
+{"id":5,"personType":"TEMPORARY","expiresOn":"2026-10-31"}
+[{"id":5,"username":"ext_vendor01","person_type":"TEMPORARY","company":"演示外包公司","department_id":2,"expires_on":"2026-10-31","days_left":9,"status":"EXPIRING"}]
+```
+
+初始密码（POST /api/platform/initial-passwords，200；密码只在此响应出现一次）：
+
+```
+{"departmentId":2,"issued":[{"username":"hr_demo_cfaf","displayName":"演示入职员工","initialPassword":"…"}],"remaining":0}
+```
+
+接入应用鉴权（GET /api/oidc/permissions/check，200 / 403 / 401）：
+
+```
+{"allowed":true,"userId":3,"code":"expense:list","grantedBy":["expense_viewer"],"permissionVersion":4}
+{"error":"Forbidden","message":"用户没有权限: expense:approve"}
+{"error":"Unauthorized","message":"权限版本已改变，请刷新或重新获取令牌"}
+```
+
+权限集合与组织数据下发（GET /api/oidc/permissions、/api/oidc/directory/users）：
+
+```
+{"userId":3,"permissionVersion":4,"permissions":["expense:list"]}
+{"total":6,"page":0,"size":100,"items":[{"id":2,"username":"demo_zhang","display_name":"演示张","enabled":true,"department_id":2,"post_id":1,"person_type":"EMPLOYEE"}]}
+```
+
+HR / OA 签名事件（POST /api/integration/hr，200 / 409）：
+
+```
+{"reused":false,"result":"SUCCESS"}
+{"reused":true,"result":"SUCCESS"}
+{"error":"Conflict","message":"同一请求编号不能对应不同内容"}
+```
 
 ## 10 Apifox 设计与检查
 
@@ -140,3 +226,7 @@ npx newman run docs/phase-one/apifox/phase-one-scenarios.postman_collection.json
 ```
 
 运行中观察到一次异常：服务启动后的第一次登录返回 500，日志为 Jackson 类 POJOPropertyBuilder 的 VerifyError；随后的请求和重新启动后的完整运行都正常。打包的 jackson-databind 3.1.5 与 Maven 仓库校验和一致，原因尚未查明，需在答辩前复现排查。
+
+### 10.2 OpenAPI 与实际路由的对应
+
+apifox/openapi.json 由 scripts/build-design-assets.py 按测试导出的实际路由生成，当前 77 个操作。Spring 注册的 Controller 路由共 80 个，差额 3 个是有意不纳入接口契约的页面：OIDC 登录页 GET /login、授权同意页 GET /consent，以及第一次检查保留的 GET /hello 演示。OIDC 协议端点（/oauth2/*、/userinfo、/.well-known/*）由授权服务器过滤器提供，见第 8 节。

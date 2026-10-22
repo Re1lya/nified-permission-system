@@ -70,12 +70,12 @@ def usecase_diagram(name,title,left,right,cases,links,includes=()):
 
 usecase_diagram('req-usecase-auth.png','用例图 1  认证、单点登录与自助',['普通用户'],['接入应用'],[
     ('UC-A01','账号密码登录','done'),('UC-A02','手机号密码登录','done'),('UC-A03','SSO 免登','part'),('UC-A04','登出','done'),
-    ('UC-A10','本人修改密码','done'),('S8','查看本人权限 / 应用门户','part'),('UC-E02','提交申请与查询审批记录','part'),
-    ('UC-A06','令牌校验','done'),('UC-A07','令牌刷新','todo'),('UC-A08','令牌撤销','done'),('UC-B07','鉴权决策','part'),('UC-B08','权限集合下发','part')],
+    ('UC-A10','本人修改密码','done'),('S8','查看本人权限 / 应用门户','part'),('UC-E02','提交申请与查询审批记录','done'),
+    ('UC-A06','令牌校验','done'),('UC-A07','令牌刷新','done'),('UC-A08','令牌撤销','done'),('UC-B07','鉴权决策','done'),('UC-B08','权限集合下发','done')],
     [('普通用户',c) for c in ['UC-A01','UC-A02','UC-A03','UC-A04','UC-A10','S8','UC-E02']]+[('接入应用',c) for c in ['UC-A03','UC-A06','UC-A07','UC-A08','UC-B07','UC-B08']])
 
 usecase_diagram('req-usecase-admin.png','用例图 2  授权与平台管理',['部门管理员','超级管理员'],['接入应用'],[
-    ('UC-B01','应用注册','done'),('UC-B02','应用接入配置','part'),('UC-B03','权限点注册与维护','part'),('UC-B04','角色管理','done'),
+    ('UC-B01','应用注册','done'),('UC-B02','应用接入配置','part'),('UC-B03','权限点注册与维护','done'),('UC-B04','角色管理','done'),
     ('UC-B05','用户-角色分配','done'),('UC-B06','角色-权限分配','done'),('UC-C05','外部人员自建与有效期','done'),('UC-A11','强制下线','done'),
     ('UC-F04','审计日志查询','part'),('UC-F05','权限复核','todo'),('扩展','三表导入预览与提交','done'),('扩展2','任命部门管理员与委派上限','done')],
     [('超级管理员',c) for c in ['UC-B01','UC-B02','UC-B03','UC-B04','UC-B05','UC-B06','UC-C05','UC-A11','UC-F04','UC-F05','扩展','扩展2']]
@@ -84,7 +84,7 @@ usecase_diagram('req-usecase-admin.png','用例图 2  授权与平台管理',['�
 usecase_diagram('req-usecase-sync.png','用例图 3  身份同步、OA 集成与审计',['HR 系统','OA 系统'],['超级管理员','接入应用'],[
     ('UC-C01','HR 员工信息同步','part'),('UC-C04','账号自动创建','part'),('UC-C02','部门信息同步','part'),('UC-C03','岗位信息同步','part'),
     ('UC-C06','离职禁用','done'),('UC-C07','调岗权限回收与再分配','done'),('UC-C08','同步异常处理与对账','todo'),
-    ('UC-E01','审批结果回调处理','done'),('UC-E03','申请单状态同步','part'),('UC-D02','用户与部门数据下发','todo'),
+    ('UC-E01','审批结果回调处理','done'),('UC-E03','申请单状态同步','part'),('UC-D02','用户与部门数据下发','done'),
     ('UC-F01','登录 / 操作 / 权限变更日志','done'),('UC-F06','日志归档','todo')],
     [('HR 系统',c) for c in ['UC-C01','UC-C02','UC-C03','UC-C06','UC-C07']]+[('OA 系统',c) for c in ['UC-E01','UC-E03']]
     +[('超级管理员',c) for c in ['UC-C08','UC-F06']]+[('接入应用','UC-D02')],includes=[('UC-C01','UC-C04','include')])
@@ -93,7 +93,7 @@ usecase_diagram('req-usecase-sync.png','用例图 3  身份同步、OA 集成与
 def domain():
     W,H=2220,1420;img=Image.new('RGB',(W,H),BG);d=ImageDraw.Draw(img)
     d.text((40,28),'领域模型（RBAC0，一期）',font=F(34,True),fill=INK)
-    d.text((40,80),'只画核心概念；会话、审计、集成事件等记录表见数据库设计文档。标“计划”的属性一期有字段但尚无配置入口。',font=F(20),fill=MUTED)
+    d.text((40,80),'只画核心概念；会话、审计、集成事件等记录表见数据库设计文档。',font=F(20),fill=MUTED)
     cols=[120,660,1200,1740];rows=[150,590,1030];BW=400
     classes={
         'dept':(0,0,'Department 部门',['name 名称','parent 上级部门','manager 负责人']),
@@ -103,7 +103,7 @@ def domain():
         'emp':(0,1,'EmployeeProfile 员工档案',['company 分公司','phone 电话']),
         'user':(1,1,'User 用户 / 账号',['username 账号名','displayName 姓名','enabled 启用','administrator 超管标记']),
         'ur':(2,1,'UserRole 用户角色',['user','role']),
-        'perm':(3,1,'Permission 权限点',['code 应用:模块:操作','name 名称','menuPath 资源路径','~type 菜单/按钮/API']),
+        'perm':(3,1,'Permission 权限点',['code 应用:模块:操作','name 名称','menuPath 资源路径','type 菜单/按钮/API']),
         'admin':(0,2,'AdminDepartment 管辖部门',['user 部门管理员','department']),
         'policy':(1,2,'AccountPolicy 账号策略',['personType 人员类型','expiresAt 有效期','mustChangePassword','version 权限版本号']),
         'session':(2,2,'LoginSession 会话',['issuedAt','expiresAt','lastSeen']),

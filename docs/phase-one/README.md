@@ -46,8 +46,11 @@ OA/HR 回调默认关闭。演示前在启动后端的终端设置不同的 `PER
 - 可提交的摘要：`verification.json`
 - 本地 HTTP：`http-verification.json`
 - 原始表导入统计：`actual-import.txt`
-- 页面截图：`images/`
-- MySQL 结构脚本：`database-mysql-phase-one.sql`，仅用于新建隔离库。
+- 页面截图：`images/ui-*.png`（20 个需求页面及部门管理员、普通用户视角，虚构演示数据）
+- 串联场景：`apifox/phase-one-scenarios.postman_collection.json` 与运行明细 `apifox/phase-one-scenarios-report.json`
+- MySQL 结构脚本：`database-mysql-phase-one.sql`，仅用于新建隔离库；MySQL 8.4 实测记录见 `mysql-verification.json`
+
+图由脚本生成：`scripts/build-requirement-diagrams.py`（用例图、领域模型、时序图）、`scripts/build-design-diagrams.py`（完整 ER 图与页面跳转图，需先运行测试导出表结构）、`scripts/build-design-assets.py`（OpenAPI 与分组 ER 图）。OIDC 刷新令牌演示需在启动前设置 `PERMISSION_OIDC_CLIENT_SECRET`（至少 32 字符），并以相同值运行 `scripts/oidc-demo.py`。
 
 ## 按课堂要求检查设计
 
