@@ -28,7 +28,7 @@ fields={'action':{'type':'string','enum':['DEPARTMENT','POST','JOIN','UPDATE','T
 components=previous.get('components',{});components.setdefault('schemas',{})['IntegrationEvent']={'type':'object','properties':fields}
 components.setdefault('securitySchemes',{})['bearerAuth']={'type':'http','scheme':'bearer','bearerFormat':'JWT'}
 components['schemas']['Envelope']={'type':'object','required':['code','message','data'],'properties':{'code':{'type':'string'},'message':{'type':'string'},'data':{'nullable':True}}}
-spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.4.0','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'https://120.46.213.158','description':'课程部署（固定证书信任；接口验收环境）'},{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
+spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.4.1','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'http://120.46.213.158','description':'课程检查 HTTP 演示环境（传输不加密）'},{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
 (D/'apifox/openapi.json').write_text(json.dumps(spec,ensure_ascii=False,indent=2))
 text='''# 一期 API 设计说明
 

@@ -1,3 +1,5 @@
+> 当前课程检查入口：[HTTP 管理门户](http://120.46.213.158/ui/index.html)。无需证书，配置与验证见 [HTTP 说明](docs/phase-one/http-access.md)。
+
 # 统一权限管理系统
 
 当前一期版本以 [原始需求及实现说明](docs/phase-one/README.md) 为准，包含 RBAC0、OIDC、OA 签名审批接口、HR 组织和员工同步、三表导入及 Vue 管理门户。

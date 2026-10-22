@@ -1,5 +1,6 @@
 """Explicit live acceptance (creates synthetic records), not a unit-test suite.
 Usage: python verify-cloud-deployment.py --config /private/runtime.json --ca /path/ca.crt
+For HTTP course demos, omit --ca. For HTTPS, pass the trusted CA file.
 The config requires issuer, admin_username, admin_password, hr_secret, oa_secret,
 client_secret. Only aggregate checks are written to evidence. No credentials/tokens.
 """
@@ -22,7 +23,7 @@ class Acceptance:
         headers=dict(headers or {});headers['Content-Type']='application/x-www-form-urlencoded' if form else 'application/json'
         if token:headers['Authorization']='Bearer '+token
         data=None if body is None else (urlencode(body) if form else json.dumps(body)).encode()
-        req=Request(path if path.startswith('https://') else self.base+path,data=data,method=method,headers=headers)
+        req=Request(path if path.startswith(('http://','https://')) else self.base+path,data=data,method=method,headers=headers)
         for attempt in range(3):
             try:
                 with (self.browser if browser else build_opener(HTTPSHandler(context=self.ctx))).open(req,timeout=30) as r:return r.status,r.read().decode(),dict(r.headers),r.url
@@ -43,7 +44,7 @@ class Acceptance:
         self.results.append({'check':name,'result':'PASS'});self.save();print('PASS '+name,flush=True)
     def save(self):
         self.output.parent.mkdir(parents=True,exist_ok=True)
-        self.output.write_text(json.dumps({'scope':'real HTTPS / MySQL / contract callers; no external OA/HR product','run':self.suffix,'checks':self.results},ensure_ascii=False,indent=2))
+        self.output.write_text(json.dumps({'scope':'real '+urlparse(self.base).scheme.upper()+' / MySQL / contract callers; no external OA/HR product','run':self.suffix,'checks':self.results},ensure_ascii=False,indent=2))
     def login(self,user,password):return self.api('/api/auth/login','POST',{'username':user,'password':password})['accessToken']
     def refresh(self,token):return self.api('/api/auth/refresh','POST',token=token)['accessToken']
     def signed(self,source,event,rid=None,expect=200,bad=False):
@@ -71,7 +72,9 @@ class Acceptance:
         tokens=self.oauth_exchange(client,payload)
         spec=importlib.util.spec_from_file_location('cloud_client',Path(__file__).with_name('oidc-cloud-client.py'))
         import os
-        os.environ.update(OIDC_ISSUER=self.base,PERMISSION_OIDC_CLIENT_SECRET=self.c['client_secret'],OIDC_CA_FILE=self.ca)
+        os.environ.update(OIDC_ISSUER=self.base,PERMISSION_OIDC_CLIENT_SECRET=self.c['client_secret'])
+        if self.ca:os.environ['OIDC_CA_FILE']=self.ca
+        else:os.environ.pop('OIDC_CA_FILE',None)
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         claims=module.verify(tokens['id_token'],client,nonce,self.api('/.well-known/openid-configuration'));assert claims['sub']
         assert tokens.get('refresh_token')
@@ -87,7 +90,7 @@ class Acceptance:
         assert self.http('/ui/index.html')[0]==200
         self.api('/api/platform/self',expect=401)
         env=self.api('/api/platform/self',token=a,headers={'Accept':'application/vnd.cdwy.v2+json'});assert env['data']['superAdmin'] and 'code' in env
-        self.record('Public HTTPS / MySQL login / anonymous denial / v2 envelope')
+        self.record('Public '+urlparse(self.base).scheme.upper()+' / MySQL login / anonymous denial / v2 envelope')
         sid=self.suffix;dept_ext='dept_'+sid;post_ext='post_'+sid;user_ext='emp_'+sid
         batch={'action':'SYNC','mode':'FULL','records':[{'action':'DEPARTMENT','externalId':dept_ext,'name':'云验收部门'+sid},{'action':'POST','externalId':post_ext,'name':'云验收岗位'+sid},{'action':'JOIN','externalId':user_ext,'displayName':'李明','departmentExternalId':dept_ext,'postExternalId':post_ext,'phone':'13900000123','company':'接口验收虚拟公司'}]}
         self.signed('hr',batch,'batch_'+sid);assert self.signed('hr',batch,'batch_'+sid)['reused']
@@ -200,10 +203,10 @@ class Acceptance:
         self.api('/api/auth/login','POST',{'username':self.username,'password':self.user_password},expect=401)
         self.record('HR leave disables account and invalidates all sessions')
         for system_id in self.apps:
-            self.api('/api/platform/applications/%s/acceptance'%system_id,'POST',{'login':True,'callback':True,'permission':True,'revocation':True,'isolation':True,'evidence':'2026-10-22 真实 HTTPS/MySQL 上的接口契约调用端通过 PKCE、签名、回调、免登、权限版本和下线验证。记录：cloud-verification.json。没有接入外部 OA/HR 产品。'},a)
+            self.api('/api/platform/applications/%s/acceptance'%system_id,'POST',{'login':True,'callback':True,'permission':True,'revocation':True,'isolation':True,'evidence':'真实 '+urlparse(self.base).scheme.upper()+'/MySQL 上的接口契约调用端通过 PKCE、签名、回调、免登、权限版本和下线验证。记录：cloud-verification.json。没有接入外部 OA/HR 产品。'},a)
         self.save()
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--config',required=True);p.add_argument('--ca',required=True);p.add_argument('--output',default='output/cloud-verification.json');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--config',required=True);p.add_argument('--ca');p.add_argument('--output',default='output/cloud-verification.json');args=p.parse_args()
     check=Acceptance(json.loads(Path(args.config).read_text()),args.ca,args.output)
     check.run(args.ca)
     # No deployment action is hidden in this reusable script.
