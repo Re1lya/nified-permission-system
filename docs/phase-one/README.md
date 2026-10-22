@@ -6,6 +6,8 @@
 
 `verification.json`、`mysql-verification.json`、`http-verification.json`、Apifox 运行报告和旧截图仅为提交 `01b94f06` 及之前版本的历史证据，不能代表本修订已通过测试。实际通过的本轮联调项目单独列在 `cloud-verification.json`，未列项目不能视为已验收。
 
+当前课程检查使用 [HTTP 门户](http://120.46.213.158/ui/index.html)，无需处理证书。切换说明见 [http-access.md](http-access.md)，增量验证见 `http-access-verification.json`；与旧版 `http-verification.json` 区分。
+
 ## 构建
 
 先安装 third-party/clonefactory，再在仓库根目录运行 `mvn -Dmaven.test.skip=true package`；前端先运行 `npm ci` 和 `npm run build`，再打包 Java 以包含最新静态资源。使用 Java 21。

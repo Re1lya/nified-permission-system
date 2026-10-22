@@ -1,0 +1,39 @@
+{
+  "scope": "HTTP course demonstration; real MySQL and contract callers",
+  "run": "f12e56b8",
+  "checks": [
+    {
+      "check": "HTTP portal, administrator login and canonical OIDC metadata",
+      "result": "PASS"
+    },
+    {
+      "check": "Exact HTTP demo origin accepted; unconfigured host and port rejected",
+      "result": "PASS"
+    },
+    {
+      "check": "HTTP platform session cookie works without conflicting with old HTTPS cookie",
+      "result": "PASS"
+    },
+    {
+      "check": "cdwy-oa-check HTTP callback, PKCE, RSA signature, nonce, userinfo and shared SSO",
+      "result": "PASS"
+    },
+    {
+      "check": "cdwy-hr-check HTTP callback, PKCE, RSA signature, nonce, userinfo and shared SSO",
+      "result": "PASS"
+    },
+    {
+      "check": "HTTP issuer in tokens, confidential client authentication, refresh rotation and replay rejection",
+      "result": "PASS"
+    },
+    {
+      "check": "HTTP browser SSO and refresh survive backend restart",
+      "result": "PASS"
+    }
+  ],
+  "status": "PASS",
+  "date": "2026-10-22",
+  "issuer": "http://120.46.213.158",
+  "projectTestSuitesRun": false,
+  "jarSha256": "759ebc77fba1fc5e4dc61313aae929751a80de2f15820be730d869fcce0c68a6"
+}

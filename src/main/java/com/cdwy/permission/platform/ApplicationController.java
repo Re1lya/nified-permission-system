@@ -20,11 +20,26 @@ import org.springframework.web.bind.annotation.*;
 public class ApplicationController {
     private final PlatformStore s;private final JwtTokenService tokens;private final PasswordEncoder passwords;
     private final JdbcRegisteredClientRepository registry;
-    public ApplicationController(PlatformStore s,JwtTokenService tokens,PasswordEncoder passwords,JdbcTemplate db){this.s=s;this.tokens=tokens;this.passwords=passwords;this.registry=new JdbcRegisteredClientRepository(db);}
+    private final URI httpDemoOrigin;
+    public ApplicationController(PlatformStore s,JwtTokenService tokens,PasswordEncoder passwords,JdbcTemplate db,
+        @org.springframework.beans.factory.annotation.Value("${permission.application.http-demo-origin:}") String httpDemoOrigin){
+        this.s=s;this.tokens=tokens;this.passwords=passwords;this.registry=new JdbcRegisteredClientRepository(db);
+        this.httpDemoOrigin=httpDemoOrigin.isBlank()?null:URI.create(httpDemoOrigin);
+        if(this.httpDemoOrigin!=null&&(!"http".equals(this.httpDemoOrigin.getScheme())||this.httpDemoOrigin.getHost()==null||this.httpDemoOrigin.getUserInfo()!=null||this.httpDemoOrigin.getQuery()!=null||this.httpDemoOrigin.getFragment()!=null||!Set.of("","/").contains(this.httpDemoOrigin.getPath())))
+            throw new IllegalArgumentException("HTTP 演示来源必须是 http://主机[:端口]，不能包含路径、凭证、查询或片段");
+    }
     public record Configuration(@NotBlank @Pattern(regexp="[A-Za-z0-9_.-]{1,100}")String clientId,
         @NotBlank @Size(max=2048)String entryUrl,@NotBlank @Pattern(regexp="OIDC|LEGACY")String protocol,
         @Size(max=20)List<String> redirectUris,@Size(max=256)String clientSecret,@Size(max=2000)String compatibilityPlan){}
-    private static void url(String text){try{var u=URI.create(text);boolean loopback=Set.of("127.0.0.1","localhost","[::1]").contains(Objects.toString(u.getHost(),""));if(u.getHost()==null||u.getUserInfo()!=null||u.getFragment()!=null||!("https".equals(u.getScheme())||loopback&&"http".equals(u.getScheme())))throw new IllegalArgumentException();}catch(Exception e){throw new IllegalArgumentException("地址必须使用 HTTPS，本地回环演示允许 HTTP；不能包含凭证或片段");}}
+    private void url(String text){
+        try{
+            var u=URI.create(text);
+            boolean loopback=Set.of("127.0.0.1","localhost","[::1]").contains(Objects.toString(u.getHost(),""));
+            boolean demo=httpDemoOrigin!=null&&Objects.equals(u.getHost(),httpDemoOrigin.getHost())
+                &&(u.getPort()==-1?80:u.getPort())==(httpDemoOrigin.getPort()==-1?80:httpDemoOrigin.getPort());
+            if(u.getHost()==null||u.getUserInfo()!=null||u.getFragment()!=null||!("https".equals(u.getScheme())||"http".equals(u.getScheme())&&(loopback||demo)))throw new IllegalArgumentException();
+        }catch(Exception e){throw new IllegalArgumentException("地址必须使用 HTTPS；HTTP 仅允许本地回环或已配置的演示来源，不能包含凭证或片段");}
+    }
     @GetMapping("/applications") public List<Map<String,Object>> list(@RequestHeader("Authorization")String auth){s.requireSuper(tokens.requireUserId(auth));return s.rows("select a.*,b.name from application_access a join biz_system b on b.id=a.system_id order by a.system_id");}
     @GetMapping("/applications/{id}/config") public Map<String,Object> config(@RequestHeader("Authorization")String auth,@PathVariable long id){s.requireSuper(tokens.requireUserId(auth));var rows=s.rows("select * from application_access where system_id=?",id);if(rows.isEmpty())throw new ResourceNotFoundException("应用未配置");var out=new LinkedHashMap<>(rows.getFirst());var c=registry.findByClientId((String)out.get("client_id"));out.put("redirectUris",c==null?List.of():c.getRedirectUris());out.put("confidential",c!=null&&c.getClientSecret()!=null);return out;}
     @PutMapping("/applications/{id}/config") @Transactional public void configure(@RequestHeader("Authorization")String auth,@PathVariable long id,@Valid @RequestBody Configuration c){
@@ -33,7 +48,7 @@ public class ApplicationController {
         if(!rows.isEmpty()&&!c.clientId().equals(rows.getFirst().get("client_id")))throw new ConflictException("客户端编号不可变更，请新建应用");
         var old=registry.findByClientId(c.clientId());if(old!=null&&!old.getId().equals("system-"+id))throw new ConflictException("客户端编号已被占用");
         if(ApplicationProtocol.of(c.protocol()).singleSignOn()){
-            if(c.redirectUris()==null||c.redirectUris().isEmpty())throw new IllegalArgumentException("至少配置一个精确回调地址");c.redirectUris().forEach(ApplicationController::url);
+            if(c.redirectUris()==null||c.redirectUris().isEmpty())throw new IllegalArgumentException("至少配置一个精确回调地址");c.redirectUris().forEach(this::url);
             String secret=c.clientSecret();if(secret!=null&&!secret.isEmpty()&&secret.length()<32)throw new IllegalArgumentException("客户端密钥至少 32 字符");
             var builder=RegisteredClient.withId("system-"+id).clientId(c.clientId()).clientName(c.clientId())
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE).scope("openid").scope("profile")

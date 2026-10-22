@@ -1,5 +1,5 @@
 """Two contract callers for deployment acceptance; these are not OA/HR products.
-TLS is terminated by the reverse proxy. Secrets come only from the service environment.
+The reverse proxy selects HTTP for course demos or HTTPS for normal deployments. Secrets come only from the service environment.
 Python 3.6+ and cryptography are required; callback URLs/codes/tokens are never logged.
 """
 import base64, hashlib, html, json, os, secrets, ssl, threading, time
@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import hashes
 
 ISSUER=os.environ['OIDC_ISSUER'].rstrip('/')
 BACKCHANNEL=os.environ.get('OIDC_BACKCHANNEL',ISSUER).rstrip('/')
+SECURE_COOKIE=urlparse(ISSUER).scheme=='https'
 SECRET=os.environ['PERMISSION_OIDC_CLIENT_SECRET']
 CONTEXT=ssl.create_default_context(cafile=os.environ.get('OIDC_CA_FILE'))
 def b64(value):return base64.urlsafe_b64encode(value).rstrip(b'=').decode()
@@ -37,7 +38,7 @@ def verify(token,client,nonce,metadata):
 class Server(ThreadingMixIn,HTTPServer):daemon_threads=True
 
 def handler(client,prefix):
-    sessions={};cookie_name='contract_'+client.replace('-','_')
+    sessions={};cookie_name=('contract_' if SECURE_COOKIE else 'contract_http_')+client.replace('-','_')
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def page(self,title,body,status=200):
@@ -60,7 +61,7 @@ def handler(client,prefix):
                     sid=secrets.token_urlsafe(24);verifier=secrets.token_urlsafe(48);state=secrets.token_urlsafe(24);nonce=secrets.token_urlsafe(24)
                     sessions[sid]={'expires':now+600,'verifier':verifier,'state':state,'nonce':nonce,'metadata':metadata}
                     query={'response_type':'code','client_id':client,'redirect_uri':ISSUER+prefix+'callback','scope':'openid profile','state':state,'nonce':nonce,'code_challenge':b64(hashlib.sha256(verifier.encode()).digest()),'code_challenge_method':'S256'}
-                    self.redirect(metadata['authorization_endpoint']+'?'+urlencode(query),cookie_name+'='+sid+'; Secure; HttpOnly; SameSite=Lax; Path='+prefix);return
+                    self.redirect(metadata['authorization_endpoint']+'?'+urlencode(query),cookie_name+'='+sid+('; Secure' if SECURE_COOKIE else '')+'; HttpOnly; SameSite=Lax; Path='+prefix);return
                 if path.path==prefix+'callback':
                     q=parse_qs(path.query)
                     if not s or not secrets.compare_digest(q.get('state',[''])[0],s.pop('state','invalid')):raise ValueError('Invalid state')
