@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-22",
+  "server": "MySQL Community Server 8.4.8（本机隔离实例 127.0.0.1:3407，utf8mb4，UTC）",
+  "schema": {
+    "script": "docs/phase-one/database-mysql-phase-one.sql",
+    "result": "无错误执行",
+    "tables": 25,
+    "foreignKeys": 24,
+    "indexes": 60,
+    "hibernate": "spring.jpa.hibernate.ddl-auto=validate 启动通过，实体与表结构一致"
+  },
+  "realImport": {
+    "source": "三份市政公司原始表（只记录统计，不入库员工数据）",
+    "counts": {
+      "posts": 54,
+      "employees": 10000,
+      "departments": 111,
+      "systems": 18,
+      "functions": 359,
+      "modules": 115
+    },
+    "errors": 0,
+    "warnings": 5,
+    "previewSeconds": 0.6,
+    "commitSeconds": 3.6,
+    "createdUsers": 10000,
+    "createdPermissions": 797,
+    "repeatReused": true
+  },
+  "scenarios": {
+    "collection": "docs/phase-one/apifox/phase-one-scenarios.postman_collection.json",
+    "requests": {
+      "total": 49,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 65,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "httpChecks": {
+    "script": "scripts/verify-phase-one.py",
+    "passed": 11,
+    "total": 11
+  },
+  "defectFound": "MySQL 拒绝只读事务中的写入：RbacService.requirePermission 继承类级 readOnly，而令牌校验会写会话活动时间，报销接口返回 500；H2 不执行只读限制。已改为读写事务后全部通过。",
+  "notCovered": "多实例部署、备份恢复、执行计划与性能指标未在本次验证。"
+}

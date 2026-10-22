@@ -36,6 +36,7 @@ CREATE TABLE `audit_event` (
     `created_at` TIMESTAMP(6) NOT NULL,
     `department_id` BIGINT,
     `id` BIGINT AUTO_INCREMENT NOT NULL,
+    `target_department_id` BIGINT,
     `result` VARCHAR(32) NOT NULL,
     `kind` VARCHAR(64) NOT NULL,
     `target` VARCHAR(255) NOT NULL
@@ -181,8 +182,10 @@ CREATE TABLE `sys_module` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `sys_permission` (
+    `active` BOOLEAN NOT NULL,
     `id` BIGINT AUTO_INCREMENT NOT NULL,
     `system_id` BIGINT NOT NULL,
+    `type` VARCHAR(16) NOT NULL,
     `code` VARCHAR(128) NOT NULL,
     `name` VARCHAR(128) NOT NULL,
     `menu_path` VARCHAR(255) NOT NULL

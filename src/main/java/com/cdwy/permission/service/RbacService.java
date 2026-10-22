@@ -360,6 +360,8 @@ public class RbacService {
                 .stream().map(row -> (String) row.get("code")).toList();
     }
 
+    // Read-write: token validation records session activity. H2 ignores the class-level read-only flag, MySQL rejects the write.
+    @Transactional
     public Long requirePermission(String authorizationHeader, String permissionCode) {
         Long userId = jwtTokenService.requireUserId(authorizationHeader);
         assertPermission(userId, permissionCode);
