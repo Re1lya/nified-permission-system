@@ -40,8 +40,12 @@ public class CompanyController {
         if(page<0||page>100000||size<1||size>100||q.length()>128)throw new IllegalArgumentException("分页或搜索参数不合法");
         String like="%"+q.replace("!","!!").replace("%","!%").replace("_","!_")+"%";
         String from=" from sys_function f join sys_module m on m.id=f.module_id join biz_system s on s.id=m.system_id where f.name like ? escape '!' or m.name like ? escape '!' or s.name like ? escape '!'";
-        var items=rows("select f.id,f.name,f.description,m.name module,s.name system"+from+" order by f.id limit ? offset ?",like,like,like,size,(long)page*size);
-        for(var item:items) item.put("permissions",rows("select p.id,p.code,p.name,d.action from permission_detail d join sys_permission p on p.id=d.permission_id where d.function_id=?",item.get("id")));
+        var items=rows("select f.id,f.name,f.description,m.name module,s.name system_name"+from+" order by f.id limit ? offset ?",like,like,like,size,(long)page*size);
+        for(var item:items) {
+            // SYSTEM is reserved in MySQL; retain the public JSON key outside SQL.
+            item.put("system",item.remove("system_name"));
+            item.put("permissions",rows("select p.id,p.code,p.name,d.action from permission_detail d join sys_permission p on p.id=d.permission_id where d.function_id=?",item.get("id")));
+        }
         return Map.of("items",items,"total",db.queryForObject("select count(*)"+from,Long.class,like,like,like),"page",page,"size",size);
     }
     @GetMapping("/templates") public List<Map<String,Object>> templates(){return rows("select name,count(*) permission_count from permission_template group by name order by name");}

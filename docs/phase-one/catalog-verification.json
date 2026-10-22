@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "date": "2026-10-22T16:10:27.870891",
+  "issuer": "http://120.46.213.158",
+  "checks": [
+    {
+      "params": {
+        "page": 0,
+        "size": 25,
+        "q": ""
+      },
+      "status": 200,
+      "total": 0,
+      "items": 0
+    },
+    {
+      "params": {
+        "page": 1,
+        "size": 25,
+        "q": ""
+      },
+      "status": 200,
+      "total": 0,
+      "items": 0
+    },
+    {
+      "params": {
+        "page": 0,
+        "size": 25,
+        "q": "%!_"
+      },
+      "status": 200,
+      "total": 0,
+      "items": 0
+    },
+    {
+      "params": {
+        "page": 100000,
+        "size": 25,
+        "q": ""
+      },
+      "status": 200,
+      "total": 0,
+      "items": 0
+    }
+  ],
+  "anonymousStatus": 401,
+  "invalidPageStatus": 400,
+  "projectTestSuitesRun": false
+}
