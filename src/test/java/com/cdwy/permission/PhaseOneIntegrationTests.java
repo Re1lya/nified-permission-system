@@ -153,7 +153,7 @@ class PhaseOneIntegrationTests {
   request("/api/permissions","{\"systemId\":"+system+",\"code\":\"OA:Leave:Approve\",\"name\":\"大写编码\",\"menuPath\":\"/x\"}",admin,400);
   request("/api/permissions","{\"systemId\":"+system+",\"code\":\"oa:leave:approve:extra\",\"name\":\"四段编码\",\"menuPath\":\"/x\"}",admin,400);
   String created=body(mvc.perform(post("/api/permissions").header("Authorization",admin).contentType("application/json").content("{\"systemId\":"+system+",\"code\":\"oa"+suffix+":leave:approve\",\"name\":\"审批请假\",\"menuPath\":\"/leave\",\"type\":\"BUTTON\"}")).andExpect(status().isCreated()));
-  long permission=json.readTree(created).get("id").asLong();assertEquals("BUTTON",json.readTree(created).get("type").asText());
+  long permission=json.readTree(created).get("id").asLong();assertEquals("BUTTON",json.readTree(created).get("type").asText());assertTrue(json.readTree(created).get("active").asBoolean(),"新建权限点在接口中应显示为有效");
   rbac.assignPermission(role,permission);rbac.assignRole(user,role);assertTrue(rbac.hasPermission(user,"oa"+suffix+":leave:approve"));
   mvc.perform(delete("/api/permissions/"+permission).header("Authorization",admin)).andExpect(status().isNoContent());
   assertFalse(rbac.hasPermission(user,"oa"+suffix+":leave:approve"),"失效权限点不再生效");

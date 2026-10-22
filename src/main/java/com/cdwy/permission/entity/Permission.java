@@ -113,6 +113,11 @@ public class Permission {
         return active;
     }
 
+    /** CloneFactory copies through get-prefixed accessors, as UserAccount.getEnabled does. */
+    public boolean getActive() {
+        return active;
+    }
+
     public void setActive(boolean active) {
         this.active = active;
     }
