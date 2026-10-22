@@ -29,10 +29,18 @@ import org.springframework.http.MediaType;
 /** Local phase-one OIDC server. Runtime keys and grants deliberately expire on restart. */
 @Configuration
 public class OidcConfig {
-    @Bean @Order(1) SecurityFilterChain authorizationServer(HttpSecurity http,com.cdwy.permission.service.JwtTokenService tokens) throws Exception {
+    @Bean @Order(1) SecurityFilterChain authorizationServer(HttpSecurity http,com.cdwy.permission.service.JwtTokenService tokens,RbacService rbac,PlatformStore store) throws Exception {
         http.oauth2AuthorizationServer(server -> {
             http.securityMatcher(server.getEndpointsMatcher());
-            server.oidc(Customizer.withDefaults());
+            // UC-B08: userinfo carries the subject's current permission codes and the version they belong to.
+            server.oidc(oidc->oidc.userInfoEndpoint(info->info.userInfoMapper(context->{
+                var authorization=context.getAuthorization();long user=Long.parseLong(authorization.getPrincipalName());
+                var idToken=authorization.getToken(org.springframework.security.oauth2.core.oidc.OidcIdToken.class);
+                Map<String,Object> claims=new LinkedHashMap<>(idToken==null?Map.of("sub",Long.toString(user)):idToken.getToken().getClaims());
+                claims.put("permissions",rbac.effectivePermissions(user).stream().map(permission->permission.code()).toList());
+                claims.put("permission_version",store.version(user));
+                return new org.springframework.security.oauth2.core.oidc.OidcUserInfo(claims);
+            })));
             server.authorizationEndpoint(endpoint->endpoint.consentPage("/consent"));
         }).authorizeHttpRequests(a->a.anyRequest().authenticated())
           .exceptionHandling(e->e.defaultAuthenticationEntryPointFor(new LoginUrlAuthenticationEntryPoint("/login"),new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));

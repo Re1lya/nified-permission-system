@@ -163,6 +163,19 @@ class PhaseOneIntegrationTests {
   mvc.perform(put("/api/permissions/"+permission).header("Authorization",admin).contentType("application/json").content("{\"name\":\"审批请假\",\"menuPath\":\"/leave\",\"active\":true}")).andExpect(status().isOk());
   assertTrue(rbac.hasPermission(user,"oa"+suffix+":leave:approve"));
  }
+ @Test void initialPasswordsAreIssuedOnceWithinScope() throws Exception {
+  long fresh=rbac.createUser(new CreateUserRequest("fresh"+suffix,"导入员工")).id();
+  db.update("insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)",fresh,department,post,"13600000000","测试公司");
+  mvc.perform(post("/api/platform/initial-passwords").header("Authorization",managerToken).contentType("application/json").content("{\"departmentId\":"+otherDepartment+"}")).andExpect(status().isForbidden());
+  var result=json.readTree(body(mvc.perform(post("/api/platform/initial-passwords").header("Authorization",managerToken).contentType("application/json").content("{\"departmentId\":"+department+"}")).andExpect(status().isOk())));
+  assertEquals(1,result.get("issued").size());assertEquals("fresh"+suffix,result.get("issued").get(0).get("username").asText());
+  String password=result.get("issued").get(0).get("initialPassword").asText();
+  PasswordPolicy.validate(password);
+  assertEquals(true,db.queryForObject("select must_change_password from account_policy where user_id=?",Boolean.class,fresh));
+  assertNotNull(rbac.login(new LoginRequest("fresh"+suffix,password)).accessToken());
+  assertEquals(0,json.readTree(body(mvc.perform(post("/api/platform/initial-passwords").header("Authorization",admin).contentType("application/json").content("{\"departmentId\":"+department+"}")).andExpect(status().isOk()))).get("issued").size(),"已有密码的账号不会再次生成");
+  assertFalse(db.queryForObject("select count(*) from audit_event where kind='INITIAL_PASSWORDS' and target like ?",Integer.class,"%"+password+"%")>0,"审计不记录明文密码");
+ }
  String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
  long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
  @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {

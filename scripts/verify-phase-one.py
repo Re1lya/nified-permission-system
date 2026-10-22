@@ -50,6 +50,12 @@ def oidc(client,admin_token):
     spec=importlib.util.spec_from_file_location('oidc_demo',Path(__file__).with_name('oidc-demo.py'));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     module.ISSUER=BASE;metadata=api('/.well-known/openid-configuration');claims=module.verify(tokens['id_token'],client,nonce,metadata)
     assert claims['sub']
+    info=api('/userinfo',token=tokens['access_token']);assert isinstance(info.get('permissions'),list) and 'permission_version' in info
+    mine=api('/api/oidc/permissions?'+urlencode({'clientId':client}),token=tokens['access_token']);assert mine['permissionVersion']==info['permission_version']
+    assert isinstance(api('/api/oidc/directory/departments?'+urlencode({'clientId':client}),token=tokens['access_token']),list)
+    directory=api('/api/oidc/directory/users?'+urlencode({'clientId':client,'size':5}),token=tokens['access_token']);assert 'phone' not in json.dumps(directory)
+    api('/api/oidc/directory/users?'+urlencode({'clientId':client}),expect=401)
+    record(client+' userinfo permissions, permission set and directory delivery (no contact data, token required)')
     api('/api/oidc/permissions/check?'+urlencode({'code':'ungranted:demo:view','clientId':client}),token=tokens['access_token'],expect=403)
     if secret:
         assert tokens.get('refresh_token'),'confidential client must receive a refresh token'

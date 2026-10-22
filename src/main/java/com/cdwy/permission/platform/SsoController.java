@@ -23,7 +23,8 @@ public class SsoController {
         var context=SecurityContextHolder.createEmptyContext();context.setAuthentication(auth);new HttpSessionSecurityContextRepository().saveContext(context,request,response);
         return Map.of("message","本地单点登录会话已建立");
     }
-    @GetMapping("/api/oidc/permissions/check") public Map<String,Object> check(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String code,@RequestParam String clientId){
+    /** Validate an OIDC access token issued to clientId and return its subject; shared by every client-facing API. */
+    private long verify(String bearer,String clientId){
         if(!Set.of("oa-demo","hr-demo").contains(clientId))throw new IllegalArgumentException("未知本地客户端");
         try{
             if(bearer==null||!bearer.startsWith("Bearer "))throw new AuthenticationFailedException();
@@ -34,7 +35,28 @@ public class SsoController {
             // Forced offline, disable, leave and password change all bump the version, so the version alone decides validity.
             if(store.count("select count(*) from sys_user where id=? and enabled=true",user)!=1)throw new AuthenticationFailedException();
             Number version=jwt.getClaim("permission_version");if(version==null||version.longValue()!=store.version(user))throw new AuthenticationFailedException("权限版本已改变，请刷新或重新获取令牌");
-            rbac.assertPermission(user,code);return Map.of("allowed",true,"userId",user,"code",code,"grantedBy",rbac.grantingRoles(user,code),"permissionVersion",version.longValue());
-        }catch(ForbiddenException|AuthenticationFailedException e){throw e;}catch(Exception e){throw new AuthenticationFailedException();}
+            return user;
+        }catch(AuthenticationFailedException e){throw e;}catch(Exception e){throw new AuthenticationFailedException();}
+    }
+    @GetMapping("/api/oidc/permissions/check") public Map<String,Object> check(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String code,@RequestParam String clientId){
+        long user=verify(bearer,clientId);
+        rbac.assertPermission(user,code);return Map.of("allowed",true,"userId",user,"code",code,"grantedBy",rbac.grantingRoles(user,code),"permissionVersion",store.version(user));
+    }
+    /** UC-B08: the caller's current permission set, with the version an application can cache it under. */
+    @GetMapping("/api/oidc/permissions") public Map<String,Object> permissions(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String clientId){
+        long user=verify(bearer,clientId);
+        return Map.of("userId",user,"permissionVersion",store.version(user),"permissions",rbac.effectivePermissions(user).stream().map(p->p.code()).toList());
+    }
+    /** UC-D02: organisation data for integrated applications; contact details are not part of the directory. */
+    @GetMapping("/api/oidc/directory/departments") public List<Map<String,Object>> departments(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String clientId){
+        verify(bearer,clientId);
+        return store.rows("select id,name,parent_id from sys_department order by id");
+    }
+    @GetMapping("/api/oidc/directory/users") public Map<String,Object> users(@RequestHeader(value="Authorization",required=false)String bearer,@RequestParam String clientId,@RequestParam(required=false) Long departmentId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="100") int size){
+        verify(bearer,clientId);
+        if(page<0||size<1||size>500)throw new IllegalArgumentException("分页参数错误");
+        String where=" from sys_user u join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where (p.deleted is null or p.deleted=false)"+(departmentId==null?"":" and e.department_id="+departmentId);
+        return Map.of("total",store.count("select count(*)"+where),"page",page,"size",size,
+            "items",store.rows("select u.id,u.username,u.display_name,u.enabled,e.department_id,e.post_id,coalesce(p.person_type,'EMPLOYEE') person_type"+where+" order by u.id limit ? offset ?",size,(long)page*size));
     }
 }
