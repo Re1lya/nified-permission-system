@@ -2,20 +2,39 @@
   "team": "CDWY",
   "projectId": 8955177,
   "projectUrl": "https://app.apifox.com/project/8955177",
+  "moduleId": 8752784,
+  "date": "2026-10-22",
+  "version": "1.4.1",
+  "status": "SYNCED",
   "imported": {
-    "operations": 68,
-    "schemas": 20,
-    "environments": 1,
-    "securitySchemes": 3
+    "operations": 98,
+    "schemas": 25,
+    "environments": 2,
+    "securitySchemes": 4
   },
-  "date": "2026-10-21",
-  "pendingSync": {
-    "date": "2026-10-22",
-    "localVersion": "1.4.1",
-    "controllerOperations": 98,
-    "reason": "用户明确要求先联调合并，Apifox 云端稍后同步",
+  "environment": {
+    "name": "云服务器 HTTP 检查",
+    "baseUrl": "http://120.46.213.158",
+    "selectedAfterReload": true
+  },
+  "sync": {
+    "sourceCommit": "85dde6ea43e0b04e9bf05ae0f0731a4840eb01ea",
+    "openapiSha256": "f7cc5f48b1621500a3f6f54aedef89b6c444985b1ff95e730d4f48075604c26a",
+    "newOperations": 31,
+    "updatedOperations": 67,
     "removedOperation": "POST /api/platform/self/applications",
+    "removal": "Moved to Apifox recycle bin; recoverable for 30 days",
     "retainedOperation": "GET /api/platform/self/applications",
-    "server": "http://120.46.213.158"
-  }
+    "modelChanges": {
+      "new": 5,
+      "updated": 2,
+      "unchanged": 18
+    },
+    "newSecuritySchemes": 1,
+    "environmentCreatedManually": true,
+    "verifiedVia": "Apifox browser UI after reload"
+  },
+  "testScenariosExecuted": false,
+  "scenarioCollectionImportedThisSync": false,
+  "deploymentSecretsUploaded": false
 }
