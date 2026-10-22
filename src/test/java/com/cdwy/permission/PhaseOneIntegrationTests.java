@@ -123,6 +123,9 @@ class PhaseOneIntegrationTests {
   request("/api/platform/users/"+user+"/password","{\"password\":\"Reset-pass-123\"}",admin,200);
   String audit=body(mvc.perform(get("/api/platform/audit?kind=PASSWORD_RESET&size=100").header("Authorization",managerToken)).andExpect(status().isOk()));
   assertTrue(audit.contains("\"target\":\""+user+"\""),"超级管理员对本部门员工的操作应对部门管理员可见");
+  request("/api/platform/external-users",external("auditext"+suffix,"EXTERNAL",java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai")).plusDays(10),department),admin,200);
+  String created=body(mvc.perform(get("/api/platform/audit?kind=EXTERNAL_CREATE&size=100").header("Authorization",managerToken)).andExpect(status().isOk()));
+  assertTrue(created.contains("\"target_department_id\":"+department),"同一事务中新建的员工，其审计也应归入本部门");
  }
  @Test void lockoutCountsUsernameAndPhoneTogetherAndLogoutIsAudited() throws Exception {
   String phone="139"+String.format("%08d",user);

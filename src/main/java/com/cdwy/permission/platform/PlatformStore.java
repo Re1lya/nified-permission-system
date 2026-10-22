@@ -9,8 +9,11 @@ import org.springframework.transaction.annotation.*;
 
 @Service
 public class PlatformStore {
-    private final JdbcTemplate db;
-    public PlatformStore(JdbcTemplate db){this.db=db;}
+    private final JdbcTemplate db;private final org.springframework.transaction.support.TransactionTemplate separate;
+    public PlatformStore(JdbcTemplate db,org.springframework.transaction.PlatformTransactionManager transactions){
+        this.db=db;this.separate=new org.springframework.transaction.support.TransactionTemplate(transactions);
+        separate.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
     public JdbcTemplate db(){return db;}
     public List<Map<String,Object>> rows(String sql,Object...args){return db.query(sql,(rs,n)->{Map<String,Object> row=new LinkedHashMap<>();var m=rs.getMetaData();for(int i=1;i<=m.getColumnCount();i++)row.put(m.getColumnLabel(i).toLowerCase(Locale.ROOT),rs.getObject(i));return row;},args);}
     public long count(String sql,Object...args){return db.queryForObject(sql,Long.class,args);}
@@ -25,11 +28,15 @@ public class PlatformStore {
         if(superAdmin(target)||departmentAdmin(target))throw new ForbiddenException("部门管理员不能维护管理员账号");
         if(count("select count(*) from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=? and e.user_id=?",actor,target)==0)throw new ForbiddenException("只能管理绑定部门的员工");
     }
-    @Transactional(propagation=Propagation.REQUIRES_NEW)
     public void audit(Long actor,String kind,String target,String result){audit(actor,kind,target,result,null);}
-    @Transactional(propagation=Propagation.REQUIRES_NEW)
-    public void audit(Long actor,String kind,String target,String result,Long targetUser){
-        db.update("insert into audit_event(actor_id,department_id,target_department_id,kind,target,result,created_at) values (?,?,?,?,?,?,?)",actor,departmentOf(actor),departmentOf(targetUser),kind,target.substring(0,Math.min(255,target.length())),result,Instant.now());
+    public void audit(Long actor,String kind,String target,String result,Long targetUser){auditDepartment(actor,kind,target,result,departmentOf(targetUser));}
+    /**
+     * Departments are resolved in the caller's transaction, so a user created in it is visible; the row itself is written
+     * in a separate transaction and survives a rollback (failed logins, denials).
+     */
+    public void auditDepartment(Long actor,String kind,String target,String result,Long targetDepartment){
+        Long actorDepartment=departmentOf(actor);String text=target.substring(0,Math.min(255,target.length()));
+        separate.executeWithoutResult(status->db.update("insert into audit_event(actor_id,department_id,target_department_id,kind,target,result,created_at) values (?,?,?,?,?,?,?)",actor,actorDepartment,targetDepartment,kind,text,result,Instant.now()));
     }
     private Long departmentOf(Long user){return user==null?null:rows("select department_id from employee_profile where user_id=?",user).stream().map(r->((Number)r.get("department_id")).longValue()).findFirst().orElse(null);}
     /** SQL condition limiting rows whose user_id column belongs to the actor's bound departments; empty for super admins. */

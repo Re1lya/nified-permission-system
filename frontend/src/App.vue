@@ -8,6 +8,7 @@ const screens:Screen[]=[
  {id:'portal',name:'应用门户',group:'开始',note:'本地 OIDC 演示入口。先启动两个演示客户端；它们不是企业真实 OA 或 HR 系统。'},
  {id:'users',name:'用户管理',group:'基础管理',admin:true,url:'/api/platform/users',columns:['id','username','display_name','enabled','department_id','post_id'],note:'导入员工默认无密码、无角色。重置密码后须由员工修改，停用和强制下线会撤销会话。',create:'/api/users',fields:[{key:'username',label:'用户名'},{key:'displayName',label:'姓名'}]},
  {id:'external',name:'外部与临时人员',group:'基础管理',admin:true,url:'/api/platform/external-users',columns:['id','username','display_name','person_type','company','department_id','expires_on','days_left','status'],note:'外包、兼职、供应商等外部人员有效期最长 365 天，临时人员最长 90 天，到期日结束后账号自动失效。14 天内到期的账号标为即将到期，可在此续期；新建时设置的初始密码须在首次登录后修改。',create:'/api/platform/external-users',fields:[{key:'username',label:'用户名'},{key:'displayName',label:'姓名'},{key:'personType',label:'人员类型',options:{EXTERNAL:'外部人员（最长 365 天）',TEMPORARY:'临时人员（最长 90 天）'}},{key:'expiresOn',label:'有效期至',type:'date'},{key:'departmentId',label:'所属部门编号',type:'number'},{key:'postId',label:'岗位编号',type:'number'},{key:'company',label:'所属单位'},{key:'phone',label:'电话'},{key:'password',label:'初始密码',type:'password'}]},
+ {id:'initialpasswords',name:'初始密码',group:'基础管理',admin:true,note:'为导入或 HR 入职的无密码员工按部门生成随机初始密码，每次最多 200 人。密码只在本页显示一次，请下载分发清单后妥善转交；员工首次登录须修改。'},
  {id:'roles',name:'角色管理',group:'基础管理',admin:true,url:'/api/platform/organization/roles',columns:['id','code','name','enabled','department_id'],note:'多角色权限取并集。部门管理员只维护所属部门角色及被委派的权限。'},
  {id:'permissions',name:'权限管理',group:'基础管理',super:true,url:'/api/permissions',columns:['id','code','name','type','active','menuPath','systemId'],note:'权限点由业务系统定义，编码格式为 应用:模块:操作（小写，最多三段）。功能下线时标记失效：既有授权保留但不再生效，失效后不能再授予，可在编辑中恢复。',create:'/api/permissions',fields:[{key:'systemId',label:'业务系统编号',type:'number'},{key:'code',label:'权限编码'},{key:'name',label:'权限名称'},{key:'menuPath',label:'菜单或资源路径'},{key:'type',label:'类型',options:{API:'API 接口',BUTTON:'按钮',MENU:'菜单'}}]},
  {id:'systems',name:'应用管理',group:'基础管理',super:true,url:'/api/systems',columns:['id','code','name','baseUrl','enabled'],note:'业务系统目录与 OIDC 客户端注册是不同配置。本地已注册两个固定回调的 PKCE 演示客户端。',create:'/api/systems',fields:[{key:'code',label:'系统编码'},{key:'name',label:'系统名称'},{key:'baseUrl',label:'入口 URL',optional:true}]},
@@ -23,7 +24,6 @@ const screens:Screen[]=[
  {id:'approvals',name:'权限申请',group:'运行记录',url:'/api/platform/self/applications',columns:['id','request_id','role_id','decision','created_at'],note:'申请只创建待审批记录，不直接授权。由本地 OA 演示端发送签名回调执行审批结果。'},
  {id:'approvalrecords',name:'审批记录',group:'运行记录',admin:true,url:'/api/platform/approvals',columns:['id','request_id','user_id','role_id','decision','created_at'],note:'OA 审批结果与对应申请。部门管理员只看到绑定部门员工的记录。'},
  {id:'sync',name:'同步记录',group:'运行记录',super:true,url:'/api/platform/integrations',columns:['id','source','request_id','result','user_id','created_at'],note:'HR 入职、调岗、离职与 OA 回调使用签名和幂等请求编号。重复事件不重复执行。'},
- {id:'initialpasswords',name:'初始密码',group:'基础管理',admin:true,note:'为导入或 HR 入职的无密码员工按部门生成随机初始密码，每次最多 200 人。密码只在本页显示一次，请下载分发清单后妥善转交；员工首次登录须修改。'},
  {id:'profile',name:'个人中心',group:'本人',note:'修改密码需验证旧密码，修改成功后撤销旧会话。'},
  {id:'mypermissions',name:'我的权限',group:'本人',columns:['id','code','name','systemId'],note:'当前登录身份的有效权限，来自所有启用角色与启用业务系统的并集。'},
  {id:'expenses',name:'报销权限演示',group:'本人',note:'返回固定演示数据，仅用于展示 expense:list 权限校验。不是实际报销业务系统。'},
@@ -55,7 +55,7 @@ async function refresh(){
  else if(screen.value.url){let url=screen.value.url;if(['users','catalog','audit','loginlogs'].includes(screen.value.id))url+=(url.includes('?')?'&':'?')+`page=${page.value}&size=25`+(screen.value.id==='catalog'?`&q=${encodeURIComponent(q.value)}`:'');data=await api(url);}
  if(data){rows.value=Array.isArray(data)?data:data.items||[];total.value=Array.isArray(data)?data.length:data.total||0;}
  }catch(e){notify((e as Error).message,true)}finally{loading.value=false}}
-async function go(id:string){screenId.value=id;location.hash=id;page.value=0;editor.value=false;selected.value=null;result.value=null;message.value='';await refresh();}
+async function go(id:string){screenId.value=id;window.scrollTo(0,0);location.hash=id;page.value=0;editor.value=false;selected.value=null;result.value=null;message.value='';await refresh();}
 async function login(){await run(async()=>{const data=await api('/api/auth/login','POST',{username:username.value,password:password.value});token.value=data.accessToken;sessionStorage.setItem('permission-token',token.value);password.value='';identity.value=await api('/api/platform/self');await go(identity.value.mustChangePassword?'profile':'home');if(identity.value.mustChangePassword)notify('请先修改初始密码，其他功能暂不可用。');});}
 async function logout(){await run(async()=>{await api('/api/auth/logout','POST');token.value='';sessionStorage.removeItem('permission-token');identity.value={};notify('已退出登录');});}
 const personTypes:Row={EXTERNAL:'外部人员',TEMPORARY:'临时人员',EMPLOYEE:'正式员工'},validity:Row={ACTIVE:'有效',EXPIRING:'即将到期',EXPIRED:'已过期'};

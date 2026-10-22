@@ -48,7 +48,7 @@ class InitialPasswordService {
             issued.add(Map.of("username",row.get("username"),"displayName",row.get("display_name"),"initialPassword",password));
         }
         // The audit records how many accounts were initialised, never the passwords themselves.
-        s.audit(actor,"INITIAL_PASSWORDS",department+":"+issued.size(),"SUCCESS");
+        s.auditDepartment(actor,"INITIAL_PASSWORDS",department+":"+issued.size(),"SUCCESS",department);
         return Map.of("departmentId",department,"issued",issued,"remaining",s.count("select count(*)"+WITHOUT_PASSWORD,department));
     }
 
