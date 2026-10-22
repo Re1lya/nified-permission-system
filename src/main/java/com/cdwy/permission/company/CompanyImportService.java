@@ -176,7 +176,7 @@ public class CompanyImportService {
             for(String action:actions) {
                 String code=sc+":f"+key(f.module()+"/"+f.name())+":"+action;
                 if(!codes.add(code)) throw new IllegalArgumentException("权限编码冲突，请核对已有目录");
-                var permission=new Permission(code,f.name()+" · "+action,"/catalog/"+code,system);em.persist(permission);createdPermissions++;
+                var permission=new Permission(code,f.name()+" · "+action,"/catalog/"+code,system,"BUTTON");em.persist(permission);createdPermissions++;
                 var detail=new CompanyData.Detail();detail.permission=permission;detail.function=function;detail.action=action;em.persist(detail);
                 for(var grant:f.grants().entrySet()) if(grant.getValue().contains(action)) {
                     var t=new CompanyData.Template();t.name=grant.getKey();t.permission=permission;em.persist(t);

@@ -203,21 +203,31 @@ public class RbacService {
     @Transactional
     public void deleteSystem(Long systemId) {
         getSystem(systemId);
-        if(!permissionRepository.findAllBySystem_Id(systemId).isEmpty())throw new ConflictException("业务系统仍有权限，请先解除关联");
-        permissionRepository.findAllBySystem_Id(systemId)
-                .forEach(permission -> deletePermission(permission.getId()));
+        List<Permission> permissions = permissionRepository.findAllBySystem_Id(systemId);
+        if (permissions.stream().anyMatch(Permission::isActive)) {
+            throw new ConflictException("业务系统仍有有效权限点，请先标记失效");
+        }
+        if (platform.count("select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.system_id=?", systemId) > 0) {
+            throw new ConflictException("失效权限点仍被角色引用，请先回收授权");
+        }
+        // Retiring the whole application removes its retired, ungranted permission points with it.
+        permissionRepository.deleteAll(permissions);
         systemRepository.deleteById(systemId);
     }
 
     @Transactional
     public PermissionResponse createPermission(CreatePermissionRequest request) {
+        if (request.code() == null || !request.code().matches(CreatePermissionRequest.CODE)) {
+            throw new IllegalArgumentException("权限编码格式为 应用:模块:操作，小写字母、数字、下划线或连字符，最多三段");
+        }
         if (permissionRepository.existsByCode(request.code())) {
             throw new ConflictException("权限编码已存在: " + request.code());
         }
         BusinessSystem system = systemRepository.findById(request.systemId())
                 .orElseThrow(() -> new ResourceNotFoundException("业务系统不存在: " + request.systemId()));
         Permission permission = permissionRepository.save(
-                new Permission(request.code(), request.name(), request.menuPath(), system));
+                new Permission(request.code(), request.name(), request.menuPath(), system,
+                        request.type() == null ? "API" : request.type()));
         return toPermissionResponse(permission);
     }
 
@@ -233,15 +243,30 @@ public class RbacService {
         Permission permission = getPermission(permissionId);
         permission.setName(request.name());
         permission.setMenuPath(request.menuPath());
+        if (request.type() != null) {
+            permission.setType(request.type());
+        }
+        if (request.active() != null && request.active() != permission.isActive()) {
+            permission.setActive(request.active());
+            holdersChanged(permissionId);
+        }
         return toPermissionResponse(permissionRepository.save(permission));
     }
 
     @Transactional
     public void deletePermission(Long permissionId) {
-        getPermission(permissionId);
-        if(platform.count("select count(*) from sys_role_permission where permission_id=?",permissionId)>0)throw new ConflictException("权限仍被角色引用，请先回收授权");
-        rolePermissionRepository.deleteAllByPermission_Id(permissionId);
-        permissionRepository.deleteById(permissionId);
+        // UC-B03 step 6: a removed function is marked inactive, not physically deleted; existing grants are kept (5a).
+        Permission permission = getPermission(permissionId);
+        if (permission.isActive()) {
+            permission.setActive(false);
+            permissionRepository.save(permission);
+            holdersChanged(permissionId);
+        }
+    }
+
+    private void holdersChanged(Long permissionId) {
+        platform.rows("select distinct ur.user_id from sys_user_role ur join sys_role_permission rp on rp.role_id=ur.role_id where rp.permission_id=?", permissionId)
+                .forEach(row -> platform.changed(((Number) row.get("user_id")).longValue()));
     }
 
     @Transactional
@@ -266,6 +291,9 @@ public class RbacService {
     public void assignPermission(Long roleId, Long permissionId) {
         Role role = getRole(roleId);
         Permission permission = getPermission(permissionId);
+        if (!permission.isActive()) {
+            throw new ConflictException("权限点已失效，不能再授予: " + permission.getCode());
+        }
         if (!rolePermissionRepository.existsByRole_IdAndPermission_Id(roleId, permissionId)) {
             rolePermissionRepository.save(new RolePermission(role, permission));
             userRoleRepository.findAllByRole_Id(roleId).forEach(link->platform.changed(link.getUser().getId()));
@@ -308,7 +336,7 @@ public class RbacService {
                 .filter(Role::isEnabled)
                 .forEach(role -> rolePermissionRepository.findAllByRole_Id(role.getId()).stream()
                         .map(RolePermission::getPermission)
-                        .filter(permission -> permission.getSystem().isEnabled())
+                        .filter(permission -> permission.isActive() && permission.getSystem().isEnabled())
                         .forEach(permission -> permissionsByCode.putIfAbsent(
                                 permission.getCode(), toPermissionResponse(permission))));
         return List.copyOf(permissionsByCode.values());
@@ -328,7 +356,7 @@ public class RbacService {
 
     /** Enabled roles of the user that currently carry the permission through an enabled system; the basis of an allow decision. */
     public List<String> grantingRoles(Long userId, String permissionCode) {
-        return platform.rows("select distinct r.code from sys_user_role ur join sys_role r on r.id=ur.role_id join sys_role_permission rp on rp.role_id=r.id join sys_permission p on p.id=rp.permission_id join biz_system s on s.id=p.system_id where ur.user_id=? and p.code=? and r.enabled=true and s.enabled=true order by r.code", userId, permissionCode)
+        return platform.rows("select distinct r.code from sys_user_role ur join sys_role r on r.id=ur.role_id join sys_role_permission rp on rp.role_id=r.id join sys_permission p on p.id=rp.permission_id join biz_system s on s.id=p.system_id where ur.user_id=? and p.code=? and r.enabled=true and p.active=true and s.enabled=true order by r.code", userId, permissionCode)
                 .stream().map(row -> (String) row.get("code")).toList();
     }
 

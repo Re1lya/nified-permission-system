@@ -148,6 +148,21 @@ class PhaseOneIntegrationTests {
   request("/api/platform/users/"+user+"/offline","{}",managerToken,200);
   assertTrue(db.queryForObject("select version from account_policy where user_id=?",Long.class,user)>before,"强制下线应使 OIDC 令牌的权限版本失效");
  }
+ @Test void permissionTypeCodeFormatAndRetirement() throws Exception {
+  long system=rbac.createSystem(new CreateSystemRequest("sys"+suffix,"系统",null)).id();
+  request("/api/permissions","{\"systemId\":"+system+",\"code\":\"OA:Leave:Approve\",\"name\":\"大写编码\",\"menuPath\":\"/x\"}",admin,400);
+  request("/api/permissions","{\"systemId\":"+system+",\"code\":\"oa:leave:approve:extra\",\"name\":\"四段编码\",\"menuPath\":\"/x\"}",admin,400);
+  String created=body(mvc.perform(post("/api/permissions").header("Authorization",admin).contentType("application/json").content("{\"systemId\":"+system+",\"code\":\"oa"+suffix+":leave:approve\",\"name\":\"审批请假\",\"menuPath\":\"/leave\",\"type\":\"BUTTON\"}")).andExpect(status().isCreated()));
+  long permission=json.readTree(created).get("id").asLong();assertEquals("BUTTON",json.readTree(created).get("type").asText());
+  rbac.assignPermission(role,permission);rbac.assignRole(user,role);assertTrue(rbac.hasPermission(user,"oa"+suffix+":leave:approve"));
+  mvc.perform(delete("/api/permissions/"+permission).header("Authorization",admin)).andExpect(status().isNoContent());
+  assertFalse(rbac.hasPermission(user,"oa"+suffix+":leave:approve"),"失效权限点不再生效");
+  assertEquals(1,db.queryForObject("select count(*) from sys_role_permission where permission_id=?",Integer.class,permission),"既有授权保留");
+  long other=rbac.createRole(new CreateRoleRequest("other"+suffix,"其他"+suffix,null)).id();
+  mvc.perform(put("/api/roles/"+other+"/permissions/"+permission).header("Authorization",admin)).andExpect(status().isConflict());
+  mvc.perform(put("/api/permissions/"+permission).header("Authorization",admin).contentType("application/json").content("{\"name\":\"审批请假\",\"menuPath\":\"/leave\",\"active\":true}")).andExpect(status().isOk());
+  assertTrue(rbac.hasPermission(user,"oa"+suffix+":leave:approve"));
+ }
  String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
  long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
  @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {
