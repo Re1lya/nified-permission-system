@@ -103,6 +103,16 @@ public class JwtTokenService {
         }
     }
 
+    /** The user behind a still-valid bearer, or null; used to attribute logout without failing it. */
+    @Transactional
+    public Long subjectIfValid(String authorizationHeader) {
+        try {
+            return requireUserId(authorizationHeader);
+        } catch (AuthenticationFailedException exception) {
+            return null;
+        }
+    }
+
     @Transactional
     public void revokeAll(Long userId) {
         // Account commands hold the user lock until both changes commit.

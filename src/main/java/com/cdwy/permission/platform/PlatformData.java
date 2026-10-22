@@ -27,6 +27,8 @@ public final class PlatformData {
     @Entity @Table(name="audit_event",indexes={@Index(columnList="actorId"),@Index(columnList="createdAt")} )
     public static class Audit extends CompanyData.Row {
         public Long actorId; public Long departmentId;
+        /** Department of the affected user, so department admins also see changes made to their staff. */
+        public Long targetDepartmentId;
         @Column(nullable=false,length=64) public String kind;
         @Column(nullable=false,length=255) public String target;
         @Column(nullable=false,length=32) public String result;

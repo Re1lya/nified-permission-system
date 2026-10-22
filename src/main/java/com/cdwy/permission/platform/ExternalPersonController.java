@@ -54,7 +54,7 @@ class ExternalPersonService {
         s.db().update("insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)",id,body.departmentId(),body.postId(),body.phone(),body.company());
         s.ensurePolicy(id);
         s.db().update("update account_policy set person_type=?,expires_at=?,must_change_password=true where user_id=?",body.personType().name(),endOf(body.expiresOn()),id);
-        s.audit(actor,"EXTERNAL_CREATE",id+":"+body.personType()+":"+body.expiresOn(),"SUCCESS");
+        s.audit(actor,"EXTERNAL_CREATE",id+":"+body.personType()+":"+body.expiresOn(),"SUCCESS",id);
         return Map.of("id",id,"personType",body.personType().name(),"expiresOn",body.expiresOn().toString());
     }
 
@@ -66,7 +66,7 @@ class ExternalPersonService {
         try{type=PersonType.valueOf((String)rows.getFirst().get("person_type"));}catch(IllegalArgumentException e){throw new IllegalArgumentException("只有外部人员和临时人员需要续期");}
         validity(type,expiresOn);
         s.db().update("update account_policy set expires_at=? where user_id=?",endOf(expiresOn),id);
-        s.changed(id);s.audit(actor,"EXTERNAL_RENEW",id+":"+expiresOn,"SUCCESS");
+        s.changed(id);s.audit(actor,"EXTERNAL_RENEW",id+":"+expiresOn,"SUCCESS",id);
         return Map.of("id",id,"expiresOn",expiresOn.toString());
     }
 

@@ -110,6 +110,27 @@ class PhaseOneIntegrationTests {
   });endpoints.sort(Comparator.comparing(e->e.get("path").toString()));
   java.nio.file.Files.writeString(java.nio.file.Path.of("output/phase-one-endpoints.json"),json.writerWithDefaultPrettyPrinter().writeValueAsString(endpoints));
  }
+ String body(org.springframework.test.web.servlet.ResultActions result) throws Exception {return result.andReturn().getResponse().getContentAsString();}
+ @Test void departmentAdminSeesManagedSessionsApprovalsAndTargetAudit() throws Exception {
+  long outside=employee("outside"+suffix,otherDepartment);login("outside"+suffix);
+  String sessions=body(mvc.perform(get("/api/platform/sessions?scope=managed").header("Authorization",managerToken)).andExpect(status().isOk()));
+  assertTrue(sessions.contains("\"user_id\":"+user+","));assertFalse(sessions.contains("\"user_id\":"+outside+","));
+  mvc.perform(get("/api/platform/sessions?scope=managed").header("Authorization",userToken)).andExpect(status().isForbidden());
+  request("/api/platform/self/applications","{\"roleId\":"+role+"}",userToken,200);
+  request("/api/platform/self/applications","{\"roleId\":"+role+"}",login("outside"+suffix),200);
+  String approvals=body(mvc.perform(get("/api/platform/approvals").header("Authorization",managerToken)).andExpect(status().isOk()));
+  assertTrue(approvals.contains("\"user_id\":"+user+","));assertFalse(approvals.contains("\"user_id\":"+outside+","));
+  request("/api/platform/users/"+user+"/password","{\"password\":\"Reset-pass-123\"}",admin,200);
+  String audit=body(mvc.perform(get("/api/platform/audit?kind=PASSWORD_RESET&size=100").header("Authorization",managerToken)).andExpect(status().isOk()));
+  assertTrue(audit.contains("\"target\":\""+user+"\""),"超级管理员对本部门员工的操作应对部门管理员可见");
+ }
+ @Test void lockoutCountsUsernameAndPhoneTogetherAndLogoutIsAudited() throws Exception {
+  String phone="139"+String.format("%08d",user);
+  for(int i=0;i<5;i++){String name=i%2==0?"user"+suffix:phone;assertThrows(com.cdwy.permission.exception.AuthenticationFailedException.class,()->rbac.login(new LoginRequest(name,"Wrong-pass-1")));}
+  assertThrows(com.cdwy.permission.exception.AuthenticationFailedException.class,()->login("user"+suffix),"第 5 次失败后正确密码也应被锁定");
+  mvc.perform(post("/api/auth/logout").header("Authorization",managerToken)).andExpect(status().isNoContent());
+  assertEquals(1,db.queryForObject("select count(*) from audit_event where kind='LOGOUT' and actor_id=?",Integer.class,manager));
+ }
  String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
  long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
  @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {

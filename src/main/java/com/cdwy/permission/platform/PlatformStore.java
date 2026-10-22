@@ -26,10 +26,14 @@ public class PlatformStore {
         if(count("select count(*) from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=? and e.user_id=?",actor,target)==0)throw new ForbiddenException("只能管理绑定部门的员工");
     }
     @Transactional(propagation=Propagation.REQUIRES_NEW)
-    public void audit(Long actor,String kind,String target,String result){
-        Long department=actor==null?null:rows("select department_id from employee_profile where user_id=?",actor).stream().map(r->((Number)r.get("department_id")).longValue()).findFirst().orElse(null);
-        db.update("insert into audit_event(actor_id,department_id,kind,target,result,created_at) values (?,?,?,?,?,?)",actor,department,kind,target.substring(0,Math.min(255,target.length())),result,Instant.now());
+    public void audit(Long actor,String kind,String target,String result){audit(actor,kind,target,result,null);}
+    @Transactional(propagation=Propagation.REQUIRES_NEW)
+    public void audit(Long actor,String kind,String target,String result,Long targetUser){
+        db.update("insert into audit_event(actor_id,department_id,target_department_id,kind,target,result,created_at) values (?,?,?,?,?,?,?)",actor,departmentOf(actor),departmentOf(targetUser),kind,target.substring(0,Math.min(255,target.length())),result,Instant.now());
     }
+    private Long departmentOf(Long user){return user==null?null:rows("select department_id from employee_profile where user_id=?",user).stream().map(r->((Number)r.get("department_id")).longValue()).findFirst().orElse(null);}
+    /** SQL condition limiting rows whose user_id column belongs to the actor's bound departments; empty for super admins. */
+    public String managedUsers(long actor,String column){return superAdmin(actor)?"":" and "+column+" in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id="+actor+")";}
     public long version(long user){return rows("select version from account_policy where user_id=?",user).stream().mapToLong(r->((Number)r.get("version")).longValue()).findFirst().orElse(0);}
     @Transactional public void ensurePolicy(long user){db.update("insert into account_policy(user_id,person_type,must_change_password,version,deleted) select ?,'EMPLOYEE',false,0,false where not exists(select 1 from account_policy where user_id=?)",user,user);}
     @Transactional public void changed(long user){ensurePolicy(user);db.update("update account_policy set version=version+1 where user_id=?",user);}

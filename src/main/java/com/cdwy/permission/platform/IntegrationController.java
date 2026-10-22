@@ -46,7 +46,7 @@ class IntegrationService {
             if(!previous.isEmpty()){if(!digest.equals(previous.getFirst().get("digest")))throw new ConflictException("同一请求编号不能对应不同内容");return Map.of("reused",true,"result",previous.getFirst().get("result"));}
             Long user=source.equals("hr")?hr(event):oa(event);
             s.db().update("insert into integration_event(source,request_id,digest,result,created_at,user_id) values(?,?,?,'SUCCESS',?,?)",source,id,digest,Instant.now(),user);
-            s.audit(null,"INTEGRATION_"+source.toUpperCase(Locale.ROOT),id,"SUCCESS");
+            s.audit(null,"INTEGRATION_"+source.toUpperCase(Locale.ROOT),id,"SUCCESS",user);
             return Map.of("reused",false,"result","SUCCESS");
         });
     }

@@ -121,22 +121,23 @@ public class RbacService {
     @Transactional
     public LoginResponse login(LoginRequest request) {
         if(request.username()==null||request.username().isBlank()||request.username().length()>64||request.password()==null||request.password().length()>256)throw new AuthenticationFailedException();
-        platform.notLocked(request.username());
         String username=request.username();
         if(!userRepository.existsByUsername(username)) {
             var candidates=platform.rows("select u.username from employee_profile e join sys_user u on u.id=e.user_id where e.phone=?",username);
             if(candidates.size()==1) username=(String)candidates.getFirst().get("username");
         }
+        // Count failures against the resolved account so username and phone attempts share one lockout.
+        platform.notLocked(username);
         UserAccount user = userRepository.findByUsernameForUpdate(username)
                 .filter(UserAccount::isEnabled)
                 .filter(account -> account.getPasswordHash() != null)
                 .filter(account -> passwordEncoder.matches(request.password(), account.getPasswordHash()))
                 .orElse(null);
-        if(user==null){platform.loginResult(request.username(),false);platform.audit(null,"LOGIN",request.username(),"FAILED");throw new AuthenticationFailedException();}
+        if(user==null){platform.loginResult(username,false);platform.audit(null,"LOGIN",request.username(),"FAILED");throw new AuthenticationFailedException();}
         platform.validAccount(user.getId());
         platform.ensurePolicy(user.getId());
-        platform.loginResult(request.username(),true);
-        platform.audit(user.getId(),"LOGIN",user.getUsername(),"SUCCESS");
+        platform.loginResult(username,true);
+        platform.audit(user.getId(),"LOGIN",user.getUsername(),"SUCCESS",user.getId());
         String accessToken = jwtTokenService.issue(user.getId());
         return new LoginResponse(accessToken, user.getId(), user.getUsername(), user.getDisplayName(),
                 effectivePermissions(user.getId()));
