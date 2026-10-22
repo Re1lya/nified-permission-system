@@ -145,9 +145,9 @@ public class JwtTokenService {
     }
 
     private Instant lastSeen(String sessionId, Instant issuedAt) {
-        var activity = platform.rows("select last_seen from session_activity where session_id=?", sessionId);
-        Object stored = activity.isEmpty() ? null : activity.getFirst().get("last_seen");
-        return stored == null ? issuedAt : stored instanceof java.time.OffsetDateTime offset ? offset.toInstant() : ((java.sql.Timestamp) stored).toInstant();
+        var activity = platform.db().query("select last_seen from session_activity where session_id=?",
+                (rs, row) -> rs.getTimestamp("last_seen", java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))).toInstant(), sessionId);
+        return activity.isEmpty() ? issuedAt : activity.getFirst();
     }
 
     public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}

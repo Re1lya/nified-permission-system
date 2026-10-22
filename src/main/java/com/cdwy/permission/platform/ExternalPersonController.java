@@ -73,11 +73,11 @@ class ExternalPersonService {
     public List<Map<String,Object>> list(long actor,int remindDays){
         admin(actor);if(remindDays<1||remindDays>90)throw new IllegalArgumentException("提醒天数应在 1 到 90 之间");
         String scope=s.superAdmin(actor)?"":" and e.department_id in(select department_id from admin_department where user_id="+actor+")";
-        var rows=s.rows("select u.id,ac.username,u.display_name,u.enabled,p.person_type,p.expires_at,e.company,e.department_id,e.post_id from account_policy p join sys_user u on u.id=p.user_id left join employee_profile e on e.user_id=u.id where p.person_type in('EXTERNAL','TEMPORARY') and p.deleted=false"+scope+" order by p.expires_at,u.id");
+        var rows=s.rows("select u.id,ac.username,u.display_name,u.enabled,p.person_type,p.expires_at,e.company,e.department_id,e.post_id from account_policy p join sys_user u on u.id=p.user_id join sys_account ac on ac.user_id=u.id left join employee_profile e on e.user_id=u.id where p.person_type in('EXTERNAL','TEMPORARY') and p.deleted=false"+scope+" order by p.expires_at,u.id");
         LocalDate today=LocalDate.now(ZONE);
         for(var row:rows){
             Object value=row.remove("expires_at");
-            Instant expires=value instanceof OffsetDateTime offset?offset.toInstant():((java.sql.Timestamp)value).toInstant();
+            Instant expires=value instanceof OffsetDateTime offset?offset.toInstant():value instanceof LocalDateTime local?local.toInstant(ZoneOffset.UTC):((java.sql.Timestamp)value).toInstant();
             LocalDate last=expires.atZone(ZONE).toLocalDate().minusDays(1);long left=Duration.between(today.atStartOfDay(ZONE),last.atStartOfDay(ZONE)).toDays();
             row.put("expires_on",last.toString());row.put("days_left",left);
             row.put("status",!expires.isAfter(Instant.now())?"EXPIRED":left<remindDays?"EXPIRING":"ACTIVE");

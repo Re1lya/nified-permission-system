@@ -22,7 +22,7 @@ def doc(name,intro):
   st=d.styles[name_];st.font.name='Arial Unicode MS';st.font.size=Pt(size);st.font.color.rgb=RGBColor(0,0,0);st.element.get_or_add_rPr().rFonts.set(qn('w:eastAsia'),'Arial Unicode MS');st.paragraph_format.space_after=Pt(6)
  d.styles['Normal'].paragraph_format.line_spacing=1.15
  d.add_paragraph('统一权限管理系统',style='Subtitle');d.add_paragraph(name,style='Title');d.add_paragraph('一期需求对齐修订  2026 年 10 月 22 日')
- d.add_paragraph(intro);d.add_paragraph('依据 DOC 01 V1.0 原始需求  本次未运行项目测试',style='Subtitle')
+ d.add_paragraph(intro);d.add_paragraph('依据 DOC 01 V1.0 原始需求  本次未运行项目测试套件  接口联调另有记录',style='Subtitle')
  foot=sec.footer.paragraphs[0];foot.alignment=2;field=OxmlElement('w:fldSimple');field.set(qn('w:instr'),'PAGE');foot._p.append(field)
  d.core_properties.title=name;d.core_properties.subject='一期需求与实现设计';d.core_properties.author='CDWY'
  return d
@@ -106,19 +106,19 @@ ui.add_heading('4 权限复核',1);ui.add_paragraph('候选列表按员工与角
 image(ui,wireframe('design-review-current.png','权限复核','受管员工角色    分页查看    复核理由必填',['员工  zhangsan       岗位角色  业务经办','当前授权来源  岗位角色关系','复核理由  岗位职责已确认','操作  确认保留        回收角色并记录','记录  操作人  目标员工  角色  结论  时间']),'复核流程设计示意')
 ui.add_heading('5 审计归档与同步异常',1);ui.add_paragraph('审计页按操作人、事件类型、时间区间查询，并可切换归档。部门范围由后台约束，不提供跨部门选择绕过入口。同步异常页展示请求编号、错误摘要与处理状态；处理理由必填，修复后由源系统重新签名发送。原始 HR 数据和密钥不写入错误日志。')
 image(ui,wireframe('design-audit-current.png','审计与归档','操作人  事件类型  开始时间  结束时间  归档开关',['2026 10 22  权限复核  KEEP  员工 12','2026 10 22  调岗交接  SUCCESS  员工 18','在线与归档使用相同的部门查询边界','记录只读  不提供修改和删除入口','分页  上一页     第 1 页     下一页']),'审计查询设计示意')
-ui.add_heading('6 OA 与异常反馈',1);ui.add_paragraph('权限申请页展示 OA 登记的申请和当前结论，申请按钮打开已验收的 OA 入口，不在平台自建审批流。未配置入口时提示联系管理员。登录失效可尝试刷新；刷新失败返回登录；403 保留会话并提示权限不足；409 提醒刷新数据。保存时禁用重复提交按钮。')
+ui.add_heading('6 OA 与异常反馈',1);ui.add_paragraph('权限申请页展示 OA 登记的申请和当前结论，申请按钮打开已验收的 OA 入口，不在平台自建审批流，旧的直接创建申请 POST 接口已删除，本人状态 GET 查询保留。未配置入口时提示联系管理员。登录失效可尝试刷新；刷新失败返回登录；403 保留会话并提示权限不足；409 提醒刷新数据。保存时禁用重复提交按钮。')
 ui.add_heading('7 界面验收边界',1);ui.add_paragraph('本次前端通过 TypeScript 类型检查与生产构建。没有逐页运行点击或连接企业 OA/HR 验收。示意图用于设计沟通，旧 screenshots 目录中的图片只反映旧提交。');ui.save(D/'02-界面原型文档.docx')
 
-api=doc('一期 API 设计','说明统一响应、认证、签名回调、应用接入和新增管理接口。接口清单来自当前编译类的离线反射，不代表已经发送请求验收。');markdown(api,D/'api-design.md');api.save(D/'03-API设计文档.docx')
+api=doc('一期 API 设计','说明统一响应、认证、签名回调、应用接入和新增管理接口。接口清单来自当前编译类的离线反射，具体运行结果见 cloud-verification.json。');markdown(api,D/'api-design.md');api.save(D/'03-API设计文档.docx')
 
-db=doc('一期数据库设计','当前结构包含业务、OAuth2 和 HTTP 会话共三十八张表。结构根据 Hibernate 元数据及 Spring 官方 JDBC schema 离线生成；本次未在 MySQL 执行脚本。')
+db=doc('一期数据库设计','当前结构包含业务、OAuth2 和 HTTP 会话共三十八张表。结构根据 Hibernate 元数据及 Spring 官方 JDBC schema 离线生成；已完成真实 MySQL 新建及隔离旧结构升级验证。')
 db.add_heading('1 数据域与关键关系',1)
 table(db,['数据域','主要表','设计目的'],[['身份与组织','sys_user sys_account employee_profile hr_identity sys_department sys_post','分离人员、凭证和稳定 HR 外部编号'],['授权','sys_role sys_permission sys_user_role sys_role_permission','RBAC0 权限并集及岗位同名角色'],['应用接入','application_access oauth2_registered_client oauth2_authorization oauth2_authorization_consent','业务目录关联协议配置与持久化授权'],['会话与密钥','sys_login_session session_activity platform_signing_key SPRING_SESSION 系列表','平台令牌、浏览器会话、共享密钥'],['审计与同步','audit_event audit_archive permission_review integration_event sync_failure platform_notification','复核、长期保留、失败记录和交接通知']], [2.7,7.5,6.8])
 db.add_paragraph('sys_account.user_id 同时为主键和外键，一期按一人一账号持久化。hr_identity 以 kind 加 external_id 唯一定位本地记录；此多态映射由服务校验，不伪造数据库外键。应用配置的 system_id 由服务锁定和检查。审计归档沿用原事件编号，保留对象、操作人、部门及时间。完整 ER 源码见 database-er.mmd。')
 db.add_heading('2 事务与一致性',1);db.add_paragraph('员工调岗、授权、权限版本更新在同一事务中提交。OA 审批对申请记录加锁，重复结论不重复授予角色。HR 批次整批原子提交；失败摘要在回滚后单独保存。归档任务锁定一批到期日志，复制到归档表后删除在线副本，同一事务内完成。')
 db.add_heading('3 凭证和历史数据',1);db.add_paragraph('密码只保存 BCrypt。OIDC 私钥位于 platform_signing_key，不通过接口返回；该表访问权限及数据库备份应按凭证管理。平台 JWT 密钥由环境变量注入，多实例必须相同。HTTP 会话和 OAuth2 授权共享数据库，进程重启不再主动更换签名密钥。')
 db.add_heading('4 新库与旧库迁移',1);db.add_paragraph('新库执行 database-mysql-phase-one.sql。旧提交 01b94f06 的二十五表安装执行 ../migrations/20261022-phase-one-completion.sql 一次。迁移前停止写入并备份；MySQL DDL 隐式提交，失败后不能盲目重跑。先复制账号凭证至 sys_account，再移除旧列；已有登录名保持不变，首次管理员标为内置管理员。旧内存中的 OIDC 授权无法迁移，需重新登录。')
-db.add_paragraph('迁移脚本没有在本次运行，因此表数和字段一致性属于离线元数据检查结果。数据库版本兼容、迁移前后数据核对、回滚恢复及多实例行为仍需运行验收。')
+db.add_paragraph('本次在云端 MySQL 9.2 新建三十八表应用库，并在隔离旧结构库执行升级。核对原有两个账号凭证、用户角色关系、权限版本和内置管理员标记；prod 模式结构校验成功。原服务器没有旧 RBAC 业务库，因此这不是旧业务数据迁移。备份恢复演练、多实例与容量仍未验收。')
 catalog=json.loads((D/'schema-catalog.json').read_text())
 db.add_heading('5 表结构目录',1)
 for entry in catalog:

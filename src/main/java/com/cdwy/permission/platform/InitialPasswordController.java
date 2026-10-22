@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * BR-03: imported and HR-created accounts start without a password. An administrator issues random initial passwords
+ * BR-03: imported and HR-created accounts start with a random, undistributed password. An administrator issues random initial passwords
  * for one department at a time; they must be changed at first login and appear only in this one response.
  */
 @RestController @RequestMapping("/api/platform/initial-passwords")

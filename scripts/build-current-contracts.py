@@ -9,10 +9,14 @@ for route in routes:
  path,method=route['path'],route['method'].lower()
  old=previous.get('paths',{}).get(path,{}).get(method,{})
  op={'operationId':route['handler'].replace('.','_')+'_'+method+'_'+re.sub('[^a-zA-Z0-9]','_',path),'summary':route['handler'],'tags':[route['handler'].split('.')[0]],'parameters':route['parameters'],'responses':{'200':{'description':'成功；采用 v2 表示时数据位于 data 字段','content':{'application/json':{'schema':route['response']}}},'400':{'description':'参数不合法'},'401':{'description':'未认证或令牌需刷新'},'403':{'description':'无权限'},'409':{'description':'重复数据或状态冲突'}}}
+ status=str(route['successStatus'])
+ success={'description':'成功'}
+ if status!='204':
+  success['content']={'application/json':{'schema':route['response']},'application/vnd.cdwy.v2+json':{'schema':{'type':'object','required':['code','message','data'],'properties':{'code':{'type':'string','enum':['SUCCESS']},'message':{'type':'string'},'data':route['response']}}}}
+ op['responses'].pop('200');op['responses'][status]=success;op['responses']['404']={'description':'资源不存在'}
  if path!='/api/auth/login' and not path.startswith('/api/integration/'):op['security']=[{'bearerAuth':[]}]
  if 'request' in route:op['requestBody']={'required':True,'content':{'application/json':{'schema':route['request']}}}
  elif 'requestBody' in old:op['requestBody']=old['requestBody']
- if path=='/api/platform/self/applications' and method=='post':op['deprecated']=True;op['description']='兼容旧演示客户端；当前需求中的申请由 OA 签名登记。'
  if path.startswith('/api/integration/'):
   op['requestBody']={'required':True,'content':{'application/json':{'schema':{'$ref':'#/components/schemas/IntegrationEvent'}}}}
   op['description']='按 source、时间戳、请求编号和原始 JSON 字节计算 HMAC-SHA256。完整契约与动作见 api-design.md。'
@@ -24,7 +28,7 @@ fields={'action':{'type':'string','enum':['DEPARTMENT','POST','JOIN','UPDATE','T
 components=previous.get('components',{});components.setdefault('schemas',{})['IntegrationEvent']={'type':'object','properties':fields}
 components.setdefault('securitySchemes',{})['bearerAuth']={'type':'http','scheme':'bearer','bearerFormat':'JWT'}
 components['schemas']['Envelope']={'type':'object','required':['code','message','data'],'properties':{'code':{'type':'string'},'message':{'type':'string'},'data':{'nullable':True}}}
-spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.3.0','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
+spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.4.0','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'https://120.46.213.158','description':'课程部署（固定证书信任；接口验收环境）'},{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
 (D/'apifox/openapi.json').write_text(json.dumps(spec,ensure_ascii=False,indent=2))
 text='''# 一期 API 设计说明
 
@@ -32,7 +36,7 @@ text='''# 一期 API 设计说明
 
 接口以原需求 DOC-01 第五、十一章为基准。管理与自助 API 使用 Bearer JWT，HR/OA 回调使用独立共享密钥的 HMAC-SHA256 签名，OIDC 使用标准授权码与 PKCE。
 
-当前前端发送 Accept: application/vnd.cdwy.v2+json，普通 JSON 响应包含 code、message、data。成功码 SUCCESS；参数、认证、授权、资源和冲突分别使用 INVALID_ARGUMENT、UNAUTHENTICATED、FORBIDDEN、NOT_FOUND、CONFLICT。HTTP 仍表达相应协议状态。204 无响应体。未发送版本头的旧客户端保持旧表示；OAuth/OIDC 端点维持协议原有格式。OpenAPI 的普通成功 schema 描述 data 的结构，旧表示直接返回该结构。
+当前前端发送 Accept: application/vnd.cdwy.v2+json，普通 JSON 响应包含 code、message、data。成功码 SUCCESS；参数、认证、授权、资源和冲突分别使用 INVALID_ARGUMENT、UNAUTHENTICATED、FORBIDDEN、NOT_FOUND、CONFLICT。HTTP 仍表达相应协议状态。204 无响应体。未发送版本头的旧客户端保持旧表示；OAuth/OIDC 端点维持协议原有格式。OpenAPI 分别描述 application/json 原始响应和 application/vnd.cdwy.v2+json 包装响应，创建资源按201、无响应体按204记录。
 
 ```json
 {"code":"SUCCESS","message":"成功","data":{"items":[],"total":0}}
@@ -81,7 +85,7 @@ HR 与 OA 密钥必须不同且至少32字符，通过 PERMISSION_HR_SECRET 与 
 
 ### 4.2 OA 动作
 
-APPLICATION 接收 OA requestId、userId、单元素 roleIds，登记待审批申请；申请在 OA 发起。QUERY_PERMISSIONS 按 userId 查询当前权限；QUERY_APPLICATION_STATUS 按 requestId 查询状态。RESULT 按 requestId 或兼容 approvalId 指定申请，decision 为 APPROVED、REJECTED、CANCELLED。已处理申请的相同结论返回成功，不同结论409。批准前检查申请人有效状态，拒绝和取消不授予权限。
+APPLICATION 接收 OA requestId、userId、单元素 roleIds，登记待审批申请；申请在 OA 发起。旧 POST /api/platform/self/applications 已删除，GET 本人状态查询保留。QUERY_PERMISSIONS 按 userId 查询当前权限；QUERY_APPLICATION_STATUS 按 requestId 查询状态。RESULT 按 requestId 或兼容 approvalId 指定申请，decision 为 APPROVED、REJECTED、CANCELLED。已处理申请的相同结论返回成功，不同结论409。批准前检查申请人有效状态，拒绝和取消不授予权限。
 
 ```json
 {"action":"APPLICATION","requestId":"OA-2026-001","userId":12,"roleIds":[7]}

@@ -22,11 +22,11 @@ public class SsoController {
         if(request.getSession(false)!=null)request.changeSessionId();
         var auth=UsernamePasswordAuthenticationToken.authenticated(Long.toString(id),null,List.of(org.springframework.security.core.authority.FactorGrantedAuthority.withFactor("PASSWORD").issuedAt(tokens.issuedAt(bearer)).build()));auth.setDetails(bearer);
         var context=SecurityContextHolder.createEmptyContext();context.setAuthentication(auth);new HttpSessionSecurityContextRepository().saveContext(context,request,response);
-        return Map.of("message","本地单点登录会话已建立");
+        return Map.of("message","单点登录会话已建立");
     }
     /** Validate an OIDC access token issued to clientId and return its subject; shared by every client-facing API. */
     private long verify(String bearer,String clientId){
-        if(clients.findByClientId(clientId)==null)throw new IllegalArgumentException("未知本地客户端");
+        if(clients.findByClientId(clientId)==null)throw new IllegalArgumentException("未知或未启用的客户端");
         try{
             if(bearer==null||!bearer.startsWith("Bearer "))throw new AuthenticationFailedException();
             var jwt=decoder.decode(bearer.substring(7));if(!jwt.getAudience().contains(clientId))throw new AuthenticationFailedException();

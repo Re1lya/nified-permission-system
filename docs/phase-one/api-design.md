@@ -4,7 +4,7 @@
 
 接口以原需求 DOC-01 第五、十一章为基准。管理与自助 API 使用 Bearer JWT，HR/OA 回调使用独立共享密钥的 HMAC-SHA256 签名，OIDC 使用标准授权码与 PKCE。
 
-当前前端发送 Accept: application/vnd.cdwy.v2+json，普通 JSON 响应包含 code、message、data。成功码 SUCCESS；参数、认证、授权、资源和冲突分别使用 INVALID_ARGUMENT、UNAUTHENTICATED、FORBIDDEN、NOT_FOUND、CONFLICT。HTTP 仍表达相应协议状态。204 无响应体。未发送版本头的旧客户端保持旧表示；OAuth/OIDC 端点维持协议原有格式。OpenAPI 的普通成功 schema 描述 data 的结构，旧表示直接返回该结构。
+当前前端发送 Accept: application/vnd.cdwy.v2+json，普通 JSON 响应包含 code、message、data。成功码 SUCCESS；参数、认证、授权、资源和冲突分别使用 INVALID_ARGUMENT、UNAUTHENTICATED、FORBIDDEN、NOT_FOUND、CONFLICT。HTTP 仍表达相应协议状态。204 无响应体。未发送版本头的旧客户端保持旧表示；OAuth/OIDC 端点维持协议原有格式。OpenAPI 分别描述 application/json 原始响应和 application/vnd.cdwy.v2+json 包装响应，创建资源按201、无响应体按204记录。
 
 ```json
 {"code":"SUCCESS","message":"成功","data":{"items":[],"total":0}}
@@ -53,7 +53,7 @@ HR 与 OA 密钥必须不同且至少32字符，通过 PERMISSION_HR_SECRET 与 
 
 ### 4.2 OA 动作
 
-APPLICATION 接收 OA requestId、userId、单元素 roleIds，登记待审批申请；申请在 OA 发起。QUERY_PERMISSIONS 按 userId 查询当前权限；QUERY_APPLICATION_STATUS 按 requestId 查询状态。RESULT 按 requestId 或兼容 approvalId 指定申请，decision 为 APPROVED、REJECTED、CANCELLED。已处理申请的相同结论返回成功，不同结论409。批准前检查申请人有效状态，拒绝和取消不授予权限。
+APPLICATION 接收 OA requestId、userId、单元素 roleIds，登记待审批申请；申请在 OA 发起。旧 POST /api/platform/self/applications 已删除，GET 本人状态查询保留。QUERY_PERMISSIONS 按 userId 查询当前权限；QUERY_APPLICATION_STATUS 按 requestId 查询状态。RESULT 按 requestId 或兼容 approvalId 指定申请，decision 为 APPROVED、REJECTED、CANCELLED。已处理申请的相同结论返回成功，不同结论409。批准前检查申请人有效状态，拒绝和取消不授予权限。
 
 ```json
 {"action":"APPLICATION","requestId":"OA-2026-001","userId":12,"roleIds":[7]}
@@ -88,8 +88,8 @@ ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGAC
 | GET | /api/company/employees | CompanyController.employees |
 | GET | /api/company/imports | CompanyController.batches |
 | GET | /api/company/templates | CompanyController.templates |
-| POST | /api/company/posts/{id}/template | CompanyController.template |
 | GET | /api/company/posts | CompanyController.posts |
+| POST | /api/company/posts/{id}/template | CompanyController.template |
 | POST | /api/company/imports/commit | CompanyController.commit |
 | GET | /api/company/catalog | CompanyController.catalog |
 | POST | /api/auth/refresh | AuthController.refresh |
@@ -112,11 +112,11 @@ ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGAC
 | GET | /api/roles | RoleController.list |
 | DELETE | /api/roles/{roleId} | RoleController.delete |
 | POST | /api/roles | RoleController.create |
+| GET | /api/users/{userId}/permissions | UserController.listPermissions |
 | GET | /api/users/{userId}/roles | UserController.listRoles |
 | PUT | /api/users/{userId}/password | UserController.setPassword |
 | PUT | /api/users/{userId}/roles/{roleId} | UserController.assignRole |
 | DELETE | /api/users/{userId}/roles/{roleId} | UserController.removeRole |
-| GET | /api/users/{userId}/permissions | UserController.listPermissions |
 | PUT | /api/users/{userId} | UserController.update |
 | GET | /api/users | UserController.list |
 | GET | /api/users/{userId}/permissions/check | UserController.checkPermission |
@@ -142,9 +142,9 @@ ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGAC
 | POST | /api/platform/initial-passwords | InitialPasswordController.issue |
 | GET | /api/platform/initial-passwords | InitialPasswordController.pending |
 | POST | /api/integration/{source} | IntegrationController.accept |
+| GET | /api/platform/organization/roles | OrganizationController.roles |
 | PUT | /api/platform/organization/departments/{id} | OrganizationController.department |
 | POST | /api/platform/organization/departments | OrganizationController.department |
-| GET | /api/platform/organization/roles | OrganizationController.roles |
 | PUT | /api/platform/organization/roles/{role}/permissions/{permission} | OrganizationController.grant |
 | DELETE | /api/platform/organization/roles/{role}/permissions/{permission} | OrganizationController.revoke |
 | PUT | /api/platform/organization/grant-limits/{department}/{permission} | OrganizationController.limit |
@@ -154,16 +154,16 @@ ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGAC
 | PUT | /api/platform/organization/posts/{id} | OrganizationMaintenance.post |
 | PUT | /api/platform/organization/dictionary/{id} | OrganizationMaintenance.dictionary |
 | DELETE | /api/platform/organization/dictionary/{id} | OrganizationMaintenance.dictionary |
+| PUT | /api/platform/users/{id}/roles/{role} | PlatformController.grant |
+| GET | /api/platform/audit | PlatformController.audit |
+| DELETE | /api/platform/users/{id}/roles/{role} | PlatformController.revoke |
+| DELETE | /api/platform/administrators/{id}/{department} | PlatformController.unbind |
 | POST | /api/platform/self/password | PlatformController.changePassword |
 | GET | /api/platform/sessions | PlatformController.sessions |
 | POST | /api/platform/users/{id}/offline | PlatformController.offline |
 | GET | /api/platform/integrations | PlatformController.integrations |
 | GET | /api/platform/approvals | PlatformController.approvals |
 | GET | /api/platform/self/applications | PlatformController.myApplications |
-| PUT | /api/platform/users/{id}/roles/{role} | PlatformController.grant |
-| GET | /api/platform/audit | PlatformController.audit |
-| DELETE | /api/platform/users/{id}/roles/{role} | PlatformController.revoke |
-| DELETE | /api/platform/administrators/{id}/{department} | PlatformController.unbind |
 | POST | /api/platform/users/{id}/password | PlatformController.reset |
 | GET | /api/platform/users | PlatformController.list |
 | DELETE | /api/platform/users/{id} | PlatformController.delete |
@@ -171,9 +171,8 @@ ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGAC
 | GET | /api/platform/self | PlatformController.self |
 | DELETE | /api/platform/sessions/{session} | PlatformController.session |
 | PUT | /api/platform/administrators/{id} | PlatformController.bind |
-| GET | /api/platform/dictionary | PlatformController.dictionary |
 | POST | /api/platform/dictionary | PlatformController.dictionary |
-| POST | /api/platform/self/applications | PlatformController.application |
+| GET | /api/platform/dictionary | PlatformController.dictionary |
 | GET | /api/oidc/directory/departments | SsoController.departments |
 | GET | /api/oidc/directory/users | SsoController.users |
 | POST | /api/platform/self/sso | SsoController.bridge |

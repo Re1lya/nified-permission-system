@@ -26,7 +26,7 @@ class PhaseOneIntegrationTests {
  @BeforeEach void setup(){
   suffix=UUID.randomUUID().toString().substring(0,8);bootstrap.initialize("phase_admin",PASSWORD);admin=login("phase_admin");
   department=department("dept"+suffix);otherDepartment=department("other"+suffix);
-  role=rbac.createRole(new CreateRoleRequest("role"+suffix,"岗位"+suffix,null)).id();db.update("insert into sys_post(name,role_id) values(?,?)","岗位"+suffix,role);post=db.queryForObject("select id from sys_post where role_id=?",Long.class,role);
+  role=rbac.createRole(new CreateRoleRequest("role"+suffix,"岗位"+suffix,null)).id();post=db.queryForObject("select id from sys_post where role_id=?",Long.class,role);
   user=employee("user"+suffix,department);manager=employee("manager"+suffix,department);
   db.update("insert into admin_department(user_id,department_id) values(?,?)",manager,department);db.update("insert into managed_role(role_id,department_id) values(?,?)",role,department);
   userToken=login("user"+suffix);managerToken=login("manager"+suffix);
@@ -66,11 +66,11 @@ class PhaseOneIntegrationTests {
   assertEquals(true,db.queryForObject("select enabled from sys_user where id=?",Boolean.class,user));
  }
  @Test void oaRequiresExistingApplicationAndDoesNotGrantOnRejection() throws Exception {
-  String response=mvc.perform(post("/api/platform/self/applications").header("Authorization",userToken).contentType("application/json").content("{\"roleId\":"+role+"}")).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-  long application=json.readTree(response).get("id").asLong();
-  signed("oa","reject"+suffix,json.writeValueAsString(Map.of("approvalId",application,"decision","REJECTED")),200);
+  String application="application"+suffix;
+  signed("oa","register"+suffix,json.writeValueAsString(Map.of("action","APPLICATION","requestId",application,"userId",user,"roleIds",List.of(role))),200);
+  signed("oa","reject"+suffix,json.writeValueAsString(Map.of("action","RESULT","requestId",application,"decision","REJECTED")),200);
   assertEquals(0,db.queryForObject("select count(*) from sys_user_role where user_id=?",Integer.class,user));
-  signed("oa","approve"+suffix,json.writeValueAsString(Map.of("approvalId",application,"decision","APPROVED")),409);
+  signed("oa","approve"+suffix,json.writeValueAsString(Map.of("action","RESULT","requestId",application,"decision","APPROVED")),409);
  }
  @Test void scopedRoleCannotReceiveNonDelegatedPermission() throws Exception {
   long system=rbac.createSystem(new CreateSystemRequest("sys"+suffix,"系统",null)).id();long permission=rbac.createPermission(new CreatePermissionRequest(system,"p"+suffix,"权限","/test")).id();
@@ -116,8 +116,8 @@ class PhaseOneIntegrationTests {
   String sessions=body(mvc.perform(get("/api/platform/sessions?scope=managed").header("Authorization",managerToken)).andExpect(status().isOk()));
   assertTrue(sessions.contains("\"user_id\":"+user+","));assertFalse(sessions.contains("\"user_id\":"+outside+","));
   mvc.perform(get("/api/platform/sessions?scope=managed").header("Authorization",userToken)).andExpect(status().isForbidden());
-  request("/api/platform/self/applications","{\"roleId\":"+role+"}",userToken,200);
-  request("/api/platform/self/applications","{\"roleId\":"+role+"}",login("outside"+suffix),200);
+  signed("oa","inside"+suffix,json.writeValueAsString(Map.of("action","APPLICATION","requestId","inside"+suffix,"userId",user,"roleIds",List.of(role))),200);
+  signed("oa","outside"+suffix,json.writeValueAsString(Map.of("action","APPLICATION","requestId","outside"+suffix,"userId",outside,"roleIds",List.of(role))),200);
   String approvals=body(mvc.perform(get("/api/platform/approvals").header("Authorization",managerToken)).andExpect(status().isOk()));
   assertTrue(approvals.contains("\"user_id\":"+user+","));assertFalse(approvals.contains("\"user_id\":"+outside+","));
   request("/api/platform/users/"+user+"/password","{\"password\":\"Reset-pass-123\"}",admin,200);

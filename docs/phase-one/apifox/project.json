@@ -8,5 +8,13 @@
     "environments": 1,
     "securitySchemes": 3
   },
-  "date": "2026-10-21"
+  "date": "2026-10-21",
+  "pendingSync": {
+    "date": "2026-10-22",
+    "localVersion": "1.4.0",
+    "controllerOperations": 98,
+    "reason": "用户明确要求先联调合并，Apifox 云端稍后同步",
+    "removedOperation": "POST /api/platform/self/applications",
+    "retainedOperation": "GET /api/platform/self/applications"
+  }
 }

@@ -122,7 +122,17 @@ public class OidcConfig {
             public RegisteredClient findByClientId(String id){return enabled(repository.findByClientId(id));}
         };
     }
-    @Bean OAuth2AuthorizationService authorizations(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){return new JdbcOAuth2AuthorizationService(db,clients);}
+    @Bean OAuth2AuthorizationService authorizations(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){
+        // JDBC token metadata contains our long permission_version claim. Keep Security's allowlist,
+        // adding only Long rather than permitting arbitrary application classes or all java.* types.
+        var allowed=tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator.builder().allowIfSubType(Long.class);
+        var mapper=tools.jackson.databind.json.JsonMapper.builder().addModules(
+            org.springframework.security.jackson.SecurityJacksonModules.getModules(getClass().getClassLoader(),allowed)).build();
+        var service=new JdbcOAuth2AuthorizationService(db,clients);
+        service.setAuthorizationRowMapper(new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationRowMapper(clients,mapper));
+        service.setAuthorizationParametersMapper(new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationParametersMapper(mapper));
+        return service;
+    }
     @Bean OAuth2AuthorizationConsentService consents(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){return new JdbcOAuth2AuthorizationConsentService(db,clients);}
     @Bean AuthorizationServerSettings authorizationSettings(@org.springframework.beans.factory.annotation.Value("${permission.oidc.issuer:}") String issuer){
         var settings=AuthorizationServerSettings.builder();if(!issuer.isBlank())settings.issuer(issuer);return settings.build();

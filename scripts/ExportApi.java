@@ -26,6 +26,14 @@ public class ExportApi {
   for(var field:c.getDeclaredFields())for(var annotation:field.getAnnotations())if(Set.of("NotNull","NotBlank","NotEmpty").contains(annotation.annotationType().getSimpleName()))required.add(field.getName());
   Map<String,Object> result=new LinkedHashMap<>(Map.of("type","object","properties",properties));if(!required.isEmpty())result.put("required",required);return result;
  }
+ static int successStatus(Method method){
+  if(method.isAnnotationPresent(ResponseStatus.class))return method.getAnnotation(ResponseStatus.class).code().value();
+  if(method.getGenericReturnType() instanceof ParameterizedType p&&p.getRawType().getTypeName().equals("org.springframework.http.ResponseEntity")){
+   if(p.getActualTypeArguments()[0]==Void.class)return 204;
+   if(method.getName().equals("create")&&Set.of("UserController","RoleController","PermissionController","BusinessSystemController").contains(method.getDeclaringClass().getSimpleName()))return 201;
+   throw new IllegalStateException("Declare verified response status for "+method);
+  }return 200;
+ }
  public static void main(String[] args)throws Exception{
   List<Object> routes=new ArrayList<>();Path root=Path.of(args[0]);
   try(var files=Files.walk(root.resolve("com/cdwy/permission"))){for(Path path:files.filter(p->p.toString().endsWith(".class")).sorted().toList()){
@@ -39,7 +47,7 @@ public class ExportApi {
     if(method.isAnnotationPresent(DeleteMapping.class)){verb="DELETE";paths=method.getAnnotation(DeleteMapping.class).value();}
     if(verb==null)continue;if(paths.length==0)paths=new String[]{""};
     for(String suffix:paths){String route=prefix+suffix;if(!route.startsWith("/api/"))continue;
-     Map<String,Object> item=new LinkedHashMap<>();item.put("path",route);item.put("method",verb);item.put("handler",c.getSimpleName()+"."+method.getName());item.put("response",schema(method.getGenericReturnType()));List<Object> parameters=new ArrayList<>();
+     Map<String,Object> item=new LinkedHashMap<>();item.put("path",route);item.put("method",verb);item.put("handler",c.getSimpleName()+"."+method.getName());item.put("response",schema(method.getGenericReturnType()));item.put("successStatus",successStatus(method));List<Object> parameters=new ArrayList<>();
      for(Parameter param:method.getParameters()){
       if(param.isAnnotationPresent(RequestBody.class)){item.put("request",schema(param.getParameterizedType()));continue;}
       String where=null,name=param.getName();boolean required=false;

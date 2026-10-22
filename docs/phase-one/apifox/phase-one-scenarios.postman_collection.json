@@ -254,7 +254,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"code\": \"demo_a_{{runId}}\", \"name\": \"演示角色A\", \"description\": \"Apifox 验收\"}"
+              "raw": "{\"code\": \"demo_a_{{runId}}\", \"name\": \"演示角色A_{{runId}}\", \"description\": \"Apifox 验收\"}"
             }
           },
           "event": [
@@ -296,7 +296,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"code\": \"demo_b_{{runId}}\", \"name\": \"演示角色B\", \"description\": \"Apifox 验收\"}"
+              "raw": "{\"code\": \"demo_b_{{runId}}\", \"name\": \"演示角色B_{{runId}}\", \"description\": \"Apifox 验收\"}"
             }
           },
           "event": [
@@ -792,7 +792,7 @@
           ]
         },
         {
-          "name": "同一令牌仍可访问",
+          "name": "旧版本令牌被拒绝",
           "request": {
             "method": "GET",
             "header": [
@@ -819,7 +819,76 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('RBAC-01 角色 B 仍提供权限，返回 200', () => pm.response.to.have.status(200));"
+                  "pm.test('权限版本变化返回 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "刷新版本令牌",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('刷新成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('userToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "角色 B 仍提供权限",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('刷新后权限并集仍允许访问', () => pm.response.to.have.status(200));"
                 ]
               }
             }
@@ -862,7 +931,7 @@
           ]
         },
         {
-          "name": "同一令牌被拒绝",
+          "name": "回收后旧版本被拒绝",
           "request": {
             "method": "GET",
             "header": [
@@ -889,7 +958,76 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('RBAC-01 全部来源回收后返回 403', () => pm.response.to.have.status(403));"
+                  "pm.test('回收后旧令牌 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "刷新回收后的令牌",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('刷新成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('userToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "全部权限回收后拒绝",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/demo/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "demo",
+                "expenses"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('新令牌无业务权限 403', () => pm.response.to.have.status(403));"
                 ]
               }
             }
@@ -1552,13 +1690,21 @@
           ]
         },
         {
-          "name": "提交岗位角色申请",
+          "name": "OA 登记岗位角色申请",
           "request": {
             "method": "POST",
             "header": [
               {
-                "key": "Authorization",
-                "value": "Bearer {{userToken}}"
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
               },
               {
                 "key": "Content-Type",
@@ -1566,32 +1712,105 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/platform/self/applications",
+              "raw": "{{baseUrl}}/api/integration/oa",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "platform",
-                "self",
-                "applications"
+                "integration",
+                "oa"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"roleId\": \"{{postRoleId}}\"}"
+              "raw": "{{rawBody}}"
             }
           },
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'oa_application_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'APPLICATION',requestId:'oa_request_'+pm.collectionVariables.get('runId'),userId:Number(pm.collectionVariables.get('userId')),roleIds:[Number(pm.collectionVariables.get('postRoleId'))]});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('申请已登记', () => pm.response.to.have.status(200));",
-                  "const a = pm.response.json();",
-                  "pm.test('状态为 PENDING', () => pm.expect(a.decision).to.eql('PENDING'));",
-                  "pm.collectionVariables.set('approvalId', a.id);"
+                  "pm.test('OA 申请已登记', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OA 查询待审批状态",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "{{reqId}}"
+              },
+              {
+                "key": "X-Timestamp",
+                "value": "{{ts}}"
+              },
+              {
+                "key": "X-Signature",
+                "value": "{{sig}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/integration/oa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "integration",
+                "oa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{{rawBody}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = 'oa_query_' + pm.collectionVariables.get('runId');",
+                  "const body = JSON.stringify({action:'QUERY_APPLICATION_STATUS',requestId:'oa_request_'+pm.collectionVariables.get('runId')});",
+                  "const ts = String(Math.floor(Date.now()/1000));",
+                  "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
+                  "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('状态查询成功', () => pm.response.to.have.status(200));",
+                  "pm.test('状态 PENDING', () => pm.expect(pm.response.json().detail.application.decision).to.eql('PENDING'));"
                 ]
               }
             }
@@ -1642,7 +1861,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const id = 'oa_bad_' + pm.collectionVariables.get('runId');",
-                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const body = JSON.stringify({action:'RESULT',requestId:'oa_request_'+pm.collectionVariables.get('runId'),decision:'APPROVED'});",
                   "const ts = String(Math.floor(Date.now()/1000));",
                   "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
                   "pm.variables.set('sig', '00'.repeat(32));"
@@ -1705,7 +1924,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const id = 'oa_' + pm.collectionVariables.get('runId');",
-                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const body = JSON.stringify({action:'RESULT',requestId:'oa_request_'+pm.collectionVariables.get('runId'),decision:'APPROVED'});",
                   "const ts = String(Math.floor(Date.now()/1000));",
                   "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
                   "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
@@ -1769,7 +1988,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const id = 'oa_' + pm.collectionVariables.get('runId');",
-                  "const body = JSON.stringify({approvalId:Number(pm.collectionVariables.get('approvalId')),decision:'APPROVED'});",
+                  "const body = JSON.stringify({action:'RESULT',requestId:'oa_request_'+pm.collectionVariables.get('runId'),decision:'APPROVED'});",
                   "const ts = String(Math.floor(Date.now()/1000));",
                   "pm.variables.set('rawBody', body); pm.variables.set('reqId', id); pm.variables.set('ts', ts);",
                   "pm.variables.set('sig', CryptoJS.HmacSHA256('oa\\n' + ts + '\\n' + id + '\\n' + body, pm.environment.get('oaSecret') || pm.variables.get('oaSecret')).toString());"
@@ -1783,6 +2002,41 @@
                 "exec": [
                   "pm.test('重复回调返回 200', () => pm.response.to.have.status(200));",
                   "pm.test('OA-01 重复回调 reused=true', () => pm.expect(pm.response.json().reused).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "审批后刷新权限令牌",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('令牌刷新成功', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('userToken', pm.response.json().accessToken);"
                 ]
               }
             }
@@ -1818,7 +2072,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('申请列表', () => pm.response.to.have.status(200));",
-                  "const a = pm.response.json().find(x => x.id == pm.collectionVariables.get('approvalId'));",
+                  "const a = pm.response.json().find(x => x.request_id === 'oa_request_'+pm.collectionVariables.get('runId'));",
                   "pm.test('OA-01 申请变为 APPROVED', () => pm.expect(a.decision).to.eql('APPROVED'));"
                 ]
               }
