@@ -63,7 +63,7 @@ class AdminAccessIntegrationTests {
     }
 
     @Test
-    void overlappingRolesUnionRevocationAndLogoutUseTheSameJwt() throws Exception {
+    void overlappingRolesUnionRevocationAndLogoutRespectPermissionVersions() throws Exception {
         long system = create("systems", Map.of("code","sys-"+suffix,"name","财务"));
         long viewer = create("roles", Map.of("code","viewer-"+suffix,"name","查看员"));
         long reviewer = create("roles", Map.of("code","reviewer-"+suffix,"name","复核员"));
@@ -78,11 +78,17 @@ class AdminAccessIntegrationTests {
         call(put("/api/users/{u}/roles/{r}",userId,viewer),admin,null,204);
         call(put("/api/users/{u}/roles/{r}",userId,reviewer),admin,null,204);
         call(put("/api/users/{u}/roles/{r}",userId,reviewer),admin,null,204); // idempotent
+        call(get("/api/auth/me"),ordinary,null,401);
+        ordinary = refresh(ordinary);
         assertEquals(2, call(get("/api/auth/me"),ordinary,null,200).path("permissions").size());
         call(get("/api/demo/expenses"),ordinary,null,200);
         call(delete("/api/users/{u}/roles/{r}",userId,viewer),admin,null,204);
+        call(get("/api/demo/expenses"),ordinary,null,401);
+        ordinary = refresh(ordinary);
         call(get("/api/demo/expenses"),ordinary,null,200); // overlap must survive
         call(delete("/api/users/{u}/roles/{r}",userId,reviewer),admin,null,204);
+        call(get("/api/demo/expenses"),ordinary,null,401);
+        ordinary = refresh(ordinary);
         call(get("/api/demo/expenses"),ordinary,null,403);
         call(get("/api/auth/me"),ordinary,null,200); // forbidden is not logged out
         call(post("/api/auth/logout"),ordinary,null,204);
@@ -143,13 +149,16 @@ class AdminAccessIntegrationTests {
         long r=create("roles",Map.of("code","catalog-"+suffix,"name","原角色"));
         long p=create("permissions",Map.of("systemId",s,"code","catalog:"+suffix,"name","原权限","menuPath","/old"));
         call(put("/api/systems/{id}",s),admin,Map.of("name","新系统","enabled",true,"baseUrl","/demo"),200);
+        admin = refresh(admin);
         call(put("/api/roles/{id}",r),admin,Map.of("name","新角色","enabled",false,"description","已停用"),200);
+        admin = refresh(admin);
         call(put("/api/permissions/{id}",p),admin,Map.of("name","新权限","menuPath","/new"),200);
         call(put("/api/roles/{r}/permissions/{p}",r,p),admin,null,204);
         call(put("/api/users/{u}/roles/{r}",userId,r),admin,null,204);
         assertEquals(0,call(get("/api/users/{id}/permissions",userId),admin,null,200).size());
         assertEquals(1,call(get("/api/roles/{id}/permissions",r),admin,null,200).size());
         call(put("/api/roles/{id}",r),admin,Map.of("name","新角色","enabled",true),200);
+        admin = refresh(admin);
         assertEquals(1,call(get("/api/users/{id}/permissions",userId),admin,null,200).size());
         call(delete("/api/roles/{r}/permissions/{p}",r,p),admin,null,204);
         assertEquals(0,call(get("/api/users/{id}/permissions",userId),admin,null,200).size());
@@ -157,9 +166,17 @@ class AdminAccessIntegrationTests {
         call(delete("/api/roles/{id}",r),admin,null,409);
         call(delete("/api/users/{u}/roles/{r}",userId,r),admin,null,204);
         call(delete("/api/roles/{id}",r),admin,null,204);
+        admin = refresh(admin);
         call(delete("/api/systems/{id}",s),admin,null,204);
+        admin = refresh(admin);
+        assertEquals(0,call(get("/api/permissions?systemId="+s),admin,null,200).size());
+        var catalog=call(get("/api/permissions"),admin,null,200);
+        for(var item:catalog)assertNotEquals(p,item.path("id").asLong(),"已删除应用的历史权限不能使当前目录报错或重新出现");
     }
 
+    private String refresh(String token) throws Exception {
+        return call(post("/api/auth/refresh"),token,null,200).path("accessToken").asText();
+    }
     private String login(String name,String password) throws Exception {
         return call(post("/api/auth/login"),"",Map.of("username",name,"password",password),200).path("accessToken").asText();
     }
