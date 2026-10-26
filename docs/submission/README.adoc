@@ -22,6 +22,7 @@
 |API 设计 |link:04-api-design.adoc[04 API 设计]：认证、签名、响应和 98 个操作
 |界面设计 |link:05-ui-design.adoc[05 界面设计]：页面、身份范围、流程示意
 |JaCoCo |link:06-jacoco.adoc[06 测试说明]；link:evidence/jacoco/index.html[完整 HTML 报告]
+|部署更新 |link:07-deployment.adoc[2026-10-26 修复版本部署与在线核对]
 |===
 
 本次测试：44 项，43 通过，1 跳过，0 失败、0 错误；行覆盖率 72.78%，分支覆盖率 36.92%。

@@ -35,7 +35,7 @@ Windows 的 Python 命令若为 `python`，替换最后两行。根项目测试�
 
 ## 部署与材料版本
 
-现有课程检查入口：[HTTP 门户](http://120.46.213.158/ui/index.html)，配置说明见 [HTTP 访问说明](docs/phase-one/http-access.md)。2026-10-22 云端建库、隔离旧结构升级和接口联调见 [部署联调记录](docs/phase-one/cloud-deployment.md)。暂没有外部 OA/HR 产品，之前使用接口契约调用端验证。本次测试修复未在此轮重新部署到云端。
+现有课程检查入口：[HTTP 门户](http://120.46.213.158/ui/index.html)，配置说明见 [HTTP 访问说明](docs/phase-one/http-access.md)。2026-10-22 云端建库、隔离旧结构升级和接口联调见 [部署联调记录](docs/phase-one/cloud-deployment.md)。暂没有外部 OA/HR 产品，之前使用接口契约调用端验证。2026-10-26 已将本次修复部署到云端，更新后接口与 OA/HR 演示端回调通过，见 [最新部署记录](docs/submission/07-deployment.adoc)。
 
 - 当前提交以 `docs/submission/` 的 `.adoc` 和报告为准。
 - [四份 Word](docs/phase-one/README.md)保留为 2026-10-22 的设计快照。

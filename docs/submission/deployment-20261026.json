@@ -1,0 +1,267 @@
+{
+  "sourceCommit": "58dc99db31e55aea3b40268bc8ab57ee757ce671",
+  "jarSha256": "f45391114dbdf7aa21f3c5ecc2017271b6b050d5e988c0587c134cdcaa7811e0",
+  "previousJarSha256": "a8b765e2530af1fdb6daf0a185f0769fc22b343306043efc16107b101680702e",
+  "previousJar": "/opt/unified-permission/releases/cloud-a8b765e2530a.jar",
+  "jar": "/opt/unified-permission/releases/cloud-f45391114dbd.jar",
+  "backup": "/var/backups/unified-permission/update-20261026-182437",
+  "databaseMigration": false,
+  "configurationChanged": false,
+  "databasePublicAccessChanged": false,
+  "status": "PASS",
+  "updatedAt": "2026-10-26T18:24:50.540637+08:00",
+  "restartToReadySeconds": 11.9,
+  "existingJwtSessionSurvived": true,
+  "httpChecks": [
+    {
+      "path": "/ui/index.html",
+      "status": 200,
+      "milliseconds": 81
+    },
+    {
+      "path": "/.well-known/openid-configuration",
+      "status": 200,
+      "milliseconds": 66,
+      "issuer": "http://120.46.213.158"
+    },
+    {
+      "path": "/oauth2/jwks",
+      "status": 200,
+      "milliseconds": 63
+    },
+    {
+      "path": "/oa-client/",
+      "status": 200,
+      "milliseconds": 65
+    },
+    {
+      "path": "/hr-client/",
+      "status": 200,
+      "milliseconds": 69
+    },
+    {
+      "path": "/api/auth/login",
+      "status": 200,
+      "milliseconds": 322
+    },
+    {
+      "path": "/api/auth/me",
+      "status": 200,
+      "milliseconds": 93
+    },
+    {
+      "path": "/api/platform/self",
+      "status": 200,
+      "milliseconds": 100
+    },
+    {
+      "path": "/api/users",
+      "status": 200,
+      "milliseconds": 105,
+      "rows": 7
+    },
+    {
+      "path": "/api/roles",
+      "status": 200,
+      "milliseconds": 93,
+      "rows": 4
+    },
+    {
+      "path": "/api/systems",
+      "status": 200,
+      "milliseconds": 103,
+      "rows": 2
+    },
+    {
+      "path": "/api/permissions",
+      "status": 200,
+      "milliseconds": 86,
+      "rows": 4
+    },
+    {
+      "path": "/api/company/catalog?page=0&size=25",
+      "status": 200,
+      "milliseconds": 86,
+      "total": 0
+    },
+    {
+      "path": "/api/company/catalog?page=1&size=25",
+      "status": 200,
+      "milliseconds": 99,
+      "total": 0
+    },
+    {
+      "path": "/api/company/catalog?page=0&size=25&q=%25%21_",
+      "status": 200,
+      "milliseconds": 90,
+      "total": 0
+    },
+    {
+      "path": "/api/company/departments",
+      "status": 200,
+      "milliseconds": 82,
+      "rows": 7
+    },
+    {
+      "path": "/api/company/posts",
+      "status": 200,
+      "milliseconds": 94,
+      "rows": 4
+    },
+    {
+      "path": "/api/company/employees?page=0&size=25",
+      "status": 200,
+      "milliseconds": 95,
+      "total": 7
+    },
+    {
+      "path": "/api/platform/applications",
+      "status": 200,
+      "milliseconds": 114,
+      "rows": 2
+    },
+    {
+      "path": "/api/platform/self/portal",
+      "status": 200,
+      "milliseconds": 90,
+      "rows": 2
+    },
+    {
+      "path": "/api/platform/audit?size=5",
+      "status": 200,
+      "milliseconds": 97,
+      "total": 201
+    },
+    {
+      "path": "/api/platform/sessions?scope=managed",
+      "status": 200,
+      "milliseconds": 109,
+      "rows": 0
+    },
+    {
+      "path": "/api/platform/approvals",
+      "status": 200,
+      "milliseconds": 94,
+      "rows": 12
+    },
+    {
+      "path": "/api/company/catalog",
+      "status": 401,
+      "milliseconds": 63,
+      "error": "登录状态无效或已过期，请重新登录",
+      "expected": 401
+    },
+    {
+      "path": "/api/users",
+      "status": 401,
+      "milliseconds": 58,
+      "error": "登录状态无效或已过期，请重新登录",
+      "expected": 401
+    },
+    {
+      "path": "/api/company/catalog?page=-1",
+      "status": 400,
+      "milliseconds": 113,
+      "error": "分页或搜索参数不合法",
+      "expected": 400
+    },
+    {
+      "path": "/api/auth/logout",
+      "status": 204,
+      "milliseconds": 87
+    }
+  ],
+  "extendedChecks": [
+    {
+      "path": "/api/company/imports",
+      "status": 200
+    },
+    {
+      "path": "/api/company/templates",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/organization/read-only",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/administrators",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/reviews",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/notifications",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/reviews/candidates",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/audit/search",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/audit/search?archived=true",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/external-users",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/initial-passwords?departmentId=1",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/organization/roles",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/integrations",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/self/applications",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/users",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/dictionary",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/sync/failures",
+      "status": 200
+    },
+    {
+      "path": "/api/platform/sync/identities",
+      "status": 200
+    },
+    {
+      "check": "SSO browser session",
+      "status": 200
+    },
+    {
+      "check": "cdwy-oa-check authorization and real callback",
+      "authorizationStatus": 302,
+      "registeredCallback": true,
+      "callbackStatus": 200,
+      "loginSuccess": true
+    },
+    {
+      "check": "cdwy-hr-check authorization and real callback",
+      "authorizationStatus": 302,
+      "registeredCallback": true,
+      "callbackStatus": 200,
+      "loginSuccess": true
+    }
+  ],
+  "scope": "Verified package deployment, existing JWT continuity, read-only business APIs and OA/HR contract-client OIDC callbacks; no load test or production test fixtures."
+}
