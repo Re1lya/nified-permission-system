@@ -364,7 +364,7 @@ Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 本次仅代表当前源码的 Maven 自动测试；未重做云端数据库迁移、生产部署、浏览器逐页回归、压力测试或外部 OA/HR 产品接入。
 2026-10-22 的云端联调见 link:../phase-one/cloud-verification.json[历史记录]；不能与本轮 H2 测试混为一次验证。
 `docs/first-check/evidence` 保留 2026-10-21 早期报告，*当前报告以本目录为准*。
-生产环境是否已经更新到本次两个修复，需要单独部署后再确认。
+后续于 2026-10-26 完成生产环境更新及在线检查，详见 link:07-deployment.adoc[部署记录]；部署检查不改变本节 Maven 测试范围。
 
 重新导出必须先成功完成完整 `clean verify`。导出脚本不运行测试，不把文件存在当作测试成功。
 源码 SHA-256 清单可用于核对报告对应代码；后续只改文档的提交不会改变这些摘要。
@@ -382,6 +382,7 @@ write('README.adoc','统一权限管理系统：课程检查材料',f'''
 |API 设计 |link:04-api-design.adoc[04 API 设计]：认证、签名、响应和 98 个操作
 |界面设计 |link:05-ui-design.adoc[05 界面设计]：页面、身份范围、流程示意
 |JaCoCo |link:06-jacoco.adoc[06 测试说明]；link:evidence/jacoco/index.html[完整 HTML 报告]
+|部署更新 |link:07-deployment.adoc[2026-10-26 修复版本部署与在线核对]
 |===
 
 本次测试：{counts['tests']} 项，{passed} 通过，{counts['skipped']} 跳过，0 失败、0 错误；行覆盖率 {cov['LINE']['percentage']}%，分支覆盖率 {cov['BRANCH']['percentage']}%。
