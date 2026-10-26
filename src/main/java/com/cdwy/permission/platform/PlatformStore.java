@@ -15,7 +15,11 @@ public class PlatformStore {
         separate.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
     public JdbcTemplate db(){return db;}
-    public List<Map<String,Object>> rows(String sql,Object...args){return db.query(sql,(rs,n)->{Map<String,Object> row=new LinkedHashMap<>();var m=rs.getMetaData();for(int i=1;i<=m.getColumnCount();i++)row.put(m.getColumnLabel(i).toLowerCase(Locale.ROOT),rs.getObject(i));return row;},args);}
+    public List<Map<String,Object>> rows(String sql,Object...args){return db.query(sql,(rs,n)->{Map<String,Object> row=new LinkedHashMap<>();var m=rs.getMetaData();for(int i=1;i<=m.getColumnCount();i++){
+            Object value=rs.getObject(i);
+            // H2 returns a Clob for @Lob text; MySQL returns a String. Materialize text while the result set is open.
+            row.put(m.getColumnLabel(i).toLowerCase(Locale.ROOT),value instanceof java.sql.Clob?rs.getString(i):value);
+        }return row;},args);}
     public long count(String sql,Object...args){return db.queryForObject(sql,Long.class,args);}
     public boolean superAdmin(long id){return count("select count(*) from sys_user where id=? and administrator=true and enabled=true",id)>0;}
     public boolean departmentAdmin(long id){return count("select count(*) from admin_department where user_id=?",id)>0;}

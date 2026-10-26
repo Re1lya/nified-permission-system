@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RbacService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.service</a> &gt; <span class="el_source">RbacService.java</span></div><h1>RbacService.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.service;
+
+import cn.edu.xmu.clonefactory.util.CloneFactory;
+import com.cdwy.permission.dto.CreatePermissionRequest;
+import com.cdwy.permission.dto.CreateRoleRequest;
+import com.cdwy.permission.dto.CreateSystemRequest;
+import com.cdwy.permission.dto.CreateUserRequest;
+import com.cdwy.permission.dto.LoginRequest;
+import com.cdwy.permission.dto.LoginResponse;
+import com.cdwy.permission.dto.PermissionResponse;
+import com.cdwy.permission.dto.RoleResponse;
+import com.cdwy.permission.dto.SetPasswordRequest;
+import com.cdwy.permission.dto.SystemResponse;
+import com.cdwy.permission.dto.UpdatePermissionRequest;
+import com.cdwy.permission.dto.UpdateRoleRequest;
+import com.cdwy.permission.dto.UpdateSystemRequest;
+import com.cdwy.permission.dto.UpdateUserRequest;
+import com.cdwy.permission.dto.UserResponse;
+import com.cdwy.permission.entity.BusinessSystem;
+import com.cdwy.permission.entity.Permission;
+import com.cdwy.permission.entity.Role;
+import com.cdwy.permission.entity.RolePermission;
+import com.cdwy.permission.entity.UserAccount;
+import com.cdwy.permission.entity.UserRole;
+import com.cdwy.permission.exception.AuthenticationFailedException;
+import com.cdwy.permission.exception.ConflictException;
+import com.cdwy.permission.exception.ForbiddenException;
+import com.cdwy.permission.exception.ResourceNotFoundException;
+import com.cdwy.permission.repository.BusinessSystemRepository;
+import com.cdwy.permission.repository.PermissionRepository;
+import com.cdwy.permission.repository.RolePermissionRepository;
+import com.cdwy.permission.repository.RoleRepository;
+import com.cdwy.permission.repository.UserAccountRepository;
+import com.cdwy.permission.repository.UserRoleRepository;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional(readOnly = true)
+public class RbacService {
+
+    private final UserAccountRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final BusinessSystemRepository systemRepository;
+    private final PermissionRepository permissionRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RolePermissionRepository rolePermissionRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenService jwtTokenService;
+    private final com.cdwy.permission.platform.PlatformStore platform;
+
+    public RbacService(
+            UserAccountRepository userRepository,
+            RoleRepository roleRepository,
+            BusinessSystemRepository systemRepository,
+            PermissionRepository permissionRepository,
+            UserRoleRepository userRoleRepository,
+            RolePermissionRepository rolePermissionRepository,
+            PasswordEncoder passwordEncoder,
+<span class="fc" id="L64">            JwtTokenService jwtTokenService, com.cdwy.permission.platform.PlatformStore platform) {</span>
+<span class="fc" id="L65">        this.userRepository = userRepository;</span>
+<span class="fc" id="L66">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L67">        this.systemRepository = systemRepository;</span>
+<span class="fc" id="L68">        this.permissionRepository = permissionRepository;</span>
+<span class="fc" id="L69">        this.userRoleRepository = userRoleRepository;</span>
+<span class="fc" id="L70">        this.rolePermissionRepository = rolePermissionRepository;</span>
+<span class="fc" id="L71">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L72">        this.jwtTokenService = jwtTokenService;</span>
+<span class="fc" id="L73">        this.platform = platform;</span>
+<span class="fc" id="L74">    }</span>
+
+    @Transactional
+    public UserResponse createUser(CreateUserRequest request) {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (userRepository.existsByUsername(request.username())) {</span>
+<span class="fc" id="L79">            throw new ConflictException(&quot;用户名已存在: &quot; + request.username());</span>
+        }
+<span class="fc" id="L81">        UserAccount user = CloneFactory.copy(new UserAccount(request.username(), request.displayName()), request);</span>
+<span class="fc" id="L82">        return toUserResponse(userRepository.save(user));</span>
+    }
+
+    public List&lt;UserResponse&gt; listUsers() {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        return userRepository.findAll().stream().filter(u -&gt; platform.count(&quot;select count(*) from account_policy where user_id=? and deleted=true&quot;,u.getId())==0).map(this::toUserResponse).toList();</span>
+    }
+
+    @Transactional
+    public UserResponse updateUser(Long userId, UpdateUserRequest request) {
+<span class="fc" id="L91">        UserAccount user = getUserForUpdate(userId);</span>
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">        if (user.isAdministrator() &amp;&amp; !request.enabled()) {</span>
+<span class="fc" id="L93">            throw new ConflictException(&quot;首次管理员不能停用&quot;);</span>
+        }
+<span class="fc" id="L95">        CloneFactory.copyNotNull(user, request);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (!user.isEnabled()) {</span>
+<span class="fc" id="L97">            jwtTokenService.revokeAll(userId);</span>
+        }
+<span class="fc" id="L99">        return toUserResponse(userRepository.save(user));</span>
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (getUserForUpdate(userId).isAdministrator()) {</span>
+<span class="fc" id="L105">            throw new ConflictException(&quot;首次管理员不能删除&quot;);</span>
+        }
+<span class="fc" id="L107">        jwtTokenService.revokeAll(userId);</span>
+<span class="fc" id="L108">        userRoleRepository.deleteAllByUser_Id(userId);</span>
+<span class="fc" id="L109">        var user=getUserForUpdate(userId);</span>
+<span class="fc" id="L110">        user.setEnabled(false);user.setUsername(&quot;deleted_&quot;+userId+&quot;_&quot;+java.util.UUID.randomUUID().toString().replace(&quot;-&quot;,&quot;&quot;));</span>
+<span class="fc" id="L111">        user.setPasswordHash(null);platform.ensurePolicy(userId);</span>
+<span class="fc" id="L112">        platform.db().update(&quot;update account_policy set deleted=true where user_id=?&quot;,userId);</span>
+<span class="fc" id="L113">        platform.db().update(&quot;delete from admin_department where user_id=?&quot;,userId);</span>
+<span class="fc" id="L114">        platform.changed(userId);userRepository.save(user);</span>
+<span class="fc" id="L115">    }</span>
+
+    @Transactional
+    public void setPassword(Long userId, SetPasswordRequest request) {
+<span class="fc" id="L119">        UserAccount user = getUserForUpdate(userId);</span>
+<span class="fc" id="L120">        PasswordPolicy.validate(request.password());</span>
+<span class="fc" id="L121">        user.setPasswordHash(passwordEncoder.encode(request.password()));</span>
+<span class="fc" id="L122">        userRepository.save(user);</span>
+<span class="fc" id="L123">        jwtTokenService.revokeAll(userId);</span>
+<span class="fc" id="L124">    }</span>
+
+    @Transactional
+    public LoginResponse login(LoginRequest request) {
+<span class="pc bpc" id="L128" title="5 of 10 branches missed.">        if(request.username()==null||request.username().isBlank()||request.username().length()&gt;64||request.password()==null||request.password().length()&gt;256)throw new AuthenticationFailedException();</span>
+<span class="fc" id="L129">        String username=request.username();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if(!userRepository.existsByUsername(username)) {</span>
+<span class="fc" id="L131">            var candidates=platform.rows(&quot;select ac.username from employee_profile e join sys_user u on u.id=e.user_id join sys_account ac on ac.user_id=u.id where e.phone=?&quot;,username);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">            if(candidates.size()==1) username=(String)candidates.getFirst().get(&quot;username&quot;);</span>
+        }
+        // Count failures against the resolved account so username and phone attempts share one lockout.
+<span class="fc" id="L135">        platform.notLocked(username);</span>
+<span class="fc" id="L136">        UserAccount user = userRepository.findByUsernameForUpdate(username)</span>
+<span class="fc" id="L137">                .filter(UserAccount::isEnabled)</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                .filter(account -&gt; account.getPasswordHash() != null)</span>
+<span class="fc" id="L139">                .filter(account -&gt; passwordEncoder.matches(request.password(), account.getPasswordHash()))</span>
+<span class="fc" id="L140">                .orElse(null);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if(user==null){platform.loginResult(username,false);platform.audit(null,&quot;LOGIN&quot;,request.username(),&quot;FAILED&quot;);throw new AuthenticationFailedException();}</span>
+<span class="fc" id="L142">        platform.validAccount(user.getId());</span>
+<span class="fc" id="L143">        platform.ensurePolicy(user.getId());</span>
+<span class="fc" id="L144">        platform.loginResult(username,true);</span>
+<span class="fc" id="L145">        platform.audit(user.getId(),&quot;LOGIN&quot;,user.getUsername(),&quot;SUCCESS&quot;,user.getId());</span>
+<span class="fc" id="L146">        String accessToken = jwtTokenService.issue(user.getId());</span>
+<span class="fc" id="L147">        return new LoginResponse(accessToken, user.getId(), user.getUsername(), user.getDisplayName(),</span>
+<span class="fc" id="L148">                effectivePermissions(user.getId()));</span>
+    }
+
+    @Transactional
+    public RoleResponse createRole(CreateRoleRequest request) {
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        if (roleRepository.existsByCode(request.code())) {</span>
+<span class="nc" id="L154">            throw new ConflictException(&quot;角色编码已存在: &quot; + request.code());</span>
+        }
+<span class="fc" id="L156">        Role role = roleRepository.saveAndFlush(new Role(request.code(), request.name(), request.description()));</span>
+<span class="fc" id="L157">        platform.db().update(&quot;insert into sys_post(name,role_id,deleted) values(?,?,false)&quot;,request.name(),role.getId());</span>
+<span class="fc" id="L158">        return toRoleResponse(role);</span>
+    }
+
+    public List&lt;RoleResponse&gt; listRoles() {
+<span class="nc" id="L162">        return roleRepository.findAll().stream().map(this::toRoleResponse).toList();</span>
+    }
+
+    @Transactional
+    public RoleResponse updateRole(Long roleId, UpdateRoleRequest request) {
+<span class="fc" id="L167">        Role role = getRole(roleId);</span>
+<span class="fc" id="L168">        role.setName(request.name());</span>
+<span class="fc" id="L169">        role.setDescription(request.description());</span>
+<span class="fc" id="L170">        role.setEnabled(request.enabled());</span>
+<span class="fc" id="L171">        platform.db().update(&quot;update sys_post set name=? where role_id=?&quot;,request.name(),roleId);</span>
+<span class="fc" id="L172">        platform.permissionsChanged();</span>
+<span class="fc" id="L173">        return toRoleResponse(roleRepository.save(role));</span>
+    }
+
+    @Transactional
+    public void deleteRole(Long roleId) {
+<span class="fc" id="L178">        var role=getRole(roleId);</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if(platform.count(&quot;select count(*) from sys_user_role where role_id=?&quot;,roleId)&gt;0</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">            ||platform.count(&quot;select count(*) from employee_profile e join sys_post p on p.id=e.post_id where p.role_id=?&quot;,roleId)&gt;0)</span>
+<span class="fc" id="L181">            throw new ConflictException(&quot;角色或岗位仍被员工引用，请先解除关联&quot;);</span>
+<span class="fc" id="L182">        rolePermissionRepository.deleteAllByRole_Id(roleId);</span>
+<span class="fc" id="L183">        platform.db().update(&quot;update sys_post set deleted=true,name=concat('deleted_post_',id) where role_id=?&quot;,roleId);</span>
+<span class="fc" id="L184">        role.setEnabled(false);role.setDeleted(true);role.setCode(&quot;deleted_role_&quot;+roleId);roleRepository.save(role);</span>
+<span class="fc" id="L185">        platform.permissionsChanged();</span>
+<span class="fc" id="L186">    }</span>
+
+    @Transactional
+    public SystemResponse createSystem(CreateSystemRequest request) {
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        if (systemRepository.existsByCode(request.code())) {</span>
+<span class="nc" id="L191">            throw new ConflictException(&quot;业务系统编码已存在: &quot; + request.code());</span>
+        }
+<span class="fc" id="L193">        BusinessSystem system = systemRepository.save(</span>
+<span class="fc" id="L194">                new BusinessSystem(request.code(), request.name(), request.baseUrl()));</span>
+<span class="fc" id="L195">        return toSystemResponse(system);</span>
+    }
+
+    public List&lt;SystemResponse&gt; listSystems() {
+<span class="nc" id="L199">        return systemRepository.findAll().stream().map(this::toSystemResponse).toList();</span>
+    }
+
+    @Transactional
+    public SystemResponse updateSystem(Long systemId, UpdateSystemRequest request) {
+<span class="fc" id="L204">        BusinessSystem system = getSystem(systemId);</span>
+<span class="fc" id="L205">        system.setName(request.name());</span>
+<span class="fc" id="L206">        system.setBaseUrl(request.baseUrl());</span>
+<span class="fc" id="L207">        system.setEnabled(request.enabled());</span>
+<span class="fc" id="L208">        platform.permissionsChanged();</span>
+<span class="fc" id="L209">        return toSystemResponse(systemRepository.save(system));</span>
+    }
+
+    @Transactional
+    public void deleteSystem(Long systemId) {
+<span class="fc" id="L214">        getSystem(systemId);</span>
+<span class="fc" id="L215">        List&lt;Permission&gt; permissions = permissionRepository.findAllBySystem_Id(systemId);</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (permissions.stream().anyMatch(Permission::isActive)) {</span>
+<span class="nc" id="L217">            throw new ConflictException(&quot;业务系统仍有有效权限点，请先标记失效&quot;);</span>
+        }
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (platform.count(&quot;select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.system_id=?&quot;, systemId) &gt; 0) {</span>
+<span class="nc" id="L220">            throw new ConflictException(&quot;失效权限点仍被角色引用，请先回收授权&quot;);</span>
+        }
+<span class="fc" id="L222">        var system=getSystem(systemId);system.setEnabled(false);system.setDeleted(true);</span>
+<span class="fc" id="L223">        system.setCode(&quot;deleted_system_&quot;+systemId);systemRepository.save(system);</span>
+<span class="fc" id="L224">        platform.db().update(&quot;update application_access set status='DISABLED' where system_id=?&quot;,systemId);</span>
+<span class="fc" id="L225">        platform.permissionsChanged();</span>
+<span class="fc" id="L226">    }</span>
+
+    @Transactional
+    public PermissionResponse createPermission(CreatePermissionRequest request) {
+<span class="pc bpc" id="L230" title="2 of 4 branches missed.">        if (request.code() == null || !request.code().matches(CreatePermissionRequest.CODE)) {</span>
+<span class="nc" id="L231">            throw new IllegalArgumentException(&quot;权限编码格式为 应用:模块:操作，小写字母、数字、下划线或连字符，最多三段&quot;);</span>
+        }
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">        if (permissionRepository.existsByCode(request.code())) {</span>
+<span class="nc" id="L234">            throw new ConflictException(&quot;权限编码已存在: &quot; + request.code());</span>
+        }
+<span class="fc" id="L236">        BusinessSystem system = systemRepository.findById(request.systemId())</span>
+<span class="pc" id="L237">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;业务系统不存在: &quot; + request.systemId()));</span>
+<span class="fc" id="L238">        Permission permission = permissionRepository.save(</span>
+<span class="fc" id="L239">                new Permission(request.code(), request.name(), request.menuPath(), system,</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">                        request.type() == null ? &quot;API&quot; : request.type()));</span>
+<span class="fc" id="L241">        return toPermissionResponse(permission);</span>
+    }
+
+    public List&lt;PermissionResponse&gt; listPermissions(Long systemId) {
+<span class="fc" id="L245">        List&lt;Permission&gt; permissions = permissionRepository.findVisibleBySystemId(systemId);</span>
+<span class="fc" id="L246">        return permissions.stream().map(this::toPermissionResponse).toList();</span>
+    }
+
+    @Transactional
+    public PermissionResponse updatePermission(Long permissionId, UpdatePermissionRequest request) {
+<span class="fc" id="L251">        Permission permission = getPermission(permissionId);</span>
+<span class="fc" id="L252">        permission.setName(request.name());</span>
+<span class="fc" id="L253">        permission.setMenuPath(request.menuPath());</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">        if (request.type() != null) {</span>
+<span class="nc" id="L255">            permission.setType(request.type());</span>
+        }
+<span class="pc bpc" id="L257" title="1 of 4 branches missed.">        if (request.active() != null &amp;&amp; request.active() != permission.isActive()) {</span>
+<span class="fc" id="L258">            permission.setActive(request.active());</span>
+<span class="fc" id="L259">            holdersChanged(permissionId);</span>
+        }
+<span class="fc" id="L261">        return toPermissionResponse(permissionRepository.save(permission));</span>
+    }
+
+    @Transactional
+    public void deletePermission(Long permissionId) {
+        // UC-B03 step 6: a removed function is marked inactive, not physically deleted; existing grants are kept (5a).
+<span class="fc" id="L267">        Permission permission = getPermission(permissionId);</span>
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">        if (permission.isActive()) {</span>
+<span class="fc" id="L269">            permission.setActive(false);</span>
+<span class="fc" id="L270">            permissionRepository.save(permission);</span>
+<span class="fc" id="L271">            holdersChanged(permissionId);</span>
+        }
+<span class="fc" id="L273">    }</span>
+
+    private void holdersChanged(Long permissionId) {
+<span class="fc" id="L276">        platform.rows(&quot;select distinct ur.user_id from sys_user_role ur join sys_role_permission rp on rp.role_id=ur.role_id where rp.permission_id=?&quot;, permissionId)</span>
+<span class="fc" id="L277">                .forEach(row -&gt; platform.changed(((Number) row.get(&quot;user_id&quot;)).longValue()));</span>
+<span class="fc" id="L278">    }</span>
+
+    @Transactional
+    public void assignRole(Long userId, Long roleId) {
+<span class="fc" id="L282">        UserAccount user = getUser(userId);</span>
+<span class="fc" id="L283">        Role role = getRole(roleId);</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">        if (!userRoleRepository.existsByUser_IdAndRole_Id(userId, roleId)) {</span>
+<span class="fc" id="L285">            userRoleRepository.save(new UserRole(user, role));</span>
+<span class="fc" id="L286">            platform.changed(userId);</span>
+        }
+<span class="fc" id="L288">    }</span>
+
+    @Transactional
+    public void removeRole(Long userId, Long roleId) {
+<span class="fc" id="L292">        getUser(userId);</span>
+<span class="fc" id="L293">        getRole(roleId);</span>
+<span class="fc" id="L294">        userRoleRepository.deleteByUser_IdAndRole_Id(userId, roleId);</span>
+<span class="fc" id="L295">        platform.changed(userId);</span>
+<span class="fc" id="L296">    }</span>
+
+    @Transactional
+    public void assignPermission(Long roleId, Long permissionId) {
+<span class="fc" id="L300">        Role role = getRole(roleId);</span>
+<span class="fc" id="L301">        Permission permission = getPermission(permissionId);</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        if (!permission.isActive()) {</span>
+<span class="fc" id="L303">            throw new ConflictException(&quot;权限点已失效，不能再授予: &quot; + permission.getCode());</span>
+        }
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        if (!rolePermissionRepository.existsByRole_IdAndPermission_Id(roleId, permissionId)) {</span>
+<span class="fc" id="L306">            rolePermissionRepository.save(new RolePermission(role, permission));</span>
+<span class="pc" id="L307">            userRoleRepository.findAllByRole_Id(roleId).forEach(link-&gt;platform.changed(link.getUser().getId()));</span>
+        }
+<span class="fc" id="L309">    }</span>
+
+    @Transactional
+    public void removePermission(Long roleId, Long permissionId) {
+<span class="fc" id="L313">        getRole(roleId);</span>
+<span class="fc" id="L314">        getPermission(permissionId);</span>
+<span class="fc" id="L315">        rolePermissionRepository.deleteByRole_IdAndPermission_Id(roleId, permissionId);</span>
+<span class="fc" id="L316">        userRoleRepository.findAllByRole_Id(roleId).forEach(link-&gt;platform.changed(link.getUser().getId()));</span>
+<span class="fc" id="L317">    }</span>
+
+    public List&lt;RoleResponse&gt; listUserRoles(Long userId) {
+<span class="nc" id="L320">        getUser(userId);</span>
+<span class="nc" id="L321">        return userRoleRepository.findAllByUser_Id(userId).stream()</span>
+<span class="nc" id="L322">                .map(UserRole::getRole)</span>
+<span class="nc" id="L323">                .map(this::toRoleResponse)</span>
+<span class="nc" id="L324">                .toList();</span>
+    }
+
+    public List&lt;PermissionResponse&gt; listRolePermissions(Long roleId) {
+<span class="fc" id="L328">        getRole(roleId);</span>
+<span class="fc" id="L329">        return rolePermissionRepository.findAllByRole_Id(roleId).stream()</span>
+<span class="fc" id="L330">                .map(RolePermission::getPermission)</span>
+<span class="fc" id="L331">                .map(this::toPermissionResponse)</span>
+<span class="fc" id="L332">                .toList();</span>
+    }
+
+    public List&lt;PermissionResponse&gt; effectivePermissions(Long userId) {
+<span class="fc" id="L336">        UserAccount user = getUser(userId);</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        if (!user.isEnabled()) {</span>
+<span class="nc" id="L338">            return List.of();</span>
+        }
+
+<span class="fc" id="L341">        Map&lt;String, PermissionResponse&gt; permissionsByCode = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L342">        userRoleRepository.findAllByUser_Id(userId).stream()</span>
+<span class="fc" id="L343">                .map(UserRole::getRole)</span>
+<span class="fc" id="L344">                .filter(Role::isEnabled)</span>
+<span class="fc" id="L345">                .forEach(role -&gt; rolePermissionRepository.findAllByRole_Id(role.getId()).stream()</span>
+<span class="fc" id="L346">                        .map(RolePermission::getPermission)</span>
+<span class="fc bfc" id="L347" title="All 4 branches covered.">                        .filter(permission -&gt; permission.isActive() &amp;&amp; permission.getSystem().isEnabled())</span>
+<span class="fc" id="L348">                        .forEach(permission -&gt; permissionsByCode.putIfAbsent(</span>
+<span class="fc" id="L349">                                permission.getCode(), toPermissionResponse(permission))));</span>
+<span class="fc" id="L350">        return List.copyOf(permissionsByCode.values());</span>
+    }
+
+    public boolean hasPermission(Long userId, String permissionCode) {
+<span class="fc" id="L354">        return effectivePermissions(userId).stream()</span>
+<span class="fc" id="L355">                .anyMatch(permission -&gt; permission.code().equals(permissionCode));</span>
+    }
+
+    public void assertPermission(Long userId, String permissionCode) {
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        if (!hasPermission(userId, permissionCode)) {</span>
+<span class="fc" id="L360">            platform.audit(userId, &quot;ACCESS_DENIED&quot;, permissionCode, &quot;DENIED&quot;, userId);</span>
+<span class="fc" id="L361">            throw new ForbiddenException(&quot;用户没有权限: &quot; + permissionCode);</span>
+        }
+<span class="fc" id="L363">    }</span>
+
+    /** Enabled roles of the user that currently carry the permission through an enabled system; the basis of an allow decision. */
+    public List&lt;String&gt; grantingRoles(Long userId, String permissionCode) {
+<span class="fc" id="L367">        return platform.rows(&quot;select distinct r.code from sys_user_role ur join sys_role r on r.id=ur.role_id join sys_role_permission rp on rp.role_id=r.id join sys_permission p on p.id=rp.permission_id join biz_system s on s.id=p.system_id where ur.user_id=? and p.code=? and r.enabled=true and p.active=true and s.enabled=true order by r.code&quot;, userId, permissionCode)</span>
+<span class="fc" id="L368">                .stream().map(row -&gt; (String) row.get(&quot;code&quot;)).toList();</span>
+    }
+
+    // Read-write: token validation records session activity. H2 ignores the class-level read-only flag, MySQL rejects the write.
+    @Transactional
+    public Long requirePermission(String authorizationHeader, String permissionCode) {
+<span class="fc" id="L374">        Long userId = jwtTokenService.requireUserId(authorizationHeader);</span>
+<span class="fc" id="L375">        assertPermission(userId, permissionCode);</span>
+<span class="fc" id="L376">        return userId;</span>
+    }
+
+    private UserAccount getUserForUpdate(Long userId) {
+<span class="fc" id="L380">        return userRepository.findByIdForUpdate(userId)</span>
+<span class="pc" id="L381">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;用户不存在: &quot; + userId));</span>
+    }
+
+    private UserAccount getUser(Long userId) {
+<span class="fc" id="L385">        return userRepository.findById(userId)</span>
+<span class="fc" id="L386">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;用户不存在: &quot; + userId));</span>
+    }
+
+    private Role getRole(Long roleId) {
+<span class="fc" id="L390">        return roleRepository.findById(roleId)</span>
+<span class="pc" id="L391">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;角色不存在: &quot; + roleId));</span>
+    }
+
+    private BusinessSystem getSystem(Long systemId) {
+<span class="fc" id="L395">        return systemRepository.findById(systemId)</span>
+<span class="pc" id="L396">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;业务系统不存在: &quot; + systemId));</span>
+    }
+
+    private Permission getPermission(Long permissionId) {
+<span class="fc" id="L400">        return permissionRepository.findById(permissionId)</span>
+<span class="pc" id="L401">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;权限不存在: &quot; + permissionId));</span>
+    }
+
+    private UserResponse toUserResponse(UserAccount user) {
+<span class="fc" id="L405">        return CloneFactory.copy(new UserResponse(), user);</span>
+    }
+
+    private RoleResponse toRoleResponse(Role role) {
+<span class="fc" id="L409">        return CloneFactory.copy(new RoleResponse(), role);</span>
+    }
+
+    private SystemResponse toSystemResponse(BusinessSystem system) {
+<span class="fc" id="L413">        return CloneFactory.copy(new SystemResponse(), system);</span>
+    }
+
+    private PermissionResponse toPermissionResponse(Permission permission) {
+<span class="fc" id="L417">        return CloneFactory.copy(new PermissionResponse(), permission);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

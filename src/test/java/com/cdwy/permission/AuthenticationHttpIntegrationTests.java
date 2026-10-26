@@ -44,9 +44,10 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(properties = {
-        "spring.datasource.url=jdbc:h2:mem:authentication-http-tests;DB_CLOSE_DELAY=-1",
+        "spring.datasource.url=jdbc:h2:mem:authentication-http-tests;DB_CLOSE_DELAY=0",
         "permission.jwt.secret=authentication-http-test-secret-at-least-32-bytes"
 })
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @AutoConfigureMockMvc
 class AuthenticationHttpIntegrationTests {
 
@@ -77,17 +78,7 @@ class AuthenticationHttpIntegrationTests {
 
     @BeforeEach
     void createFixture() throws Exception {
-        // Each HTTP call commits independently, as it would in Postman.
-        for (var user : rbacService.listUsers()) {
-            if (!user.isAdministrator()) rbacService.deleteUser(user.id());
-        }
-        for (var role : rbacService.listRoles()) {
-            rbacService.deleteRole(role.id());
-        }
-        for(var permission:rbacService.listPermissions(null))rbacService.deletePermission(permission.id());
-        for (var system : rbacService.listSystems()) {
-            rbacService.deleteSystem(system.id());
-        }
+        // Fresh database per test: soft-deleted catalog rows must retain their historical references.
         bootstrap.initialize("test-admin", PASSWORD);
         adminToken = login("test-admin", PASSWORD);
         systemId = create("/api/systems", """
@@ -181,7 +172,7 @@ class AuthenticationHttpIntegrationTests {
         updateSystem(false);
         mvc.perform(get("/api/users/{id}/permissions", userId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
-        expectExpense(token, 403);
+        expectExpense(token, 401); // permission version changed
         String loginResponse = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"alice\",\"password\":\"password-123\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.permissions.length()").value(0))
@@ -189,19 +180,23 @@ class AuthenticationHttpIntegrationTests {
         expectExpense(json.readTree(loginResponse).path("accessToken").asText(), 403);
 
         updateSystem(true);
-        expectExpense(token, 200);
+        expectExpense(token, 401);
+        expectExpense(refresh(token), 200);
     }
 
     @Test
-    void roleRemovalAffectsTheNextRequestWithoutReissuingTheToken() throws Exception {
+    void roleRemovalInvalidatesOldTokenAndRefreshUsesCurrentPermissions() throws Exception {
         String token = login("alice", PASSWORD);
         expectExpense(token, 200);
         mvc.perform(delete("/api/users/{id}/roles/{roleId}", userId, roleId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
+        expectExpense(token, 401);
+        token = refresh(token);
         expectExpense(token, 403);
         mvc.perform(put("/api/users/{id}/roles/{roleId}", userId, roleId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
-        expectExpense(token, 200);
+        expectExpense(token, 401);
+        expectExpense(refresh(token), 200);
     }
 
     @Test
@@ -351,9 +346,16 @@ class AuthenticationHttpIntegrationTests {
                 .andExpect(status().isOk());
     }
 
+    private String refresh(String token) throws Exception {
+        return json.readTree(mvc.perform(post("/api/auth/refresh").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8))
+                .path("accessToken").asText();
+    }
+
     private void updateSystem(boolean enabled) throws Exception {
         mvc.perform(put("/api/systems/{id}", systemId).header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"财务系统\",\"enabled\":" + enabled + "}"))
                 .andExpect(status().isOk());
+        adminToken = refresh(adminToken);
     }
 }

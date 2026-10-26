@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompanyImportIntegrationTests {
  @Autowired CompanyImportService service;
  @Autowired JdbcTemplate db;
+ @Autowired com.cdwy.permission.service.RbacService rbac;
  static byte[] xlsx(String[][] rows) throws Exception {
   var out=new ByteArrayOutputStream();
   try(var zip=new ZipOutputStream(out)) {
@@ -29,12 +30,12 @@ class CompanyImportIntegrationTests {
  byte[] permissions(String s) throws Exception{return xlsx(new String[][]{{"清单"},{"软件系统","功能模块","功能点","功能说明","系统管理员","公司领导","部门经理","项目经理","普通员工"},{"系统"+s,"模块","功能","说明","全部","查看/审批","查看/编辑","无","查看本人"}});}
  @Test void atomicImportIsIdempotentAndNeverGrantsEmployeesRolesOrAdmin() throws Exception {
   String s="a"+System.nanoTime();var p=service.preview(1L,deps(s),employees(s),permissions(s));
-  assertEquals(0,p.get("errorCount"));assertEquals(0,db.queryForObject("select count(*) from sys_user where username=?",Integer.class,"SG"+s));
+  assertEquals(0,p.get("errorCount"));assertEquals(0,db.queryForObject("select count(*) from hr_identity where kind='EMPLOYEE' and external_id=?",Integer.class,"SG"+s));
   String id=(String)p.get("previewId");assertThrows(IllegalArgumentException.class,()->service.commit(2L,id,true));
   assertThrows(IllegalArgumentException.class,()->service.commit(1L,id,false));
   service.commit(1L,id,true);assertEquals(true,service.commit(1L,id,true).get("reused"));
-  assertEquals(1,db.queryForObject("select count(*) from sys_user where username=? and administrator=false and password_hash is null",Integer.class,"SG"+s));
-  assertEquals(0,db.queryForObject("select count(*) from sys_user_role ur join sys_user u on u.id=ur.user_id where u.username=?",Integer.class,"SG"+s));
+  assertEquals(1,db.queryForObject("select count(*) from hr_identity h join sys_user u on u.id=h.local_id join sys_account a on a.user_id=u.id join account_policy p on p.user_id=u.id where h.kind='EMPLOYEE' and h.external_id=? and u.administrator=false and a.password_hash is not null and p.must_change_password=true and p.initial_password_issued=false",Integer.class,"SG"+s));
+  assertEquals(0,db.queryForObject("select count(*) from sys_user_role ur join hr_identity h on h.local_id=ur.user_id where h.kind='EMPLOYEE' and h.external_id=?",Integer.class,"SG"+s));
   assertTrue(db.queryForObject("select count(*) from permission_detail where action='view_self'",Integer.class)>0);
  }
  @Test void malformedRelationshipBlocksEntireImport() throws Exception {
@@ -43,7 +44,8 @@ class CompanyImportIntegrationTests {
   assertEquals(0,db.queryForObject("select count(*) from sys_department where name=?",Integer.class,"部门"+s));
  }
  @Test void collisionRollsBackPreviouslyInsertedDepartmentsAndRoles() throws Exception {
-  String s="c"+System.nanoTime();db.update("insert into sys_user(username,display_name,enabled,administrator) values (?,?,true,true)","SG"+s,"保留管理员");
+  String s="c"+System.nanoTime();long existing=rbac.createUser(new com.cdwy.permission.dto.CreateUserRequest("manual"+s,"已有手工账号")).id();
+  db.update("insert into hr_identity(kind,external_id,local_id) values('EMPLOYEE',?,?)","SG"+s,existing);
   var p=service.preview(1L,deps(s),employees(s),permissions(s));
   assertThrows(IllegalArgumentException.class,()->service.commit(1L,(String)p.get("previewId"),true));
   assertEquals(0,db.queryForObject("select count(*) from sys_department where name=?",Integer.class,"部门"+s));

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuditLifecycle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">AuditLifecycle.java</span></div><h1>AuditLifecycle.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import com.cdwy.permission.service.*;
+import com.cdwy.permission.exception.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.time.*;
+import java.util.*;
+import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+@Service
+class AuditRetention {
+    private final PlatformStore s;
+<span class="fc" id="L17">    AuditRetention(PlatformStore s){this.s=s;}</span>
+    /** Move, do not discard, records older than twelve calendar months. One transaction per bounded batch. */
+    @Scheduled(cron=&quot;${permission.audit.archive-cron:0 */5 * * * *}&quot;,zone=&quot;UTC&quot;)
+    @Transactional public void archive(){
+<span class="nc" id="L21">        var cutoff=ZonedDateTime.now(ZoneOffset.UTC).minusMonths(12).toInstant();</span>
+<span class="nc" id="L22">        var ids=s.db().queryForList(&quot;select id from audit_event where created_at&lt;? order by id limit 1000 for update&quot;,Long.class,cutoff);</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        for(long id:ids){</span>
+<span class="nc" id="L24">            s.db().update(&quot;insert into audit_archive(id,actor_id,department_id,target_department_id,kind,target,result,created_at,archived_at) select id,actor_id,department_id,target_department_id,kind,target,result,created_at,? from audit_event where id=?&quot;,Instant.now(),id);</span>
+<span class="nc" id="L25">            s.db().update(&quot;delete from audit_event where id=?&quot;,id);</span>
+<span class="nc" id="L26">        }</span>
+<span class="nc" id="L27">    }</span>
+}
+
+@RestController @RequestMapping(&quot;/api/platform&quot;)
+public class AuditLifecycle {
+    private final PlatformStore s;private final JwtTokenService tokens;private final RbacService rbac;
+<span class="fc" id="L33">    public AuditLifecycle(PlatformStore s,JwtTokenService tokens,RbacService rbac){this.s=s;this.tokens=tokens;this.rbac=rbac;}</span>
+<span class="nc bnc" id="L34" title="All 4 branches missed.">    private long admin(String auth){long id=tokens.requireUserId(auth);if(!s.superAdmin(id)&amp;&amp;!s.departmentAdmin(id))throw new ForbiddenException(&quot;需要管理权限&quot;);return id;}</span>
+<span class="nc" id="L35">    public record Decision(@Positive long userId,@Positive long roleId,@Pattern(regexp=&quot;KEEP|REVOKE&quot;) @NotBlank String decision,@NotBlank @Size(max=1000) String reason){}</span>
+<span class="nc bnc" id="L36" title="All 4 branches missed.">    @GetMapping(&quot;/reviews/candidates&quot;) public Map&lt;String,Object&gt; candidates(@RequestHeader(&quot;Authorization&quot;)String auth,@RequestParam(defaultValue=&quot;0&quot;)int page){if(page&lt;0||page&gt;100000)throw new IllegalArgumentException(&quot;页码不合法&quot;);long a=admin(auth);var items=s.rows(&quot;select ur.user_id,ac.username,ur.role_id,r.name role_name from sys_user_role ur join sys_user u on u.id=ur.user_id join sys_account ac on ac.user_id=u.id join sys_role r on r.id=ur.role_id where u.administrator=false&quot;+s.managedUsers(a,&quot;ur.user_id&quot;)+&quot; order by ur.user_id,ur.role_id limit 100 offset ?&quot;,page*100L);return Map.of(&quot;items&quot;,items,&quot;total&quot;,s.count(&quot;select count(*) from sys_user_role ur join sys_user u on u.id=ur.user_id where u.administrator=false&quot;+s.managedUsers(a,&quot;ur.user_id&quot;)));}</span>
+<span class="nc bnc" id="L37" title="All 4 branches missed.">    @GetMapping(&quot;/reviews&quot;) public Map&lt;String,Object&gt; reviews(@RequestHeader(&quot;Authorization&quot;)String auth,@RequestParam(defaultValue=&quot;0&quot;)int page){if(page&lt;0||page&gt;100000)throw new IllegalArgumentException(&quot;页码不合法&quot;);long a=admin(auth);var items=s.rows(&quot;select * from permission_review where 1=1&quot;+s.managedUsers(a,&quot;user_id&quot;)+&quot; order by id desc limit 100 offset ?&quot;,page*100L);return Map.of(&quot;items&quot;,items,&quot;total&quot;,s.count(&quot;select count(*) from permission_review where 1=1&quot;+s.managedUsers(a,&quot;user_id&quot;)));}</span>
+    @PostMapping(&quot;/reviews&quot;) @Transactional public void review(@RequestHeader(&quot;Authorization&quot;)String auth,@Valid @RequestBody Decision d){
+<span class="nc" id="L39">        long a=admin(auth);s.requireUser(a,d.userId());</span>
+<span class="nc" id="L40">        s.db().queryForObject(&quot;select id from sys_user where id=? for update&quot;,Long.class,d.userId());</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if(s.count(&quot;select count(*) from sys_user_role where user_id=? and role_id=?&quot;,d.userId(),d.roleId())!=1)throw new ConflictException(&quot;该角色已回收，请刷新复核清单&quot;);</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if(d.decision().equals(&quot;REVOKE&quot;))rbac.removeRole(d.userId(),d.roleId());</span>
+<span class="nc" id="L43">        s.db().update(&quot;insert into permission_review(actor_id,user_id,role_id,decision,reason,created_at) values(?,?,?,?,?,?)&quot;,a,d.userId(),d.roleId(),d.decision(),d.reason(),Instant.now());</span>
+<span class="nc" id="L44">        s.audit(a,&quot;PERMISSION_REVIEW&quot;,d.userId()+&quot;:&quot;+d.roleId(),d.decision(),d.userId());</span>
+<span class="nc" id="L45">    }</span>
+    @GetMapping(&quot;/audit/search&quot;) public Map&lt;String,Object&gt; search(@RequestHeader(&quot;Authorization&quot;)String auth,@RequestParam(defaultValue=&quot;false&quot;)boolean archived,@RequestParam(required=false)Instant from,@RequestParam(required=false)Instant until,@RequestParam(required=false)Long actorId,@RequestParam(defaultValue=&quot;&quot;)String kind,@RequestParam(defaultValue=&quot;0&quot;)int page,@RequestParam(defaultValue=&quot;25&quot;)int size){
+<span class="nc bnc" id="L47" title="All 14 branches missed.">        long a=admin(auth);if(page&lt;0||page&gt;100000||size&lt;1||size&gt;100||from!=null&amp;&amp;until!=null&amp;&amp;!from.isBefore(until))throw new IllegalArgumentException(&quot;查询条件不合法&quot;);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        String sql=&quot; from &quot;+(archived?&quot;audit_archive&quot;:&quot;audit_event&quot;)+&quot; where 1=1&quot;;List&lt;Object&gt; args=new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if(!s.superAdmin(a)){sql+=&quot; and (department_id in(select department_id from admin_department where user_id=?) or target_department_id in(select department_id from admin_department where user_id=?))&quot;;args.add(a);args.add(a);}</span>
+<span class="nc bnc" id="L50" title="All 8 branches missed.">        if(from!=null){sql+=&quot; and created_at&gt;=?&quot;;args.add(from);}if(until!=null){sql+=&quot; and created_at&lt;?&quot;;args.add(until);}if(actorId!=null){sql+=&quot; and actor_id=?&quot;;args.add(actorId);}if(!kind.isBlank()){sql+=&quot; and kind=?&quot;;args.add(kind);}</span>
+<span class="nc" id="L51">        long total=s.count(&quot;select count(*)&quot;+sql,args.toArray());args.add(size);args.add((long)page*size);</span>
+<span class="nc" id="L52">        return Map.of(&quot;total&quot;,total,&quot;items&quot;,s.rows(&quot;select *&quot;+sql+&quot; order by id desc limit ? offset ?&quot;,args.toArray()));</span>
+    }
+<span class="nc bnc" id="L54" title="All 2 branches missed.">    @GetMapping(&quot;/notifications&quot;) public List&lt;Map&lt;String,Object&gt;&gt; notifications(@RequestHeader(&quot;Authorization&quot;)String auth){long a=admin(auth);return s.rows(&quot;select * from platform_notification where 1=1&quot;+(s.superAdmin(a)?&quot;&quot;:&quot; and department_id in(select department_id from admin_department where user_id=&quot;+a+&quot;)&quot;)+&quot; order by id desc limit 200&quot;);}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

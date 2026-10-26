@@ -1,0 +1,322 @@
+= 统一权限管理系统：API 设计
+:lang: zh-CN
+:toc: left
+:toc-title: 目录
+:sectnums:
+:sectanchors:
+:source-highlighter: highlight.js
+:icons: font
+
+小组成员：温家正、姚景云、杜奕含、陈浩贤。
+
+更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。
+
+接口清单为 98 个业务控制器操作。OIDC 协议端点由 Spring Authorization Server 提供，不与业务控制器计数混淆。
+
+OpenAPI：link:../phase-one/apifox/openapi.json[可导入接口契约]。
+
+
+== 契约与版本
+
+接口以原需求 DOC-01 第五、十一章为基准。管理与自助 API 使用 Bearer JWT，HR/OA 回调使用独立共享密钥的 HMAC-SHA256 签名，OIDC 使用标准授权码与 PKCE。
+
+当前前端发送 Accept: application/vnd.cdwy.v2+json，普通 JSON 响应包含 code、message、data。成功码 SUCCESS；参数、认证、授权、资源和冲突分别使用 INVALID_ARGUMENT、UNAUTHENTICATED、FORBIDDEN、NOT_FOUND、CONFLICT。HTTP 仍表达相应协议状态。204 无响应体。未发送版本头的旧客户端保持旧表示；OAuth/OIDC 端点维持协议原有格式。OpenAPI 分别描述 application/json 原始响应和 application/vnd.cdwy.v2+json 包装响应，创建资源按201、无响应体按204记录。
+
+[source,json]
+----
+{"code":"SUCCESS","message":"成功","data":{"items":[],"total":0}}
+----
+
+
+管理接口在服务端复核角色、目标用户、部门范围和委派上限。前端导航权限不能替代后端检查。列表采用 page 从零开始、size 默认25且最多100；个别目录接口上限500，批次查询或摘要列表的上限见代码参数说明。
+
+== 认证和权限变更
+
+POST /api/auth/login 接收 username 和 password，账号或唯一手机号均可登录。平台 JWT 携带 permission_version；每次使用比较当前版本。版本改变时旧 JWT 返回401，前端可 POST /api/auth/refresh 换取当前权限版本令牌，无需重新输入密码。禁用、离职、改密或强制下线会撤销数据库会话，刷新也失败。
+
+OIDC 端点遵循协议，不套业务响应。授权码客户端必须使用 S256 PKCE；精确匹配登记的回调；公开客户端不发放刷新令牌。机密客户端使用 client_secret_basic 且启用刷新令牌轮换。应用配置改变后进入 DRAFT 并撤销旧授权；完成接入验收后才启用。
+
+== 应用配置与验收
+
+先 POST /api/systems 注册目录，再 PUT /api/platform/applications/{id}/config。输入 clientId、entryUrl、protocol、redirectUris、clientSecret、compatibilityPlan。客户端编号不可更改；配置读取不返回密钥。外部地址默认要求 HTTPS；回环演示及显式配置的课程 HTTP 演示源允许 HTTP，配置见 ../phase-one/http-access.md。LEGACY 必须说明隔离方案，并明确没有统一免登能力。
+
+POST /api/platform/applications/{id}/acceptance 接收 login、callback、permission、revocation、isolation 和 evidence。OIDC 五项均需确认；LEGACY 至少确认隔离。此接口保存人工验收结果，不自动执行测试。GET /api/platform/self/portal 只返回已验收、启用且当前用户获授权的入口。
+
+== HR 与 OA 签名格式
+
+POST /api/integration/{source}，source 为 hr 或 oa。X-Request-Id 为请求幂等编号，X-Timestamp 为 Unix 秒，时间窗口为五分钟。签名为以下 UTF-8 原文的 HMAC-SHA256 十六进制摘要，不对 JSON 重新排版：
+
+[source,text]
+----
+source + "\n" + timestamp + "\n" + requestId + "\n" + rawBody
+----
+
+
+HR 与 OA 密钥必须不同且至少32字符，通过 PERMISSION_HR_SECRET 与 PERMISSION_OA_SECRET 配置。请求体最多1200万字符。相同编号相同内容返回历史结果，不重复变更；相同编号不同内容409。业务事务失败后，单独保存请求摘要和错误原因；原始数据修正后必须使用新编号。没有验签通过的请求不会进入同步异常库。
+
+=== HR 动作
+
+[cols="1,1,1",options="header"]
+|===
+|动作 |输入要点 |行为
+
+|DEPARTMENT |externalId name parentExternalId |先父后子同步，禁止部门环
+
+|POST |externalId name |同步岗位及同名角色，不覆盖既有授权
+
+|JOIN |externalId displayName departmentExternalId postExternalId phone company |创建拼音账号、随机密码和初始改密策略，不授予角色；已有稳定编号只更新未变更组织的资料
+
+|UPDATE |externalId 或 userId，加完整资料 |更新姓名、电话和单位，组织不同则要求 TRANSFER
+
+|TRANSFER |员工编号、新组织和完整 roleIds |单事务回收旧授权并分配新岗位角色，写两部门通知
+
+|LEAVE |externalId 或 userId |停用、撤权、撤销会话
+
+|SYNC |mode FULL 或 INCREMENTAL，records |最多20000条，依赖有序、整批原子处理；不因遗漏自动删除员工
+
+|RECONCILE |records 中提供 externalId |返回 missing extra matched，不修改员工
+
+|===
+
+
+[source,json]
+----
+{"action":"SYNC","mode":"INCREMENTAL","records":[{"action":"DEPARTMENT","externalId":"dept-it","name":"信息中心"},{"action":"POST","externalId":"post-dev","name":"开发岗"},{"action":"JOIN","externalId":"E1001","displayName":"张三","departmentExternalId":"dept-it","postExternalId":"post-dev","phone":"13800000001","company":"示例公司"}]}
+----
+
+
+=== OA 动作
+
+APPLICATION 接收 OA requestId、userId、单元素 roleIds，登记待审批申请；申请在 OA 发起。旧 POST /api/platform/self/applications 已删除，GET 本人状态查询保留。QUERY_PERMISSIONS 按 userId 查询当前权限；QUERY_APPLICATION_STATUS 按 requestId 查询状态。RESULT 按 requestId 或兼容 approvalId 指定申请，decision 为 APPROVED、REJECTED、CANCELLED。已处理申请的相同结论返回成功，不同结论409。批准前检查申请人有效状态，拒绝和取消不授予权限。
+
+[source,json]
+----
+{"action":"APPLICATION","requestId":"OA-2026-001","userId":12,"roleIds":[7]}
+----
+
+
+[source,json]
+----
+{"action":"RESULT","requestId":"OA-2026-001","decision":"APPROVED"}
+----
+
+
+== 复核 审计与组织管理
+
+GET /api/platform/reviews/candidates 返回受管员工角色；POST /api/platform/reviews 接收 userId、roleId、KEEP 或 REVOKE、reason。回收与记录在一个事务中完成。GET /reviews 查看历史，禁止普通用户查询。
+
+GET /api/platform/audit/search 接收 from、until、actorId、kind、archived、page、size；时间区间为左闭右开。归档与在线查询使用相同管理范围。归档任务只移动超过十二个月的记录，不提供日志写改删 API。
+
+同步异常通过 /api/platform/sync/failures 查看，处理记录通过 /failures/{id}/resolve 写入。标记已处理不能代替 HR 重发成功；实际同步结果仍在 integration_event 中记录。部门通知包括调岗交接、账号命名人工核对、外部账号到期提醒。
+
+管理员成员、组织维护及用户资料使用独立接口，校验目标账号和部门引用。首次内置管理员不能变更身份，管理员不能修改自己的超级管理员成员状态。
+
+== 协议适配能力
+
+ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGACY 只提供隔离入口。OAuth2 独立场景、SAML、CAS、LDAP 仅保留扩展边界，不能标为已经实现。应用接入验收必须包含正向登录、错误回调、无权限、撤权后拒绝及隔离检查。
+
+== 控制器路由清单
+
+以下清单由当前编译类离线导出。接口存在和编译通过不等于运行场景验收通过。
+
+[cols="1,1,1",options="header"]
+|===
+|方法 |路径 |处理入口
+
+|POST |/api/company/imports/preview |CompanyController.preview
+
+|GET |/api/company/departments |CompanyController.departments
+
+|GET |/api/company/employees |CompanyController.employees
+
+|GET |/api/company/imports |CompanyController.batches
+
+|GET |/api/company/templates |CompanyController.templates
+
+|GET |/api/company/posts |CompanyController.posts
+
+|POST |/api/company/posts/{id}/template |CompanyController.template
+
+|POST |/api/company/imports/commit |CompanyController.commit
+
+|GET |/api/company/catalog |CompanyController.catalog
+
+|POST |/api/auth/refresh |AuthController.refresh
+
+|POST |/api/auth/login |AuthController.login
+
+|POST |/api/auth/logout |AuthController.logout
+
+|PUT |/api/systems/{systemId} |BusinessSystemController.update
+
+|GET |/api/systems |BusinessSystemController.list
+
+|DELETE |/api/systems/{systemId} |BusinessSystemController.delete
+
+|POST |/api/systems |BusinessSystemController.create
+
+|GET |/api/auth/me |CurrentUserController.me
+
+|GET |/api/demo/expenses |DemoExpenseController.list
+
+|PUT |/api/permissions/{permissionId} |PermissionController.update
+
+|GET |/api/permissions |PermissionController.list
+
+|DELETE |/api/permissions/{permissionId} |PermissionController.delete
+
+|POST |/api/permissions |PermissionController.create
+
+|GET |/api/roles/{roleId}/permissions |RoleController.listPermissions
+
+|PUT |/api/roles/{roleId}/permissions/{permissionId} |RoleController.assignPermission
+
+|DELETE |/api/roles/{roleId}/permissions/{permissionId} |RoleController.removePermission
+
+|PUT |/api/roles/{roleId} |RoleController.update
+
+|GET |/api/roles |RoleController.list
+
+|DELETE |/api/roles/{roleId} |RoleController.delete
+
+|POST |/api/roles |RoleController.create
+
+|GET |/api/users/{userId}/permissions |UserController.listPermissions
+
+|GET |/api/users/{userId}/roles |UserController.listRoles
+
+|PUT |/api/users/{userId}/password |UserController.setPassword
+
+|PUT |/api/users/{userId}/roles/{roleId} |UserController.assignRole
+
+|DELETE |/api/users/{userId}/roles/{roleId} |UserController.removeRole
+
+|PUT |/api/users/{userId} |UserController.update
+
+|GET |/api/users |UserController.list
+
+|GET |/api/users/{userId}/permissions/check |UserController.checkPermission
+
+|DELETE |/api/users/{userId} |UserController.delete
+
+|POST |/api/users |UserController.create
+
+|PUT |/api/platform/super-administrators/{id} |AdministrationController.membership
+
+|GET |/api/platform/organization/read-only |AdministrationController.organization
+
+|PUT |/api/platform/users/{id}/profile |AdministrationController.profile
+
+|GET |/api/platform/administrators |AdministrationController.list
+
+|GET |/api/platform/self/portal |ApplicationController.portal
+
+|GET |/api/platform/applications |ApplicationController.list
+
+|POST |/api/platform/applications/{id}/acceptance |ApplicationController.accept
+
+|GET |/api/platform/applications/{id}/config |ApplicationController.config
+
+|PUT |/api/platform/applications/{id}/config |ApplicationController.configure
+
+|GET |/api/platform/reviews |AuditLifecycle.reviews
+
+|GET |/api/platform/notifications |AuditLifecycle.notifications
+
+|POST |/api/platform/reviews |AuditLifecycle.review
+
+|GET |/api/platform/reviews/candidates |AuditLifecycle.candidates
+
+|GET |/api/platform/audit/search |AuditLifecycle.search
+
+|PUT |/api/platform/external-users/{id}/expiry |ExternalPersonController.renew
+
+|GET |/api/platform/external-users |ExternalPersonController.list
+
+|POST |/api/platform/external-users |ExternalPersonController.create
+
+|POST |/api/platform/initial-passwords |InitialPasswordController.issue
+
+|GET |/api/platform/initial-passwords |InitialPasswordController.pending
+
+|POST |/api/integration/{source} |IntegrationController.accept
+
+|GET |/api/platform/organization/roles |OrganizationController.roles
+
+|PUT |/api/platform/organization/departments/{id} |OrganizationController.department
+
+|POST |/api/platform/organization/departments |OrganizationController.department
+
+|PUT |/api/platform/organization/roles/{role}/permissions/{permission} |OrganizationController.grant
+
+|DELETE |/api/platform/organization/roles/{role}/permissions/{permission} |OrganizationController.revoke
+
+|PUT |/api/platform/organization/grant-limits/{department}/{permission} |OrganizationController.limit
+
+|POST |/api/platform/organization/posts |OrganizationController.post
+
+|DELETE |/api/platform/organization/departments/{id} |OrganizationMaintenance.department
+
+|DELETE |/api/platform/organization/posts/{id} |OrganizationMaintenance.post
+
+|PUT |/api/platform/organization/posts/{id} |OrganizationMaintenance.post
+
+|PUT |/api/platform/organization/dictionary/{id} |OrganizationMaintenance.dictionary
+
+|DELETE |/api/platform/organization/dictionary/{id} |OrganizationMaintenance.dictionary
+
+|PUT |/api/platform/users/{id}/roles/{role} |PlatformController.grant
+
+|GET |/api/platform/audit |PlatformController.audit
+
+|DELETE |/api/platform/users/{id}/roles/{role} |PlatformController.revoke
+
+|DELETE |/api/platform/administrators/{id}/{department} |PlatformController.unbind
+
+|POST |/api/platform/self/password |PlatformController.changePassword
+
+|GET |/api/platform/sessions |PlatformController.sessions
+
+|POST |/api/platform/users/{id}/offline |PlatformController.offline
+
+|GET |/api/platform/integrations |PlatformController.integrations
+
+|GET |/api/platform/approvals |PlatformController.approvals
+
+|GET |/api/platform/self/applications |PlatformController.myApplications
+
+|POST |/api/platform/users/{id}/password |PlatformController.reset
+
+|GET |/api/platform/users |PlatformController.list
+
+|DELETE |/api/platform/users/{id} |PlatformController.delete
+
+|PUT |/api/platform/users/{id}/state |PlatformController.state
+
+|GET |/api/platform/self |PlatformController.self
+
+|DELETE |/api/platform/sessions/{session} |PlatformController.session
+
+|PUT |/api/platform/administrators/{id} |PlatformController.bind
+
+|POST |/api/platform/dictionary |PlatformController.dictionary
+
+|GET |/api/platform/dictionary |PlatformController.dictionary
+
+|GET |/api/oidc/directory/departments |SsoController.departments
+
+|GET |/api/oidc/directory/users |SsoController.users
+
+|POST |/api/platform/self/sso |SsoController.bridge
+
+|GET |/api/oidc/permissions |SsoController.permissions
+
+|GET |/api/oidc/permissions/check |SsoController.check
+
+|GET |/api/platform/sync/failures |SyncAdministration.failures
+
+|GET |/api/platform/sync/identities |SyncAdministration.identities
+
+|POST |/api/platform/sync/failures/{id}/resolve |SyncAdministration.resolve
+
+|===

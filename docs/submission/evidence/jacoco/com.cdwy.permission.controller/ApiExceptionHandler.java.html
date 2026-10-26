@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.controller</a> &gt; <span class="el_source">ApiExceptionHandler.java</span></div><h1>ApiExceptionHandler.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.controller;
+
+import com.cdwy.permission.exception.ConflictException;
+import com.cdwy.permission.exception.AuthenticationFailedException;
+import com.cdwy.permission.exception.ForbiddenException;
+import com.cdwy.permission.exception.ResourceNotFoundException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+<span class="fc" id="L16">public class ApiExceptionHandler {</span>
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; notFound(ResourceNotFoundException exception) {
+<span class="fc" id="L20">        return response(HttpStatus.NOT_FOUND, exception.getMessage());</span>
+    }
+
+    @ExceptionHandler(org.springframework.dao.EmptyResultDataAccessException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; missingRow(Exception exception) {
+<span class="nc" id="L25">        return response(HttpStatus.NOT_FOUND, &quot;记录不存在或已删除&quot;);</span>
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; conflict(ConflictException exception) {
+<span class="fc" id="L30">        return response(HttpStatus.CONFLICT, exception.getMessage());</span>
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; forbidden(ForbiddenException exception) {
+<span class="fc" id="L35">        return response(HttpStatus.FORBIDDEN, exception.getMessage());</span>
+    }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; unauthorized(AuthenticationFailedException exception) {
+<span class="fc" id="L40">        return response(HttpStatus.UNAUTHORIZED, exception.getMessage());</span>
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; invalid(MethodArgumentNotValidException exception) {
+<span class="fc" id="L45">        String message = exception.getBindingResult().getFieldErrors().stream()</span>
+<span class="fc" id="L46">                .findFirst()</span>
+<span class="fc" id="L47">                .map(error -&gt; error.getField() + &quot;: &quot; + error.getDefaultMessage())</span>
+<span class="fc" id="L48">                .orElse(&quot;请求参数不合法&quot;);</span>
+<span class="fc" id="L49">        return response(HttpStatus.BAD_REQUEST, message);</span>
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; badInput(Exception exception) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        return response(HttpStatus.BAD_REQUEST, exception instanceof IllegalArgumentException</span>
+<span class="fc" id="L56">                ? exception.getMessage() : &quot;请求格式不正确，请检查字段类型和 JSON&quot;);</span>
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; constraint(Exception exception) {
+<span class="nc" id="L61">        return response(HttpStatus.CONFLICT, &quot;数据重复或关联约束冲突，请刷新后重试&quot;);</span>
+    }
+
+    private ResponseEntity&lt;Map&lt;String, String&gt;&gt; response(HttpStatus status, String message) {
+<span class="fc" id="L65">        Map&lt;String, String&gt; body = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L66">        body.put(&quot;error&quot;, status.getReasonPhrase());</span>
+<span class="fc" id="L67">        body.put(&quot;message&quot;, message);</span>
+<span class="fc" id="L68">        return ResponseEntity.status(status).body(body);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

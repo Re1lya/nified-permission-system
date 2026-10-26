@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminBootstrapService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.service</a> &gt; <span class="el_source">AdminBootstrapService.java</span></div><h1>AdminBootstrapService.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.service;
+
+import com.cdwy.permission.entity.UserAccount;
+import com.cdwy.permission.repository.UserAccountRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/** Operator-only startup command. Never exposed as an HTTP endpoint. */
+@Service
+public class AdminBootstrapService {
+    private final UserAccountRepository users;
+    private final PasswordEncoder encoder;
+
+<span class="fc" id="L15">    public AdminBootstrapService(UserAccountRepository users, PasswordEncoder encoder) {</span>
+<span class="fc" id="L16">        this.users = users;</span>
+<span class="fc" id="L17">        this.encoder = encoder;</span>
+<span class="fc" id="L18">    }</span>
+
+    @Transactional
+    public void initialize(String username, String password) {
+<span class="fc bfc" id="L22" title="All 4 branches covered.">        if (username.isBlank() &amp;&amp; password.isBlank()) return;</span>
+<span class="pc bpc" id="L23" title="1 of 6 branches missed.">        if (username.isBlank() || username.length() &gt; 64 || !username.equals(username.trim())) {</span>
+<span class="fc" id="L24">            throw new IllegalArgumentException(&quot;初始化管理员用户名必须为 1 至 64 个字符，首尾不能有空格&quot;);</span>
+        }
+<span class="fc" id="L26">        PasswordPolicy.validate(password);</span>
+<span class="fc" id="L27">        var existing = users.findByUsernameForUpdate(username);</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (existing.isPresent()) {</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            if (!existing.get().isAdministrator()) {</span>
+<span class="fc" id="L30">                throw new IllegalStateException(&quot;初始化用户名已被普通用户使用，禁止自动提权&quot;);</span>
+            }
+<span class="fc" id="L32">            return; // Repeat startup does not reset an existing password or sessions.</span>
+        }
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (users.existsByAdministratorTrue()) {</span>
+<span class="fc" id="L35">            throw new IllegalStateException(&quot;已存在首次管理员，禁止通过更换启动参数创建第二个管理员&quot;);</span>
+        }
+<span class="fc" id="L37">        UserAccount admin = new UserAccount(username, &quot;系统管理员&quot;);</span>
+<span class="fc" id="L38">        admin.setAdministrator(true);</span>
+<span class="fc" id="L39">        admin.setBuiltInAdministrator(true);</span>
+<span class="fc" id="L40">        admin.setPasswordHash(encoder.encode(password));</span>
+<span class="fc" id="L41">        users.save(admin);</span>
+<span class="fc" id="L42">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

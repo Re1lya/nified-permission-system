@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessSystem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.entity</a> &gt; <span class="el_source">BusinessSystem.java</span></div><h1>BusinessSystem.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
+@Entity
+@Table(name = &quot;biz_system&quot;, uniqueConstraints = {
+        @UniqueConstraint(name = &quot;uk_biz_system_code&quot;, columnNames = &quot;code&quot;)
+})
+@org.hibernate.annotations.SQLRestriction(&quot;deleted=false&quot;)
+public class BusinessSystem {
+    @Column(nullable=false) private boolean deleted;
+<span class="nc" id="L18">    public boolean isDeleted(){return deleted;}</span>
+<span class="fc" id="L19">    public void setDeleted(boolean value){deleted=value;}</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 64)
+    private String code;
+
+    @Column(nullable = false, length = 128)
+    private String name;
+
+    @Column(length = 255)
+    private String baseUrl;
+
+<span class="fc" id="L34">    @Column(nullable = false)</span>
+    private boolean enabled = true;
+
+<span class="fc" id="L37">    protected BusinessSystem() {</span>
+<span class="fc" id="L38">    }</span>
+
+<span class="fc" id="L40">    public BusinessSystem(String code, String name, String baseUrl) {</span>
+<span class="fc" id="L41">        this.code = code;</span>
+<span class="fc" id="L42">        this.name = name;</span>
+<span class="fc" id="L43">        this.baseUrl = baseUrl;</span>
+<span class="fc" id="L44">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L47">        return id;</span>
+    }
+
+    public String getCode() {
+<span class="fc" id="L51">        return code;</span>
+    }
+
+    public String getName() {
+<span class="fc" id="L55">        return name;</span>
+    }
+
+    public String getBaseUrl() {
+<span class="fc" id="L59">        return baseUrl;</span>
+    }
+
+    public boolean isEnabled() {
+<span class="fc" id="L63">        return enabled;</span>
+    }
+
+    public boolean getEnabled() {
+<span class="fc" id="L67">        return enabled;</span>
+    }
+
+    public void setCode(String code) {
+<span class="fc" id="L71">        this.code = code;</span>
+<span class="fc" id="L72">    }</span>
+
+    public void setName(String name) {
+<span class="fc" id="L75">        this.name = name;</span>
+<span class="fc" id="L76">    }</span>
+
+    public void setBaseUrl(String baseUrl) {
+<span class="fc" id="L79">        this.baseUrl = baseUrl;</span>
+<span class="fc" id="L80">    }</span>
+
+    public void setEnabled(boolean enabled) {
+<span class="fc" id="L83">        this.enabled = enabled;</span>
+<span class="fc" id="L84">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompanyImportService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.company</a> &gt; <span class="el_source">CompanyImportService.java</span></div><h1>CompanyImportService.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.company;
+
+import com.cdwy.permission.entity.*;
+import jakarta.persistence.EntityManager;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+
+@Service
+public class CompanyImportService {
+<span class="fc" id="L15">    public record Department(String name,String parent,String manager) {}</span>
+<span class="fc" id="L16">    public record Employee(String name,String username,String company,String department,String post,String phone) {}</span>
+<span class="fc" id="L17">    public record Feature(String system,String module,String name,String description,Map&lt;String,Set&lt;String&gt;&gt; grants) {}</span>
+<span class="fc" id="L18">    public record Issue(String sheet,int row,String message) {}</span>
+<span class="fc" id="L19">    public record Plan(String id,Long actor,String fingerprint,Instant expires,List&lt;Department&gt; departments,</span>
+                       List&lt;Employee&gt; employees,List&lt;Feature&gt; features,List&lt;Issue&gt; errors,List&lt;Issue&gt; warnings) {}
+<span class="fc" id="L21">    private final Map&lt;String,Plan&gt; plans=new LinkedHashMap&lt;&gt;();</span>
+    private final EntityManager em;
+    private final JdbcTemplate jdbc;
+    private final TransactionTemplate tx;
+    private final com.cdwy.permission.platform.AccountNaming naming;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwords;
+<span class="fc" id="L27">    public CompanyImportService(EntityManager em,JdbcTemplate jdbc,TransactionTemplate tx,com.cdwy.permission.platform.AccountNaming naming,org.springframework.security.crypto.password.PasswordEncoder passwords) {this.em=em;this.jdbc=jdbc;this.tx=tx;this.naming=naming;this.passwords=passwords;}</span>
+<span class="fc" id="L28">    private static final Map&lt;String,String&gt; ACTIONS=Map.of(&quot;查看&quot;,&quot;view&quot;,&quot;新增&quot;,&quot;create&quot;,&quot;编辑&quot;,&quot;edit&quot;,&quot;审批&quot;,&quot;approve&quot;,&quot;导出&quot;,&quot;export&quot;,&quot;查看本人&quot;,&quot;view_self&quot;,&quot;编辑本人&quot;,&quot;edit_self&quot;);</span>
+<span class="fc" id="L29">    private static final List&lt;String&gt; TEMPLATES=List.of(&quot;系统管理员&quot;,&quot;公司领导&quot;,&quot;部门经理&quot;,&quot;项目经理&quot;,&quot;普通员工&quot;);</span>
+
+    public synchronized Map&lt;String,Object&gt; preview(Long actor,byte[] departmentFile,byte[] employeeFile,byte[] permissionFile) {
+<span class="fc" id="L32">        plans.values().removeIf(p-&gt;p.expires().isBefore(Instant.now()));</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if(plans.size()&gt;=10) throw new IllegalArgumentException(&quot;预览任务已满，请稍后重试，或先完成已有导入&quot;);</span>
+<span class="fc" id="L34">        var reader=new XlsxReader(); var ds=reader.read(departmentFile); var es=reader.read(employeeFile); var fs=reader.read(permissionFile);</span>
+<span class="fc" id="L35">        header(ds,0,List.of(&quot;部门名称&quot;,&quot;部门经理&quot;,&quot;上级部门&quot;));</span>
+<span class="fc" id="L36">        header(es,0,List.of(&quot;姓名&quot;,&quot;用户名&quot;,&quot;分公司&quot;,&quot;部门&quot;,&quot;岗位&quot;,&quot;电话号码&quot;));</span>
+<span class="fc" id="L37">        header(fs,1,List.of(&quot;软件系统&quot;,&quot;功能模块&quot;,&quot;功能点&quot;,&quot;功能说明&quot;,&quot;系统管理员&quot;,&quot;公司领导&quot;,&quot;部门经理&quot;,&quot;项目经理&quot;,&quot;普通员工&quot;));</span>
+<span class="fc" id="L38">        var errors=new ArrayList&lt;Issue&gt;(); var warnings=new ArrayList&lt;Issue&gt;();</span>
+<span class="fc" id="L39">        var deps=new ArrayList&lt;Department&gt;(); var employees=new ArrayList&lt;Employee&gt;(); var features=new ArrayList&lt;Feature&gt;();</span>
+<span class="fc" id="L40">        var names=new HashSet&lt;String&gt;(); var usernames=new HashSet&lt;String&gt;(); var phones=new HashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        for(var r:ds.subList(1,ds.size())) {</span>
+<span class="pc bpc" id="L42" title="2 of 4 branches missed.">            if(r.get(&quot;A&quot;).isEmpty() || !names.add(r.get(&quot;A&quot;))) errors.add(new Issue(&quot;部门&quot;,r.number(),&quot;部门名称为空或重复&quot;));</span>
+<span class="pc bpc" id="L43" title="3 of 6 branches missed.">            if(r.get(&quot;A&quot;).length()&gt;128||r.get(&quot;B&quot;).length()&gt;128||r.get(&quot;C&quot;).length()&gt;128) errors.add(new Issue(&quot;部门&quot;,r.number(),&quot;名称超过 128 字符&quot;));</span>
+<span class="fc" id="L44">            deps.add(new Department(r.get(&quot;A&quot;),r.get(&quot;C&quot;),r.get(&quot;B&quot;)));</span>
+<span class="fc" id="L45">        }</span>
+<span class="fc" id="L46">        var parents=new HashMap&lt;String,String&gt;(); deps.forEach(d-&gt;parents.put(d.name(),d.parent()));</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        for(var d:deps) {</span>
+<span class="fc" id="L48">            var visited=new HashSet&lt;String&gt;(); String node=d.name();</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            while(!node.isEmpty()) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                if(!visited.add(node)){errors.add(new Issue(&quot;部门&quot;,0,&quot;组织树存在循环: &quot;+d.name()));break;}</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">                if(!parents.containsKey(node)){errors.add(new Issue(&quot;部门&quot;,0,&quot;上级部门不存在: &quot;+node));break;}</span>
+<span class="fc" id="L52">                node=parents.get(node);</span>
+            }
+<span class="fc" id="L54">        }</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        for(var r:es.subList(1,es.size())) {</span>
+<span class="fc" id="L56">            String dep=r.get(&quot;D&quot;);</span>
+<span class="pc bpc" id="L57" title="3 of 4 branches missed.">            if(!r.get(&quot;C&quot;).equals(&quot;总公司&quot;)&amp;&amp;!dep.equals(r.get(&quot;C&quot;))) dep=r.get(&quot;C&quot;)+&quot;-&quot;+dep;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if(!names.contains(dep)) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;分公司与部门不能匹配组织表&quot;));</span>
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">            if(!r.get(&quot;B&quot;).matches(&quot;[A-Za-z0-9_-]{1,64}&quot;)||!usernames.add(r.get(&quot;B&quot;))) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;用户名不合法或重复&quot;));</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if(!r.get(&quot;F&quot;).matches(&quot;[0-9+ -]{6,32}&quot;)) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;电话号码格式不合法&quot;));</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            if(!phones.add(r.get(&quot;F&quot;))) warnings.add(new Issue(&quot;员工&quot;,r.number(),&quot;电话号码重复，不可用该号码唯一识别账号&quot;));</span>
+<span class="pc bpc" id="L62" title="2 of 6 branches missed.">            for(String c:List.of(&quot;A&quot;,&quot;C&quot;,&quot;D&quot;,&quot;E&quot;)) if(r.get(c).isEmpty()||r.get(c).length()&gt;128) errors.add(new Issue(&quot;员工&quot;,r.number(),c+&quot; 列必填且最多 128 字符&quot;));</span>
+<span class="fc" id="L63">            employees.add(new Employee(r.get(&quot;A&quot;),r.get(&quot;B&quot;),r.get(&quot;C&quot;),dep,r.get(&quot;E&quot;),r.get(&quot;F&quot;)));</span>
+<span class="fc" id="L64">        }</span>
+<span class="fc" id="L65">        String system=&quot;&quot;,module=&quot;&quot;; var featureKeys=new HashSet&lt;String&gt;();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for(var r:fs.subList(2,fs.size())) {</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if(!r.get(&quot;A&quot;).isEmpty()){system=r.get(&quot;A&quot;);module=&quot;&quot;;}</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">            if(!r.get(&quot;B&quot;).isEmpty()) module=r.get(&quot;B&quot;);</span>
+<span class="pc bpc" id="L69" title="4 of 8 branches missed.">            if(system.isEmpty()||module.isEmpty()||r.get(&quot;C&quot;).isEmpty()||!featureKeys.add(system+&quot;/&quot;+module+&quot;/&quot;+r.get(&quot;C&quot;))) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;系统、模块或功能缺失，或功能重复&quot;));</span>
+<span class="pc bpc" id="L70" title="3 of 6 branches missed.">            if(system.length()&gt;128||module.length()&gt;128||r.get(&quot;C&quot;).length()&gt;100) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;系统或功能名称过长&quot;));</span>
+<span class="fc" id="L71">            Map&lt;String,Set&lt;String&gt;&gt; grants=new LinkedHashMap&lt;&gt;(); Set&lt;String&gt; all=new TreeSet&lt;&gt;();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            for(int i=0;i&lt;5;i++) {</span>
+<span class="fc" id="L73">                String cell=r.get(String.valueOf((char)('E'+i)));</span>
+<span class="fc" id="L74">                var set=new TreeSet&lt;String&gt;(); grants.put(TEMPLATES.get(i),set);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                if(cell.isEmpty()) {warnings.add(new Issue(&quot;权限&quot;,r.number(),TEMPLATES.get(i)+&quot; 权限为空，保留为未确认，不授予&quot;));continue;}</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">                if(cell.equals(&quot;无&quot;)) continue;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if(cell.equals(&quot;全部&quot;)){set.add(&quot;*&quot;);continue;}</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                for(String action:cell.split(&quot;/&quot;)) {</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                    if(action.equals(&quot;view&quot;)){action=&quot;查看&quot;;warnings.add(new Issue(&quot;权限&quot;,r.number(),&quot;view 规范化为查看&quot;));}</span>
+<span class="fc" id="L80">                    String code=ACTIONS.get(action);</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                    if(code==null) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;不识别的操作: &quot;+action));</span>
+<span class="fc" id="L82">                    else {set.add(code);all.add(code);}</span>
+                }
+            }
+            // &quot;All&quot; expands only to explicitly defined actions on this function. No implicit CRUD.
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">            if(all.isEmpty()&amp;&amp;grants.values().stream().anyMatch(s-&gt;s.contains(&quot;*&quot;))) warnings.add(new Issue(&quot;权限&quot;,r.number(),&quot;只有全部但没有具体操作定义，暂不生成操作权限&quot;));</span>
+<span class="fc bfc" id="L87" title="All 4 branches covered.">            for(var set:grants.values()) if(set.remove(&quot;*&quot;)) set.addAll(all);</span>
+<span class="fc" id="L88">            features.add(new Feature(system,module,r.get(&quot;C&quot;),r.get(&quot;D&quot;),grants));</span>
+<span class="fc" id="L89">        }</span>
+<span class="fc" id="L90">        warnings.add(new Issue(&quot;权限&quot;,0,&quot;本人范围操作只作为独立权限编码保存，不代表接入应用已实现数据范围校验&quot;));</span>
+<span class="fc" id="L91">        warnings.add(new Issue(&quot;岗位&quot;,0,&quot;创建岗位同名角色，但不自动分配给员工；五类清单保存为模板，需管理员明确应用&quot;));</span>
+<span class="fc" id="L92">        var digest=digest(departmentFile,employeeFile,permissionFile);</span>
+<span class="fc" id="L93">        var plan=new Plan(UUID.randomUUID().toString(),actor,digest,Instant.now().plusSeconds(1800),deps,employees,features,errors,warnings);</span>
+<span class="fc" id="L94">        plans.put(plan.id(),plan);</span>
+<span class="fc" id="L95">        return summary(plan);</span>
+    }
+    private Map&lt;String,Object&gt; summary(Plan p) {
+<span class="fc" id="L98">        return Map.of(&quot;previewId&quot;,p.id(),&quot;fingerprint&quot;,p.fingerprint(),&quot;expiresAt&quot;,p.expires(),</span>
+<span class="fc" id="L99">            &quot;counts&quot;,Map.of(&quot;departments&quot;,p.departments().size(),&quot;employees&quot;,p.employees().size(),&quot;posts&quot;,p.employees().stream().map(Employee::post).distinct().count(),&quot;systems&quot;,p.features().stream().map(Feature::system).distinct().count(),&quot;modules&quot;,p.features().stream().map(f-&gt;f.system()+&quot;/&quot;+f.module()).distinct().count(),&quot;functions&quot;,p.features().size()),</span>
+<span class="fc" id="L100">            &quot;errors&quot;,p.errors().stream().limit(200).toList(),&quot;errorCount&quot;,p.errors().size(),&quot;warnings&quot;,p.warnings().stream().limit(200).toList(),&quot;warningCount&quot;,p.warnings().size());</span>
+    }
+    public synchronized Map&lt;String,Object&gt; commit(Long actor,String id,boolean acknowledged) {
+<span class="fc" id="L103">        var p=plans.get(id);</span>
+<span class="pc bpc" id="L104" title="2 of 6 branches missed.">        if(p==null||!p.actor().equals(actor)||p.expires().isBefore(Instant.now())) throw new IllegalArgumentException(&quot;预览不存在、已过期或不属于当前管理员，请重新上传&quot;);</span>
+<span class="fc bfc" id="L105" title="All 4 branches covered.">        if(!p.errors().isEmpty()||!acknowledged) throw new IllegalArgumentException(&quot;请先修复错误，并确认未确定权限不授予及保留已有数据的规则&quot;);</span>
+<span class="fc" id="L106">        return tx.execute(status-&gt;importPlan(p));</span>
+    }
+    private Map&lt;String,Object&gt; importPlan(Plan p) {
+<span class="fc" id="L109">        var old=jdbc.queryForList(&quot;select id from company_import_batch where fingerprint=?&quot;,p.fingerprint());</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if(!old.isEmpty()) return Map.of(&quot;reused&quot;,true,&quot;message&quot;,&quot;相同三表已导入，不重复执行&quot;,&quot;fingerprint&quot;,p.fingerprint());</span>
+<span class="fc" id="L111">        Map&lt;String,CompanyData.Department&gt; departments=new HashMap&lt;&gt;();</span>
+<span class="fc" id="L112">        em.createQuery(&quot;from CompanyData$Department&quot;,CompanyData.Department.class); // Entity queries below use JPA simple names.</span>
+<span class="fc" id="L113">        return insertPlan(p,departments);</span>
+    }
+    private Map&lt;String,Object&gt; insertPlan(Plan p,Map&lt;String,CompanyData.Department&gt; deps) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        for(var d:em.createQuery(&quot;from CompanyData$Department&quot;,CompanyData.Department.class).getResultList()) deps.put(d.name,d);</span>
+<span class="fc bfc" id="L117" title="All 4 branches covered.">        for(var d:p.departments()) if(!deps.containsKey(d.name())) {</span>
+<span class="fc" id="L118">            var entity=new CompanyData.Department();entity.name=d.name();entity.managerName=d.manager();em.persist(entity);deps.put(d.name(),entity);</span>
+        }
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        for(var d:p.departments()) {</span>
+<span class="fc" id="L121">            var entity=deps.get(d.name());</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            String existing=entity.parent==null?&quot;&quot;:entity.parent.name;</span>
+<span class="pc bpc" id="L123" title="3 of 4 branches missed.">            if(entity.parent!=null&amp;&amp;!existing.equals(d.parent())) throw new IllegalArgumentException(&quot;已有组织上级发生变化，请通过受控调动处理: &quot;+d.name());</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if(!d.parent().isEmpty()) entity.parent=deps.get(d.parent());</span>
+<span class="fc" id="L125">        }</span>
+<span class="fc" id="L126">        Map&lt;String,CompanyData.Post&gt; posts=new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for(var post:em.createQuery(&quot;from CompanyData$Post&quot;,CompanyData.Post.class).getResultList()) posts.put(post.name,post);</span>
+<span class="pc bpc" id="L128" title="1 of 4 branches missed.">        for(var name:p.employees().stream().map(Employee::post).distinct().toList()) if(!posts.containsKey(name)) {</span>
+<span class="fc" id="L129">            var role=new Role(&quot;post_&quot;+key(name),name,&quot;导入岗位；权限需管理员配置&quot;);em.persist(role);</span>
+<span class="fc" id="L130">            var post=new CompanyData.Post();post.name=name;post.role=role;em.persist(post);posts.put(name,post);</span>
+        }
+<span class="fc" id="L132">        em.flush();</span>
+<span class="fc" id="L133">        var users=new HashMap&lt;String,Long&gt;();</span>
+<span class="fc" id="L134">        jdbc.query(&quot;select external_id,local_id from hr_identity where kind='EMPLOYEE'&quot;,(org.springframework.jdbc.core.RowCallbackHandler)rs-&gt;users.put(rs.getString(1),rs.getLong(2)));</span>
+<span class="fc" id="L135">        Set&lt;String&gt; createdUsernames=new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L136" title="All 4 branches covered.">        for(var e:p.employees()) if(!users.containsKey(e.username())) {</span>
+<span class="fc" id="L137">            var generated=naming.generate(e.name(),e.phone());</span>
+<span class="fc" id="L138">            var user=new UserAccount(generated.username(),e.name());</span>
+<span class="fc" id="L139">            user.setPasswordHash(passwords.encode(&quot;Aa1!&quot;+UUID.randomUUID()));em.persist(user);em.flush();</span>
+<span class="fc" id="L140">            jdbc.update(&quot;insert into hr_identity(kind,external_id,local_id) values('EMPLOYEE',?,?)&quot;,e.username(),user.getId());</span>
+<span class="fc" id="L141">            jdbc.update(&quot;insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',true,0,false,false)&quot;,user.getId());</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if(generated.manualReview())jdbc.update(&quot;insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,'ACCOUNT_NAME_REVIEW',?,?)&quot;,deps.get(e.department()).id,user.getId(),&quot;账号存在重名或多音字，请人工核对：&quot;+generated.username(),Instant.now());</span>
+<span class="fc" id="L143">            users.put(e.username(),user.getId());createdUsernames.add(e.username());</span>
+        }
+<span class="fc" id="L145">        Set&lt;Long&gt; existingProfiles=new HashSet&lt;&gt;(jdbc.queryForList(&quot;select user_id from employee_profile&quot;,Long.class));</span>
+<span class="fc" id="L146">        var newProfiles=new ArrayList&lt;Object[]&gt;();</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        for(var e:p.employees()) {</span>
+<span class="fc" id="L148">            Long uid=users.get(e.username());</span>
+            // Refuse attaching HR data to a pre-existing manually maintained identity.
+<span class="pc bpc" id="L150" title="1 of 4 branches missed.">            if(!existingProfiles.contains(uid)&amp;&amp;!createdUsernames.contains(e.username())) throw new IllegalArgumentException(&quot;员工用户名与已有非导入账号冲突: &quot;+e.username());</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            if(existingProfiles.contains(uid)) {</span>
+<span class="nc" id="L152">                var current=jdbc.queryForMap(&quot;select department_id,post_id,phone,company from employee_profile where user_id=?&quot;,uid);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                if(!Objects.equals(((Number)current.get(&quot;department_id&quot;)).longValue(),deps.get(e.department()).id)</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                    ||!Objects.equals(((Number)current.get(&quot;post_id&quot;)).longValue(),posts.get(e.post()).id)) throw new IllegalArgumentException(&quot;员工组织或岗位变化，请先执行调岗流程: &quot;+e.username());</span>
+<span class="pc" id="L155">            } else newProfiles.add(new Object[]{uid,deps.get(e.department()).id,posts.get(e.post()).id,e.phone(),e.company()});</span>
+<span class="fc" id="L156">        }</span>
+<span class="fc" id="L157">        jdbc.batchUpdate(&quot;insert into employee_profile(user_id,department_id,post_id,phone,company) values (?,?,?,?,?)&quot;,newProfiles);</span>
+<span class="fc" id="L158">        int unresolvedManagers=0;</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        for(var d:p.departments()) {</span>
+<span class="pc bpc" id="L160" title="1 of 4 branches missed.">            var candidates=p.employees().stream().filter(e-&gt;e.name().equals(d.manager())&amp;&amp;e.department().equals(d.name())).toList();</span>
+<span class="pc bpc" id="L161" title="1 of 4 branches missed.">            if(candidates.size()==1 &amp;&amp; deps.get(d.name()).manager==null) deps.get(d.name()).manager=em.getReference(UserAccount.class,users.get(candidates.getFirst().username()));</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">            else if(candidates.size()!=1) unresolvedManagers++;</span>
+<span class="fc" id="L163">        }</span>
+<span class="fc" id="L164">        Map&lt;String,BusinessSystem&gt; systems=new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        for(var s:em.createQuery(&quot;from BusinessSystem&quot;,BusinessSystem.class).getResultList()) systems.put(s.getCode(),s);</span>
+<span class="fc" id="L166">        Map&lt;String,CompanyData.Module&gt; modules=new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        for(var m:em.createQuery(&quot;from CompanyData$Module&quot;,CompanyData.Module.class).getResultList()) modules.put(m.system.getCode()+&quot;/&quot;+m.name,m);</span>
+<span class="fc" id="L168">        Map&lt;String,CompanyData.Function&gt; functions=new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        for(var f:em.createQuery(&quot;from CompanyData$Function&quot;,CompanyData.Function.class).getResultList()) functions.put(f.module.system.getCode()+&quot;/&quot;+f.module.name+&quot;/&quot;+f.name,f);</span>
+<span class="fc" id="L170">        Set&lt;String&gt; codes=new HashSet&lt;&gt;(jdbc.queryForList(&quot;select code from sys_permission&quot;,String.class));</span>
+<span class="fc" id="L171">        int createdPermissions=0;</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        for(var f:p.features()) {</span>
+<span class="fc" id="L173">            String sc=&quot;app&quot;+key(f.system());</span>
+<span class="fc" id="L174">            var system=systems.get(sc);</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">            if(system==null){system=new BusinessSystem(sc,f.system(),null);em.persist(system);systems.put(sc,system);}</span>
+<span class="fc" id="L176">            String mk=sc+&quot;/&quot;+f.module(); var module=modules.get(mk);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">            if(module==null){module=new CompanyData.Module();module.system=system;module.name=f.module();em.persist(module);modules.put(mk,module);}</span>
+<span class="fc" id="L178">            String fk=mk+&quot;/&quot;+f.name();var function=functions.get(fk);</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            if(function!=null) continue; // Existing grants and definitions are never overwritten by re-import.</span>
+<span class="fc" id="L180">            function=new CompanyData.Function();function.module=module;function.name=f.name();function.description=f.description();em.persist(function);functions.put(fk,function);</span>
+<span class="fc" id="L181">            Set&lt;String&gt; actions=new TreeSet&lt;&gt;();f.grants().values().forEach(actions::addAll);</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            for(String action:actions) {</span>
+<span class="fc" id="L183">                String code=sc+&quot;:f&quot;+key(f.module()+&quot;/&quot;+f.name())+&quot;:&quot;+action;</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">                if(!codes.add(code)) throw new IllegalArgumentException(&quot;权限编码冲突，请核对已有目录&quot;);</span>
+<span class="fc" id="L185">                var permission=new Permission(code,f.name()+&quot; · &quot;+action,&quot;/catalog/&quot;+code,system,&quot;BUTTON&quot;);em.persist(permission);createdPermissions++;</span>
+<span class="fc" id="L186">                var detail=new CompanyData.Detail();detail.permission=permission;detail.function=function;detail.action=action;em.persist(detail);</span>
+<span class="fc bfc" id="L187" title="All 4 branches covered.">                for(var grant:f.grants().entrySet()) if(grant.getValue().contains(action)) {</span>
+<span class="fc" id="L188">                    var t=new CompanyData.Template();t.name=grant.getKey();t.permission=permission;em.persist(t);</span>
+                }
+<span class="fc" id="L190">            }</span>
+<span class="fc" id="L191">        }</span>
+<span class="fc" id="L192">        var batch=new CompanyData.Batch();batch.actorId=p.actor();batch.fingerprint=p.fingerprint();batch.createdAt=Instant.now();batch.employees=p.employees().size();batch.departments=p.departments().size();batch.functions=p.features().size();em.persist(batch);em.flush();</span>
+<span class="fc" id="L193">        return Map.of(&quot;reused&quot;,false,&quot;batchId&quot;,batch.id,&quot;createdUsers&quot;,createdUsernames.size(),&quot;createdPermissions&quot;,createdPermissions,&quot;unresolvedManagers&quot;,unresolvedManagers,&quot;message&quot;,&quot;导入成功；新员工无密码、无角色，已有账号状态及授权保持不变&quot;);</span>
+    }
+    private static void header(List&lt;XlsxReader.Row&gt; rows,int index,List&lt;String&gt; expected) {
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if(rows.size()&lt;=index) throw new IllegalArgumentException(&quot;文件为空或表头缺失&quot;);</span>
+<span class="fc bfc" id="L197" title="All 4 branches covered.">        for(int i=0;i&lt;expected.size();i++) if(!rows.get(index).get(String.valueOf((char)('A'+i))).equals(expected.get(i))) throw new IllegalArgumentException(&quot;表头不匹配，期望 &quot;+expected.get(i));</span>
+<span class="fc" id="L198">    }</span>
+<span class="fc" id="L199">    private static String key(String text) {return digest(text.getBytes(StandardCharsets.UTF_8)).substring(0,16);}</span>
+    private static String digest(byte[]... inputs) {
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        try {var d=MessageDigest.getInstance(&quot;SHA-256&quot;);for(byte[] input:inputs){d.update(java.nio.ByteBuffer.allocate(4).putInt(input.length).array());d.update(input);}return HexFormat.of().formatHex(d.digest());}</span>
+<span class="nc" id="L202">        catch(Exception e){throw new IllegalStateException(e);}</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

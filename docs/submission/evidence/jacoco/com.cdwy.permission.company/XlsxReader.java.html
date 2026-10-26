@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XlsxReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.company</a> &gt; <span class="el_source">XlsxReader.java</span></div><h1>XlsxReader.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.company;
+
+import java.io.*;
+import java.util.*;
+import java.util.zip.*;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.*;
+
+/** Restricted XLSX reader for these tabular imports; no formulas or external entities. */
+<span class="fc" id="L11">public final class XlsxReader {</span>
+<span class="fc" id="L12">    public record Row(int number, Map&lt;String,String&gt; cells) {</span>
+<span class="fc" id="L13">        public String get(String column) { return cells.getOrDefault(column, &quot;&quot;).strip(); }</span>
+    }
+    private static final String NS=&quot;http://schemas.openxmlformats.org/spreadsheetml/2006/main&quot;;
+    public List&lt;Row&gt; read(byte[] bytes) {
+        try {
+<span class="fc" id="L18">            Map&lt;String,byte[]&gt; parts=new HashMap&lt;&gt;(); int total=0, entries=0;</span>
+<span class="fc" id="L19">            try(var zip=new ZipInputStream(new ByteArrayInputStream(bytes))) {</span>
+                ZipEntry entry;
+<span class="fc bfc" id="L21" title="All 2 branches covered.">                while((entry=zip.getNextEntry())!=null) {</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">                    if(++entries&gt;1000) throw new IllegalArgumentException(&quot;XLSX 包含过多文件&quot;);</span>
+<span class="fc" id="L23">                    byte[] part=zip.readNBytes(24_000_001); total+=part.length;</span>
+<span class="pc bpc" id="L24" title="2 of 4 branches missed.">                    if(part.length&gt;24_000_000 || total&gt;48_000_000) throw new IllegalArgumentException(&quot;XLSX 解压大小超限&quot;);</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">                    if(parts.put(entry.getName(),part)!=null) throw new IllegalArgumentException(&quot;XLSX 含重复文件项&quot;);</span>
+<span class="fc" id="L26">                }</span>
+            }
+<span class="fc" id="L28">            var strings=new ArrayList&lt;String&gt;();</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">            if(parts.containsKey(&quot;xl/sharedStrings.xml&quot;)) {</span>
+<span class="nc" id="L30">                var nodes=parse(parts.get(&quot;xl/sharedStrings.xml&quot;)).getElementsByTagNameNS(NS,&quot;si&quot;);</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">                for(int i=0;i&lt;nodes.getLength();i++) strings.add(text((Element)nodes.item(i),&quot;t&quot;));</span>
+            }
+            // Source templates have exactly one worksheet; reject ambiguous multi-sheet imports.
+<span class="fc" id="L34">            var sheets=parts.keySet().stream().filter(x-&gt;x.matches(&quot;xl/worksheets/sheet\\d+\\.xml&quot;)).sorted().toList();</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">            if(sheets.size()!=1) throw new IllegalArgumentException(&quot;每个导入文件必须包含且仅包含一个工作表&quot;);</span>
+<span class="fc" id="L36">            var doc=parse(parts.get(sheets.getFirst()));</span>
+<span class="fc" id="L37">            var nodes=doc.getElementsByTagNameNS(NS,&quot;row&quot;);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if(nodes.getLength()&gt;20002) throw new IllegalArgumentException(&quot;单表最多 20000 条数据&quot;);</span>
+<span class="fc" id="L39">            var rows=new ArrayList&lt;Row&gt;();</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            for(int i=0;i&lt;nodes.getLength();i++) {</span>
+<span class="fc" id="L41">                var row=(Element)nodes.item(i); var cells=new LinkedHashMap&lt;String,String&gt;();</span>
+<span class="fc" id="L42">                var cs=row.getElementsByTagNameNS(NS,&quot;c&quot;);</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                for(int j=0;j&lt;cs.getLength();j++) {</span>
+<span class="fc" id="L44">                    var c=(Element)cs.item(j); String ref=c.getAttribute(&quot;r&quot;);</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                    if(c.getElementsByTagNameNS(NS,&quot;f&quot;).getLength()&gt;0) throw new IllegalArgumentException(&quot;不接受公式单元格: &quot;+ref);</span>
+<span class="fc" id="L46">                    String value=text(c,&quot;v&quot;);</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">                    if(c.getAttribute(&quot;t&quot;).equals(&quot;s&quot;)) value=strings.get(Integer.parseInt(value));</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                    if(c.getAttribute(&quot;t&quot;).equals(&quot;inlineStr&quot;)) value=text(c,&quot;t&quot;);</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">                    if(value.length()&gt;2000) throw new IllegalArgumentException(&quot;单元格内容过长: &quot;+ref);</span>
+<span class="fc" id="L50">                    cells.put(ref.replaceAll(&quot;[0-9]&quot;, &quot;&quot;),value);</span>
+                }
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">                if(cells.values().stream().anyMatch(v-&gt;!v.isBlank())) rows.add(new Row(Integer.parseInt(row.getAttribute(&quot;r&quot;)),cells));</span>
+            }
+<span class="fc" id="L54">            return rows;</span>
+<span class="nc" id="L55">        } catch(IllegalArgumentException e) { throw e; }</span>
+<span class="fc" id="L56">        catch(Exception e) { throw new IllegalArgumentException(&quot;无法读取 XLSX，请使用原始三表格式且不要包含公式&quot;); }</span>
+    }
+    private Document parse(byte[] data) throws Exception {
+<span class="fc" id="L59">        var f=DocumentBuilderFactory.newInstance(); f.setNamespaceAware(true);</span>
+<span class="fc" id="L60">        f.setFeature(&quot;http://apache.org/xml/features/disallow-doctype-decl&quot;,true);</span>
+<span class="fc" id="L61">        f.setFeature(&quot;http://xml.org/sax/features/external-general-entities&quot;,false);</span>
+<span class="fc" id="L62">        f.setFeature(&quot;http://xml.org/sax/features/external-parameter-entities&quot;,false);</span>
+<span class="fc" id="L63">        f.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD,&quot;&quot;); f.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA,&quot;&quot;);</span>
+<span class="fc" id="L64">        return f.newDocumentBuilder().parse(new ByteArrayInputStream(data));</span>
+    }
+    private String text(Element e,String tag) {
+<span class="fc" id="L67">        var nodes=e.getElementsByTagNameNS(NS,tag); var b=new StringBuilder();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for(int i=0;i&lt;nodes.getLength();i++) b.append(nodes.item(i).getTextContent());</span>
+<span class="fc" id="L69">        return b.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

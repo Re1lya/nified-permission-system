@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompletionData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">CompletionData.java</span></div><h1>CompletionData.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+import com.cdwy.permission.company.CompanyData;
+
+/** Persistent records for application onboarding, review and HR reconciliation. */
+public final class CompletionData {
+    private CompletionData() {}
+<span class="nc" id="L10">    @Entity @Table(name=&quot;application_access&quot;) public static class ApplicationAccess {</span>
+        @Id public Long systemId;
+        @Column(unique=true,nullable=false,length=100) public String clientId;
+        @Column(nullable=false,length=2048) public String entryUrl;
+<span class="nc" id="L14">        @Column(nullable=false,length=16) public String protocol=&quot;OIDC&quot;;</span>
+<span class="nc" id="L15">        @Column(nullable=false,length=16) public String status=&quot;DRAFT&quot;;</span>
+        @Column(length=2000) public String compatibilityPlan;
+        @Column(length=2000) public String acceptance;
+    }
+<span class="nc" id="L19">    @Entity @Table(name=&quot;platform_signing_key&quot;) public static class SigningKey {</span>
+        @Id @Column(length=64) public String id;
+        @Column(nullable=false,length=8000) public String jwk;
+    }
+<span class="fc" id="L23">    @Entity @Table(name=&quot;permission_review&quot;) public static class Review extends CompanyData.Row {</span>
+        @Column(nullable=false) public Long actorId;
+        @Column(nullable=false) public Long userId;
+        @Column(nullable=false) public Long roleId;
+        @Column(nullable=false,length=16) public String decision;
+        @Column(nullable=false,length=1000) public String reason;
+        @Column(nullable=false) public Instant createdAt;
+    }
+<span class="nc" id="L31">    @Entity @Table(name=&quot;audit_archive&quot;) public static class Archive {</span>
+        @Id public Long id;
+        public Long actorId; public Long departmentId; public Long targetDepartmentId;
+        @Column(nullable=false,length=64) public String kind;
+        @Column(nullable=false,length=255) public String target;
+        @Column(nullable=false,length=32) public String result;
+        @Column(nullable=false) public Instant createdAt;
+        @Column(nullable=false) public Instant archivedAt;
+    }
+    @Entity @Table(name=&quot;hr_identity&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;kind&quot;,&quot;external_id&quot;}))
+<span class="fc" id="L41">    public static class HrIdentity extends CompanyData.Row {</span>
+        @Column(nullable=false,length=16) public String kind;
+        @Column(nullable=false,length=128) public String externalId;
+        @Column(nullable=false) public Long localId;
+    }
+    @Entity @Table(name=&quot;sync_failure&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;source&quot;,&quot;request_id&quot;}))
+<span class="fc" id="L47">    public static class Failure extends CompanyData.Row {</span>
+        @Column(nullable=false,length=16) public String source;
+        @Column(nullable=false,length=64) public String requestId;
+        @Column(nullable=false,length=64) public String digest;
+        @Column(nullable=false,length=1000) public String error;
+<span class="fc" id="L52">        @Column(nullable=false,length=16) public String status=&quot;OPEN&quot;;</span>
+        @Column(length=1000) public String resolution;
+        @Column(nullable=false) public Instant createdAt;
+    }
+<span class="fc" id="L56">    @Entity @Table(name=&quot;platform_notification&quot;) public static class Notification extends CompanyData.Row {</span>
+        @Column(nullable=false) public Long departmentId;
+        @Column(nullable=false) public Long userId;
+        @Column(nullable=false,length=64) public String kind;
+        @Column(nullable=false,length=1000) public String message;
+        @Column(nullable=false) public Instant createdAt;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

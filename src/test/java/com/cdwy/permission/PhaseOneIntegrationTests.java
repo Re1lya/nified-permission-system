@@ -32,7 +32,7 @@ class PhaseOneIntegrationTests {
   userToken=login("user"+suffix);managerToken=login("manager"+suffix);
  }
  String login(String name){return "Bearer "+rbac.login(new LoginRequest(name,PASSWORD)).accessToken();}
- long department(String name){db.update("insert into sys_department(name) values(?)",name);return db.queryForObject("select id from sys_department where name=?",Long.class,name);}
+ long department(String name){db.update("insert into sys_department(name,deleted) values(?,false)",name);return db.queryForObject("select id from sys_department where name=?",Long.class,name);}
  long employee(String name,long dep){long id=rbac.createUser(new CreateUserRequest(name,"测试员工")).id();rbac.setPassword(id,new SetPasswordRequest(PASSWORD));db.update("insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)",id,dep,post,"139"+String.format("%08d",id),"测试公司");return id;}
  void request(String path,String body,String auth,int status) throws Exception {mvc.perform(post(path).header("Authorization",auth).contentType("application/json").content(body)).andExpect(status().is(status));}
  @Test void departmentAdminCannotResetOutsideDepartmentOrGrantAdmin() throws Exception {
@@ -90,7 +90,7 @@ class PhaseOneIntegrationTests {
  @Test void databaseHasEmployeeAndAuthorizationConstraints() throws Exception {
   var tables=db.queryForList("select table_name from information_schema.tables where table_schema='PUBLIC' and table_type='BASE TABLE' order by table_name",String.class);
   assertTrue(tables.containsAll(List.of("EMPLOYEE_PROFILE","SYS_POST","ADMIN_DEPARTMENT","INTEGRATION_EVENT")));
-  assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->db.update("insert into sys_post(name,role_id) values(?,?)","duplicate"+suffix,role));
+  assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->db.update("insert into sys_post(name,role_id,deleted) values(?,?,false)","duplicate"+suffix,role));
   assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->db.update("insert into admin_department(user_id,department_id) values(?,?)",user,99999999));
   var schema=new LinkedHashMap<String,Object>();
   for(String table:tables)schema.put(table.toLowerCase(Locale.ROOT),db.queryForList("select column_name,data_type,character_maximum_length,is_nullable,column_default from information_schema.columns where table_schema='PUBLIC' and table_name=? order by ordinal_position",table));
@@ -180,7 +180,7 @@ class PhaseOneIntegrationTests {
   assertFalse(db.queryForObject("select count(*) from audit_event where kind='INITIAL_PASSWORDS' and target like ?",Integer.class,"%"+password+"%")>0,"审计不记录明文密码");
  }
  String external(String name,String type,java.time.LocalDate expiresOn,long dep){return "{\"username\":\""+name+"\",\"displayName\":\"外包人员\",\"personType\":\""+type+"\",\"expiresOn\":\""+expiresOn+"\",\"departmentId\":"+dep+",\"postId\":"+post+",\"company\":\"演示外包公司\",\"phone\":\"13700000000\",\"password\":\""+PASSWORD+"\"}";}
- long externalId(String name){return db.queryForObject("select id from sys_user where username=?",Long.class,name);}
+ long externalId(String name){return db.queryForObject("select user_id from sys_account where username=?",Long.class,name);}
  @Test void externalPersonRequiresBoundedExpiryAndDepartmentScope() throws Exception {
   var today=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Shanghai"));
   request("/api/platform/external-users",external("ext"+suffix,"EXTERNAL",today.minusDays(1),department),admin,400);

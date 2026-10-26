@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdministrationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">AdministrationController.java</span></div><h1>AdministrationController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import com.cdwy.permission.service.*;
+import com.cdwy.permission.repository.UserAccountRepository;
+import com.cdwy.permission.exception.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+@RestController @RequestMapping(&quot;/api/platform&quot;)
+public class AdministrationController {
+    private final PlatformStore s;private final JwtTokenService tokens;private final UserAccountRepository users;
+<span class="fc" id="L15">    public AdministrationController(PlatformStore s,JwtTokenService tokens,UserAccountRepository users){this.s=s;this.tokens=tokens;this.users=users;}</span>
+<span class="nc" id="L16">    @GetMapping(&quot;/administrators&quot;) public List&lt;Map&lt;String,Object&gt;&gt; list(@RequestHeader(&quot;Authorization&quot;)String auth){s.requireSuper(tokens.requireUserId(auth));return s.rows(&quot;select u.id,a.username,u.administrator,u.built_in_administrator,d.department_id from sys_user u join sys_account a on a.user_id=u.id left join admin_department d on d.user_id=u.id where u.administrator=true or d.user_id is not null order by u.id&quot;);}</span>
+<span class="nc" id="L17">    public record Membership(boolean administrator){}</span>
+    @PutMapping(&quot;/super-administrators/{id}&quot;) @Transactional public void membership(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id,@RequestBody Membership m){
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        long a=tokens.requireUserId(auth);s.requireSuper(a);if(a==id)throw new ForbiddenException(&quot;不能变更本人的管理员身份&quot;);</span>
+        // Lock administrators in a deterministic order so concurrent demotions cannot remove the last administrator.
+<span class="nc" id="L21">        s.db().queryForList(&quot;select id from sys_user where administrator=true order by id for update&quot;,Long.class);</span>
+<span class="nc" id="L22">        var user=users.findByIdForUpdate(id).orElseThrow(()-&gt;new ResourceNotFoundException(&quot;用户不存在&quot;));</span>
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        if(user.isBuiltInAdministrator())throw new ForbiddenException(&quot;内置管理员身份不可修改&quot;);s.validAccount(id);</span>
+<span class="nc bnc" id="L24" title="All 4 branches missed.">        if(!user.isEnabled()||user.getPasswordHash()==null)throw new ConflictException(&quot;请先启用账号并配置密码&quot;);</span>
+<span class="nc" id="L25">        user.setAdministrator(m.administrator());users.saveAndFlush(user);tokens.revokeAll(id);</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        s.audit(a,&quot;SUPER_ADMIN_MEMBERSHIP&quot;,Long.toString(id),m.administrator()?&quot;GRANT&quot;:&quot;REVOKE&quot;,id);</span>
+<span class="nc" id="L27">    }</span>
+<span class="nc" id="L28">    public record Profile(@NotBlank @Size(max=128)String displayName){}</span>
+<span class="nc" id="L29">    @PutMapping(&quot;/users/{id}/profile&quot;) @Transactional public void profile(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id,@Valid @RequestBody Profile p){long a=tokens.requireUserId(auth);s.requireUser(a,id);var user=users.findByIdForUpdate(id).orElseThrow(()-&gt;new ResourceNotFoundException(&quot;用户不存在&quot;));user.setDisplayName(p.displayName());s.audit(a,&quot;USER_PROFILE&quot;,Long.toString(id),&quot;SUCCESS&quot;,id);}</span>
+<span class="nc bnc" id="L30" title="All 8 branches missed.">    @GetMapping(&quot;/organization/read-only&quot;) public Map&lt;String,Object&gt; organization(@RequestHeader(&quot;Authorization&quot;)String auth){long a=tokens.requireUserId(auth);if(!s.superAdmin(a)&amp;&amp;!s.departmentAdmin(a))throw new ForbiddenException(&quot;需要管理员权限&quot;);String scope=s.superAdmin(a)?&quot; where deleted=false&quot;:&quot; where deleted=false and id in(select department_id from admin_department where user_id=&quot;+a+&quot;)&quot;;return Map.of(&quot;departments&quot;,s.rows(&quot;select id,name,parent_id from sys_department&quot;+scope),&quot;posts&quot;,s.rows(&quot;select id,name,role_id from sys_post&quot;+(s.superAdmin(a)?&quot; where deleted=false&quot;:&quot; where deleted=false and id in(select e.post_id from employee_profile e join admin_department d on d.department_id=e.department_id where d.user_id=&quot;+a+&quot;)&quot;)),&quot;dictionary&quot;,s.rows(&quot;select * from data_dictionary where deleted=false order by category,code&quot;));}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

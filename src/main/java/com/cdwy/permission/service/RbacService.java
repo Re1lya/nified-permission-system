@@ -242,9 +242,7 @@ public class RbacService {
     }
 
     public List<PermissionResponse> listPermissions(Long systemId) {
-        List<Permission> permissions = systemId == null
-                ? permissionRepository.findAll()
-                : permissionRepository.findAllBySystem_Id(systemId);
+        List<Permission> permissions = permissionRepository.findVisibleBySystemId(systemId);
         return permissions.stream().map(this::toPermissionResponse).toList();
     }
 

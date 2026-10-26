@@ -1,0 +1,95 @@
+= 统一权限管理系统：JaCoCo 与测试说明
+:lang: zh-CN
+:toc: left
+:toc-title: 目录
+:sectnums:
+:sectanchors:
+:source-highlighter: highlight.js
+:icons: font
+
+小组成员：温家正、姚景云、杜奕含、陈浩贤。
+
+更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。
+
+== 本次实际结果
+
+运行环境：本机 Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
+测试源代码提交：`33bf7e63eb1d2fdcd7f49061e146daf665fe8a2e`。完整命令为 `mvn -B clean verify`。
+总计 44 项，43 项通过，失败 0、错误 0、跳过 1。
+报告导出时间：2026-10-26T18:05:37.338781+08:00。
+
+[cols="5,1,1,1,1",options="header"]
+|===
+|测试类 |总数 |失败 |错误 |跳过
+|ActualWorkbookImportTests |1 |0 |0 |1
+|AdminAccessIntegrationTests |7 |0 |0 |0
+|AuthenticationHttpIntegrationTests |11 |0 |0 |0
+|CompanyImportIntegrationTests |5 |0 |0 |0
+|NifiedPermissionSystemApplicationTests |1 |0 |0 |0
+|PhaseOneIntegrationTests |18 |0 |0 |0
+|RbacServiceIntegrationTests |1 |0 |0 |0
+|===
+
+`ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。本机本轮未设置此变量，因此 1 项跳过；跳过不算通过。
+公司导入的合成工作簿集成测试已执行。真实 Excel 测试的断言已按当前分表和初始改密策略更新，但本轮没有执行该条件测试。
+
+== 覆盖率
+
+[cols="2,1,1,1",options="header"]
+|===
+|指标 |已覆盖 |未覆盖 |比例
+|LINE |1190 |445 |72.78%
+|BRANCH |460 |786 |36.92%
+|INSTRUCTION |8742 |6782 |56.31%
+|METHOD |450 |178 |71.66%
+|CLASS |111 |24 |82.22%
+|===
+
+覆盖率由本次 `jacoco.xml` 根节点计数计算，分母包含 JaCoCo 报告内所有生产类，未为提高数字配置覆盖排除。
+行覆盖率衡量执行到的代码行，分支覆盖率衡量已走过的条件分支；不是需求完成比例，也不是负载测试结果。
+新增模块的部分路径仍未覆盖，不能沿用旧版 85.91% 的覆盖率宣称当前版本达到相同水平。
+
+== 报告文件与查看方式
+
+* link:evidence/jacoco/index.html[JaCoCo HTML 首页]：下载或克隆仓库后用浏览器打开，Gitee 文件页可能只显示源码。
+* link:evidence/jacoco/jacoco.xml[JaCoCo XML]、link:evidence/jacoco/jacoco.csv[CSV 统计]。
+* link:evidence/surefire/[JUnit 测试类摘要]；link:evidence/test-summary.json[汇总、提交号与源码 SHA-256]。
+
+[source,bash]
+----
+# 仓库根目录；先确认 Java 21 与 Maven 3.9+
+java -version
+mvn -version
+mvn -B -f third-party/clonefactory/pom.xml -Dmaven.test.skip=true install
+mvn -B clean verify
+# 浏览器打开 target/site/jacoco/index.html
+python3 scripts/export-evidence.py
+python3 scripts/build-submission-docs.py
+----
+
+Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
+单纯启动后端、登录网页或运行 JMeter，不会自动替代这条 Maven 测试命令。
+`-DskipTests` 或 `-Dmaven.test.skip=true` 不可用于根项目的报告生成命令。
+测试使用隔离 H2，不需要修改云端数据库，也不使用线上管理员凭证。
+
+== 覆盖到的主要行为
+
+* RBAC 权限并集、重叠角色撤回、管理 API 的匿名/普通用户拒绝、管理员字段防批量赋值。
+* JWT 登录、刷新、退出、禁用/删除、密码变更、跨验证器撤销、登录和改密并发、事务回滚。
+* 部门管理范围、初始密码一次发放、外部人员期限、锁定、空闲会话、权限点失效。
+* HR 签名、离职和请求幂等；OA 登记、驳回及冲突；审计范围；导入幂等、回滚和 XML 外部实体拒绝。
+* OIDC discovery 与静态页面可达；这不代表完整 OIDC 授权码流程均被自动测试覆盖。
+
+本轮修正了测试中旧的 `sys_user.username/password_hash` 字段、旧令牌期望和共享软删除数据的清理方式。
+运行中发现并修复两处实现问题：CLOB JSON 结果读取，以及已删除应用留下历史权限时列表映射报错。
+测试保留越权、撤销、回滚和并发断言，没有通过删掉断言或排除生产类来提高通过率。
+
+== 验证边界与历史记录
+
+本次仅代表当前源码的 Maven 自动测试；未重做云端数据库迁移、生产部署、浏览器逐页回归、压力测试或外部 OA/HR 产品接入。
+2026-10-22 的云端联调见 link:../phase-one/cloud-verification.json[历史记录]；不能与本轮 H2 测试混为一次验证。
+`docs/first-check/evidence` 保留 2026-10-21 早期报告，*当前报告以本目录为准*。
+生产环境是否已经更新到本次两个修复，需要单独部署后再确认。
+
+重新导出必须先成功完成完整 `clean verify`。导出脚本不运行测试，不把文件存在当作测试成功。
+源码 SHA-256 清单可用于核对报告对应代码；后续只改文档的提交不会改变这些摘要。

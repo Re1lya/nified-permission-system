@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Permission.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.entity</a> &gt; <span class="el_source">Permission.java</span></div><h1>Permission.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+
+@Entity
+@Table(name = &quot;sys_permission&quot;, uniqueConstraints = {
+        @UniqueConstraint(name = &quot;uk_sys_permission_code&quot;, columnNames = &quot;code&quot;)
+})
+public class Permission {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 128)
+    private String code;
+
+    @Column(nullable = false, length = 128)
+    private String name;
+
+    @Column(nullable = false, length = 255)
+    private String menuPath;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = &quot;system_id&quot;, nullable = false)
+    private BusinessSystem system;
+
+    /** MENU, BUTTON or API (requirement 6.2); a button and its API may share one code. */
+<span class="fc" id="L38">    @Column(nullable = false, length = 16)</span>
+    private String type = &quot;API&quot;;
+
+    /** Retired permissions are marked inactive instead of deleted (UC-B03): grants stay, but no longer take effect. */
+<span class="fc" id="L42">    @Column(nullable = false)</span>
+    private boolean active = true;
+
+<span class="fc" id="L45">    protected Permission() {</span>
+<span class="fc" id="L46">    }</span>
+
+<span class="fc" id="L48">    public Permission(String code, String name, String menuPath, BusinessSystem system) {</span>
+<span class="fc" id="L49">        this.code = code;</span>
+<span class="fc" id="L50">        this.name = name;</span>
+<span class="fc" id="L51">        this.menuPath = menuPath;</span>
+<span class="fc" id="L52">        this.system = system;</span>
+<span class="fc" id="L53">    }</span>
+
+    public Permission(String code, String name, String menuPath, BusinessSystem system, String type) {
+<span class="fc" id="L56">        this(code, name, menuPath, system);</span>
+<span class="fc" id="L57">        this.type = type;</span>
+<span class="fc" id="L58">    }</span>
+
+    public Long getId() {
+<span class="fc" id="L61">        return id;</span>
+    }
+
+    public String getCode() {
+<span class="fc" id="L65">        return code;</span>
+    }
+
+    public String getName() {
+<span class="fc" id="L69">        return name;</span>
+    }
+
+    public String getMenuPath() {
+<span class="fc" id="L73">        return menuPath;</span>
+    }
+
+    public BusinessSystem getSystem() {
+<span class="fc" id="L77">        return system;</span>
+    }
+
+    public Long getSystemId() {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        return system == null ? null : system.getId();</span>
+    }
+
+    public String getSystemCode() {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        return system == null ? null : system.getCode();</span>
+    }
+
+    public void setCode(String code) {
+<span class="nc" id="L89">        this.code = code;</span>
+<span class="nc" id="L90">    }</span>
+
+    public void setName(String name) {
+<span class="fc" id="L93">        this.name = name;</span>
+<span class="fc" id="L94">    }</span>
+
+    public void setMenuPath(String menuPath) {
+<span class="fc" id="L97">        this.menuPath = menuPath;</span>
+<span class="fc" id="L98">    }</span>
+
+    public void setSystem(BusinessSystem system) {
+<span class="nc" id="L101">        this.system = system;</span>
+<span class="nc" id="L102">    }</span>
+
+    public String getType() {
+<span class="fc" id="L105">        return type;</span>
+    }
+
+    public void setType(String type) {
+<span class="nc" id="L109">        this.type = type;</span>
+<span class="nc" id="L110">    }</span>
+
+    public boolean isActive() {
+<span class="fc" id="L113">        return active;</span>
+    }
+
+    /** CloneFactory copies through get-prefixed accessors, as UserAccount.getEnabled does. */
+    public boolean getActive() {
+<span class="fc" id="L118">        return active;</span>
+    }
+
+    public void setActive(boolean active) {
+<span class="fc" id="L122">        this.active = active;</span>
+<span class="fc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
