@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PermissionResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.dto</a> &gt; <span class="el_source">PermissionResponse.java</span></div><h1>PermissionResponse.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.dto;
+
+import cn.edu.xmu.clonefactory.CopyFrom;
+import com.cdwy.permission.entity.Permission;
+
+@CopyFrom(Permission.class)
+public class PermissionResponse {
+
+    private Long id;
+    private Long systemId;
+    private String systemCode;
+    private String code;
+    private String name;
+    private String menuPath;
+    private String type;
+    private boolean active;
+
+<span class="fc" id="L18">    public PermissionResponse() {</span>
+<span class="fc" id="L19">    }</span>
+
+<span class="nc" id="L21">    public PermissionResponse(Long id, Long systemId, String systemCode, String code, String name, String menuPath) {</span>
+<span class="nc" id="L22">        this.id = id;</span>
+<span class="nc" id="L23">        this.systemId = systemId;</span>
+<span class="nc" id="L24">        this.systemCode = systemCode;</span>
+<span class="nc" id="L25">        this.code = code;</span>
+<span class="nc" id="L26">        this.name = name;</span>
+<span class="nc" id="L27">        this.menuPath = menuPath;</span>
+<span class="nc" id="L28">    }</span>
+
+<span class="fc" id="L30">    public Long id() { return id; }</span>
+<span class="fc" id="L31">    public Long getId() { return id; }</span>
+<span class="fc" id="L32">    public void setId(Long id) { this.id = id; }</span>
+<span class="nc" id="L33">    public Long systemId() { return systemId; }</span>
+<span class="fc" id="L34">    public Long getSystemId() { return systemId; }</span>
+<span class="fc" id="L35">    public void setSystemId(Long systemId) { this.systemId = systemId; }</span>
+<span class="nc" id="L36">    public String systemCode() { return systemCode; }</span>
+<span class="fc" id="L37">    public String getSystemCode() { return systemCode; }</span>
+<span class="fc" id="L38">    public void setSystemCode(String systemCode) { this.systemCode = systemCode; }</span>
+<span class="fc" id="L39">    public String code() { return code; }</span>
+<span class="fc" id="L40">    public String getCode() { return code; }</span>
+<span class="fc" id="L41">    public void setCode(String code) { this.code = code; }</span>
+<span class="nc" id="L42">    public String name() { return name; }</span>
+<span class="fc" id="L43">    public String getName() { return name; }</span>
+<span class="fc" id="L44">    public void setName(String name) { this.name = name; }</span>
+<span class="nc" id="L45">    public String menuPath() { return menuPath; }</span>
+<span class="fc" id="L46">    public String getMenuPath() { return menuPath; }</span>
+<span class="fc" id="L47">    public void setMenuPath(String menuPath) { this.menuPath = menuPath; }</span>
+<span class="nc" id="L48">    public String type() { return type; }</span>
+<span class="fc" id="L49">    public String getType() { return type; }</span>
+<span class="fc" id="L50">    public void setType(String type) { this.type = type; }</span>
+<span class="nc" id="L51">    public boolean active() { return active; }</span>
+<span class="fc" id="L52">    public boolean isActive() { return active; }</span>
+<span class="fc" id="L53">    public void setActive(boolean active) { this.active = active; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

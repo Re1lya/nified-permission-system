@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntegrationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">IntegrationController.java</span></div><h1>IntegrationController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import com.cdwy.permission.dto.*;
+import com.cdwy.permission.service.*;
+import com.cdwy.permission.exception.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.*;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.ObjectMapper;
+
+/** Signed server-to-server ingress; request IDs are stable business event IDs. */
+@RestController @RequestMapping(&quot;/api/integration&quot;)
+public class IntegrationController {
+    private final IntegrationService service;
+<span class="fc" id="L22">    public IntegrationController(IntegrationService service){this.service=service;}</span>
+<span class="fc" id="L23">    @PostMapping(&quot;/{source}&quot;) public Map&lt;String,Object&gt; accept(@PathVariable String source,@RequestHeader(&quot;X-Request-Id&quot;) String id,@RequestHeader(&quot;X-Timestamp&quot;) String timestamp,@RequestHeader(&quot;X-Signature&quot;) String signature,@RequestBody String body){return service.accept(source,id,timestamp,signature,body);}</span>
+}
+
+@Service
+class IntegrationService {
+    private final PlatformStore s;private final RbacService rbac;private final JwtTokenService tokens;private final TransactionTemplate tx;private final ObjectMapper json;
+    private final String hrSecret,oaSecret;private final HrSynchronization sync;
+<span class="fc" id="L30">    IntegrationService(PlatformStore s,RbacService rbac,JwtTokenService tokens,TransactionTemplate tx,ObjectMapper json,HrSynchronization sync,@Value(&quot;${permission.integration.hr-secret:}&quot;)String hrSecret,@Value(&quot;${permission.integration.oa-secret:}&quot;)String oaSecret){this.sync=sync;this.s=s;this.rbac=rbac;this.tokens=tokens;this.tx=tx;this.json=json;this.hrSecret=hrSecret;this.oaSecret=oaSecret;}</span>
+<span class="fc" id="L31">    public record Event(String action,String username,String displayName,Long userId,Long departmentId,Long postId,String phone,String company,List&lt;Long&gt; roleIds,Long approvalId,String decision,String externalId,String name,String parentExternalId,List&lt;Event&gt; records,String mode,String requestId,String departmentExternalId,String postExternalId) {}</span>
+    public synchronized Map&lt;String,Object&gt; accept(String source,String id,String timestamp,String signature,String body){
+<span class="pc bpc" id="L33" title="1 of 3 branches missed.">        String secret=switch(source){case &quot;hr&quot;-&gt;hrSecret;case &quot;oa&quot;-&gt;oaSecret;default-&gt;throw new IllegalArgumentException(&quot;未知集成来源&quot;);};</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if(secret.length()&lt;32)throw new ForbiddenException(&quot;该集成未配置启用&quot;);</span>
+<span class="pc bpc" id="L35" title="2 of 4 branches missed.">        if(!id.matches(&quot;[A-Za-z0-9_-]{1,64}&quot;)||body.length()&gt;12_000_000)throw new IllegalArgumentException(&quot;请求标识或请求体不合法&quot;);</span>
+        try {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            long seconds=Long.parseLong(timestamp);if(Math.abs(Instant.now().getEpochSecond()-seconds)&gt;300)throw new ForbiddenException(&quot;请求签名已过期&quot;);</span>
+<span class="fc" id="L38">            var mac=Mac.getInstance(&quot;HmacSHA256&quot;);mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8),&quot;HmacSHA256&quot;));</span>
+<span class="fc" id="L39">            byte[] expected=mac.doFinal((source+&quot;\n&quot;+timestamp+&quot;\n&quot;+id+&quot;\n&quot;+body).getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if(!MessageDigest.isEqual(expected,HexFormat.of().parseHex(signature)))throw new ForbiddenException(&quot;请求签名不正确&quot;);</span>
+<span class="pc" id="L41">        }catch(ForbiddenException e){throw e;}catch(Exception e){throw new ForbiddenException(&quot;请求签名不正确&quot;);}</span>
+<span class="pc" id="L42">        final String digest;try{digest=HexFormat.of().formatHex(MessageDigest.getInstance(&quot;SHA-256&quot;).digest(body.getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}</span>
+<span class="fc" id="L43">        try { return tx.execute(status-&gt;{</span>
+<span class="pc" id="L44">            Event event;try{event=json.readValue(body,Event.class);}catch(Exception e){throw new IllegalArgumentException(&quot;集成数据格式不正确&quot;);}</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if(event==null)throw new IllegalArgumentException(&quot;集成事件不能为空&quot;);</span>
+<span class="fc" id="L46">            var failure=s.rows(&quot;select digest from sync_failure where source=? and request_id=?&quot;,source,id);</span>
+<span class="pc bpc" id="L47" title="3 of 4 branches missed.">            if(!failure.isEmpty()&amp;&amp;!digest.equals(failure.getFirst().get(&quot;digest&quot;)))throw new ConflictException(&quot;修正内容后必须使用新的请求编号&quot;);</span>
+<span class="fc" id="L48">            var previous=s.rows(&quot;select digest,result,response from integration_event where source=? and request_id=?&quot;,source,id);</span>
+<span class="pc bpc" id="L49" title="1 of 6 branches missed.">            if(!previous.isEmpty()){if(!digest.equals(previous.getFirst().get(&quot;digest&quot;)))throw new ConflictException(&quot;同一请求编号不能对应不同内容&quot;);return Map.of(&quot;reused&quot;,true,&quot;result&quot;,previous.getFirst().get(&quot;result&quot;),&quot;detail&quot;,previous.getFirst().get(&quot;response&quot;)==null?Map.of():json.readValue(previous.getFirst().get(&quot;response&quot;).toString(),Map.class));}</span>
+<span class="fc" id="L50">            Map&lt;String,Object&gt; detail=new LinkedHashMap&lt;&gt;();Long user=null;</span>
+<span class="pc bpc" id="L51" title="1 of 4 branches missed.">            if(source.equals(&quot;hr&quot;)&amp;&amp;&quot;RECONCILE&quot;.equals(event.action()))detail.putAll(sync.reconcile(event.records()));</span>
+<span class="pc bpc" id="L52" title="1 of 4 branches missed.">            else if(source.equals(&quot;hr&quot;)&amp;&amp;&quot;SYNC&quot;.equals(event.action())) {</span>
+<span class="nc bnc" id="L53" title="All 6 branches missed.">                if(!Set.of(&quot;FULL&quot;,&quot;INCREMENTAL&quot;).contains(Objects.toString(event.mode(),&quot;&quot;))||event.records()==null||event.records().size()&gt;20000)throw new IllegalArgumentException(&quot;同步需要 FULL/INCREMENTAL 模式，最多20000条&quot;);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                for(var item:event.records())hr(item);</span>
+<span class="nc" id="L55">                detail.put(&quot;processed&quot;,event.records().size());detail.put(&quot;mode&quot;,event.mode());</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            } else if(source.equals(&quot;oa&quot;)&amp;&amp;&quot;QUERY_PERMISSIONS&quot;.equals(event.action())) {</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                if(event.userId()==null)throw new IllegalArgumentException(&quot;缺少员工编号&quot;);s.validAccount(event.userId());</span>
+<span class="nc" id="L58">                detail.put(&quot;permissions&quot;,rbac.effectivePermissions(event.userId()));detail.put(&quot;permissionVersion&quot;,s.version(event.userId()));</span>
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">            } else if(source.equals(&quot;oa&quot;)&amp;&amp;&quot;QUERY_APPLICATION_STATUS&quot;.equals(event.action())) {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                if(event.requestId()==null)throw new IllegalArgumentException(&quot;需要 OA 申请单号&quot;);</span>
+<span class="nc" id="L61">                var applications=s.rows(&quot;select request_id,user_id,role_id,decision,created_at from approval_record where request_id=?&quot;,event.requestId());</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                if(applications.isEmpty())throw new ResourceNotFoundException(&quot;申请不存在&quot;);detail.put(&quot;application&quot;,applications.getFirst());</span>
+<span class="pc bfc" id="L63" title="All 4 branches covered.">            } else if(source.equals(&quot;oa&quot;)&amp;&amp;&quot;APPLICATION&quot;.equals(event.action()))user=registerApplication(event);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            else user=source.equals(&quot;hr&quot;)?hr(event):oa(event);</span>
+<span class="fc" id="L65">            s.db().update(&quot;update sync_failure set status='RESOLVED',resolution='原始请求重试成功' where source=? and request_id=?&quot;,source,id);</span>
+<span class="fc" id="L66">            s.db().update(&quot;insert into integration_event(source,request_id,digest,result,created_at,user_id,response) values(?,?,?,'SUCCESS',?,?,?)&quot;,source,id,digest,Instant.now(),user,json.writeValueAsString(detail));</span>
+<span class="fc" id="L67">            s.audit(null,&quot;INTEGRATION_&quot;+source.toUpperCase(Locale.ROOT),id,&quot;SUCCESS&quot;,user);</span>
+<span class="fc" id="L68">            return Map.of(&quot;reused&quot;,false,&quot;result&quot;,&quot;SUCCESS&quot;,&quot;detail&quot;,detail);</span>
+<span class="fc" id="L69">        }); } catch(RuntimeException failure) {</span>
+            // The business transaction has rolled back. Save only a digest and a bounded reason, never a payload or secret.
+<span class="fc" id="L71">            try {tx.executeWithoutResult(status-&gt;{</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                if(s.count(&quot;select count(*) from sync_failure where source=? and request_id=?&quot;,source,id)==0)</span>
+<span class="fc" id="L73">                    s.db().update(&quot;insert into sync_failure(source,request_id,digest,error,status,created_at) values(?,?,?,?,'OPEN',?)&quot;,source,id,digest,</span>
+<span class="pc bpc" id="L74" title="4 of 6 branches missed.">                        failure instanceof IllegalArgumentException||failure instanceof ConflictException||failure instanceof ForbiddenException?Objects.toString(failure.getMessage(),&quot;同步失败&quot;).substring(0,Math.min(1000,Objects.toString(failure.getMessage(),&quot;同步失败&quot;).length())):&quot;数据冲突或处理失败，请核对外部编号和关联数据&quot;,Instant.now());</span>
+<span class="pc" id="L75">            });} catch(org.springframework.dao.DuplicateKeyException race){/* Another instance recorded the same failure. */}</span>
+<span class="fc" id="L76">            throw failure;</span>
+        }
+    }
+    private Long registerApplication(Event e){
+<span class="pc bpc" id="L80" title="5 of 10 branches missed.">        if(e.userId()==null||e.roleIds()==null||e.roleIds().size()!=1||e.requestId()==null||!e.requestId().matches(&quot;[A-Za-z0-9_-]{1,64}&quot;))throw new IllegalArgumentException(&quot;OA 申请需要申请单号、用户和一个岗位角色&quot;);</span>
+<span class="fc" id="L81">        s.validAccount(e.userId());long role=e.roleIds().getFirst();</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if(s.count(&quot;select count(*) from sys_post p join sys_role r on r.id=p.role_id where p.deleted=false and r.id=? and r.enabled=true&quot;,role)!=1)throw new IllegalArgumentException(&quot;只能申请启用的岗位角色&quot;);</span>
+<span class="fc" id="L83">        var existing=s.rows(&quot;select user_id,role_id from approval_record where request_id=?&quot;,e.requestId());</span>
+<span class="pc bpc" id="L84" title="5 of 6 branches missed.">        if(!existing.isEmpty()) {if(((Number)existing.getFirst().get(&quot;user_id&quot;)).longValue()!=e.userId()||((Number)existing.getFirst().get(&quot;role_id&quot;)).longValue()!=role)throw new ConflictException(&quot;申请单内容冲突&quot;);return e.userId();}</span>
+<span class="fc" id="L85">        s.db().update(&quot;insert into approval_record(request_id,user_id,role_id,decision,created_at) values(?,?,?,'PENDING',?)&quot;,e.requestId(),e.userId(),role,Instant.now());return e.userId();</span>
+    }
+    private Long hr(Event input){
+<span class="fc" id="L88">        Event e=sync.resolve(input);</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if(e.action()==null)throw new IllegalArgumentException(&quot;缺少 HR 事件类型&quot;);</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if(e.action().equals(&quot;DEPARTMENT&quot;)){sync.department(e);return null;}</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if(e.action().equals(&quot;POST&quot;)){sync.post(e);return null;}</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if(e.action().equals(&quot;JOIN&quot;)){profile(e);return sync.join(e);}</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        Long resolved=e.externalId()==null?e.userId():sync.lookup(&quot;EMPLOYEE&quot;,e.externalId());</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if(resolved==null)throw new IllegalArgumentException(&quot;缺少或不存在员工编号&quot;);long id=resolved;</span>
+<span class="pc bpc" id="L95" title="2 of 4 branches missed.">        if(s.superAdmin(id)||s.departmentAdmin(id))throw new ForbiddenException(&quot;HR 不能直接变更管理员账号，请先人工解除管理身份&quot;);</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if(s.count(&quot;select count(*) from employee_profile where user_id=?&quot;,id)!=1)throw new IllegalArgumentException(&quot;员工不存在&quot;);</span>
+<span class="fc" id="L97">        s.db().queryForObject(&quot;select id from sys_user where id=? for update&quot;,Long.class,id);</span>
+<span class="pc bpc" id="L98" title="3 of 4 branches missed.">        switch(e.action()){</span>
+            case &quot;UPDATE&quot; -&gt; {
+<span class="nc" id="L100">                profile(e);var current=s.rows(&quot;select department_id,post_id from employee_profile where user_id=?&quot;,id).getFirst();</span>
+<span class="nc bnc" id="L101" title="All 4 branches missed.">                if(((Number)current.get(&quot;department_id&quot;)).longValue()!=e.departmentId()||((Number)current.get(&quot;post_id&quot;)).longValue()!=e.postId())throw new ConflictException(&quot;组织岗位变更必须使用 TRANSFER 并给出完整授权集合&quot;);</span>
+<span class="nc bnc" id="L102" title="All 6 branches missed.">                if(e.displayName()==null||e.displayName().isBlank()||e.displayName().length()&gt;128)throw new IllegalArgumentException(&quot;姓名不合法&quot;);</span>
+<span class="nc" id="L103">                s.db().update(&quot;update sys_user set display_name=? where id=?&quot;,e.displayName(),id);</span>
+<span class="nc" id="L104">                s.db().update(&quot;update employee_profile set phone=?,company=? where user_id=?&quot;,e.phone(),e.company(),id);</span>
+<span class="nc" id="L105">            }</span>
+            case &quot;TRANSFER&quot; -&gt; {
+<span class="nc" id="L107">                long oldDepartment=s.db().queryForObject(&quot;select department_id from employee_profile where user_id=?&quot;,Long.class,id);</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">                profile(e);if(e.roleIds()==null||e.roleIds().size()&gt;100)throw new IllegalArgumentException(&quot;调岗必须明确提供完整岗位角色列表，空数组表示回收全部&quot;);</span>
+<span class="nc bnc" id="L109" title="All 4 branches missed.">                for(long role:e.roleIds())if(s.count(&quot;select count(*) from sys_post p join sys_role r on r.id=p.role_id where p.deleted=false and p.id=? and r.id=? and r.enabled=true&quot;,e.postId(),role)!=1)throw new IllegalArgumentException(&quot;调岗只能授予新岗位对应的启用角色&quot;);</span>
+<span class="nc" id="L110">                s.db().update(&quot;delete from sys_user_role where user_id=?&quot;,id);s.db().update(&quot;update employee_profile set department_id=?,post_id=?,phone=?,company=? where user_id=?&quot;,e.departmentId(),e.postId(),e.phone(),e.company(),id);</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                for(long role:new HashSet&lt;&gt;(e.roleIds()))rbac.assignRole(id,role);</span>
+<span class="nc" id="L112">                sync.notice(oldDepartment,id,&quot;TRANSFER_OUT&quot;,&quot;员工已调出，原岗位授权已回收&quot;);</span>
+<span class="nc" id="L113">                sync.notice(e.departmentId(),id,&quot;TRANSFER_IN&quot;,&quot;员工已调入，新岗位授权已在同一事务中设置&quot;);</span>
+<span class="nc" id="L114">            }</span>
+<span class="fc" id="L115">            case &quot;LEAVE&quot; -&gt; {s.db().update(&quot;update sys_user set enabled=false where id=?&quot;,id);s.db().update(&quot;delete from sys_user_role where user_id=?&quot;,id);tokens.revokeAll(id);}</span>
+<span class="nc" id="L116">            default -&gt; throw new IllegalArgumentException(&quot;HR 仅支持 DEPARTMENT、POST、JOIN、UPDATE、TRANSFER、LEAVE&quot;);</span>
+        }
+<span class="fc" id="L118">        s.changed(id);return id;</span>
+    }
+<span class="nc bnc" id="L120" title="All 18 branches missed.">    private void profile(Event e){if(e.departmentId()==null||e.postId()==null||e.phone()==null||!e.phone().matches(&quot;[0-9+ -]{5,32}&quot;)||e.company()==null||e.company().isBlank()||e.company().length()&gt;128)throw new IllegalArgumentException(&quot;员工组织或联系方式不完整&quot;);if(s.count(&quot;select count(*) from sys_department where id=? and deleted=false&quot;,e.departmentId())!=1||s.count(&quot;select count(*) from sys_post where id=? and deleted=false&quot;,e.postId())!=1)throw new IllegalArgumentException(&quot;部门或岗位不存在&quot;);}</span>
+    private Long oa(Event e){
+<span class="pc bpc" id="L122" title="4 of 8 branches missed.">        if((e.approvalId()==null&amp;&amp;e.requestId()==null)||!Set.of(&quot;APPROVED&quot;,&quot;REJECTED&quot;,&quot;CANCELLED&quot;).contains(e.decision()==null?&quot;&quot;:e.decision()))throw new IllegalArgumentException(&quot;审批编号或结论错误&quot;);</span>
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">        var rows=e.requestId()!=null?s.rows(&quot;select * from approval_record where request_id=? for update&quot;,e.requestId()):s.rows(&quot;select * from approval_record where id=? for update&quot;,e.approvalId());if(rows.isEmpty())throw new IllegalArgumentException(&quot;审批申请不存在&quot;);var row=rows.getFirst();</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if(!&quot;PENDING&quot;.equals(row.get(&quot;decision&quot;))){if(e.decision().equals(row.get(&quot;decision&quot;)))return ((Number)row.get(&quot;user_id&quot;)).longValue();throw new ConflictException(&quot;审批已经处理且结论不同&quot;);}long user=((Number)row.get(&quot;user_id&quot;)).longValue(),role=((Number)row.get(&quot;role_id&quot;)).longValue();</span>
+<span class="pc bpc" id="L125" title="3 of 4 branches missed.">        if(e.decision().equals(&quot;APPROVED&quot;)){s.validAccount(user);if(s.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1)throw new ConflictException(&quot;申请人已停用&quot;);rbac.assignRole(user,role);}</span>
+<span class="fc" id="L126">        s.db().update(&quot;update approval_record set decision=? where id=?&quot;,e.decision(),row.get(&quot;id&quot;));return user;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

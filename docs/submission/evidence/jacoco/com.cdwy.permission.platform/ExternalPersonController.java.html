@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalPersonController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">ExternalPersonController.java</span></div><h1>ExternalPersonController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import com.cdwy.permission.dto.*;
+import com.cdwy.permission.exception.*;
+import com.cdwy.permission.service.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.time.*;
+import java.util.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+
+/** UC-C05 / BR-11: platform-created external and temporary people always carry an expiry date. */
+@RestController @RequestMapping(&quot;/api/platform/external-users&quot;)
+public class ExternalPersonController {
+    private final ExternalPersonService service;private final JwtTokenService tokens;
+<span class="fc" id="L18">    public ExternalPersonController(ExternalPersonService service,JwtTokenService tokens){this.service=service;this.tokens=tokens;}</span>
+<span class="fc" id="L19">    public record Creation(@NotBlank @Pattern(regexp=&quot;[A-Za-z0-9_.-]{1,64}&quot;) String username,@NotBlank @Size(max=128) String displayName,</span>
+        @NotNull PersonType personType,@NotNull LocalDate expiresOn,@NotNull @Positive Long departmentId,@NotNull @Positive Long postId,
+        @NotBlank @Size(max=128) String company,@NotBlank @Pattern(regexp=&quot;[0-9+ -]{5,32}&quot;) String phone,@NotBlank String password) {}
+<span class="fc" id="L22">    public record Renewal(@NotNull LocalDate expiresOn) {}</span>
+<span class="fc" id="L23">    @PostMapping public Map&lt;String,Object&gt; create(@RequestHeader(&quot;Authorization&quot;) String auth,@Valid @RequestBody Creation body){return service.create(tokens.requireUserId(auth),body);}</span>
+<span class="fc" id="L24">    @PutMapping(&quot;/{id}/expiry&quot;) public Map&lt;String,Object&gt; renew(@RequestHeader(&quot;Authorization&quot;) String auth,@PathVariable long id,@Valid @RequestBody Renewal body){return service.renew(tokens.requireUserId(auth),id,body.expiresOn());}</span>
+<span class="fc" id="L25">    @GetMapping public List&lt;Map&lt;String,Object&gt;&gt; list(@RequestHeader(&quot;Authorization&quot;) String auth,@RequestParam(defaultValue=&quot;14&quot;) int remindDays){return service.list(tokens.requireUserId(auth),remindDays);}</span>
+}
+
+/** Maximum validity per person type; validity runs through the end of expiresOn in the company's time zone. */
+<span class="fc" id="L29">enum PersonType {</span>
+<span class="fc" id="L30">    EXTERNAL(365),TEMPORARY(90);</span>
+    final int maxDays;
+<span class="fc" id="L32">    PersonType(int maxDays){this.maxDays=maxDays;}</span>
+}
+
+@Service
+class ExternalPersonService {
+<span class="fc" id="L37">    static final ZoneId ZONE=ZoneId.of(&quot;Asia/Shanghai&quot;);</span>
+    private final PlatformStore s;private final RbacService rbac;
+<span class="fc" id="L39">    ExternalPersonService(PlatformStore s,RbacService rbac){this.s=s;this.rbac=rbac;}</span>
+
+<span class="fc bfc" id="L41" title="All 4 branches covered.">    private long admin(long actor){if(!s.superAdmin(actor)&amp;&amp;!s.departmentAdmin(actor))throw new ForbiddenException(&quot;需要管理权限&quot;);return actor;}</span>
+<span class="fc" id="L42">    private static Instant endOf(LocalDate day){return day.plusDays(1).atStartOfDay(ZONE).toInstant();}</span>
+    private static void validity(PersonType type,LocalDate expiresOn){
+<span class="fc" id="L44">        LocalDate today=LocalDate.now(ZONE);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if(expiresOn.isBefore(today))throw new IllegalArgumentException(&quot;有效期不能早于今天&quot;);</span>
+<span class="fc bfc" id="L46" title="All 4 branches covered.">        if(expiresOn.isAfter(today.plusDays(type.maxDays)))throw new IllegalArgumentException((type==PersonType.EXTERNAL?&quot;外部人员&quot;:&quot;临时人员&quot;)+&quot;有效期最长 &quot;+type.maxDays+&quot; 天&quot;);</span>
+<span class="fc" id="L47">    }</span>
+
+    @Transactional public Map&lt;String,Object&gt; create(long actor,ExternalPersonController.Creation body){
+<span class="fc" id="L50">        admin(actor);s.requireDepartment(actor,body.departmentId());validity(body.personType(),body.expiresOn());</span>
+<span class="pc bpc" id="L51" title="2 of 4 branches missed.">        if(s.count(&quot;select count(*) from sys_department where id=? and deleted=false&quot;,body.departmentId())!=1||s.count(&quot;select count(*) from sys_post where id=? and deleted=false&quot;,body.postId())!=1)throw new IllegalArgumentException(&quot;部门或岗位不存在&quot;);</span>
+<span class="fc" id="L52">        long id=rbac.createUser(new CreateUserRequest(body.username(),body.displayName())).id();</span>
+<span class="fc" id="L53">        s.ensurePolicy(id);</span>
+<span class="fc" id="L54">        rbac.setPassword(id,new SetPasswordRequest(body.password()));</span>
+<span class="fc" id="L55">        s.db().update(&quot;insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)&quot;,id,body.departmentId(),body.postId(),body.phone(),body.company());</span>
+<span class="fc" id="L56">        s.db().update(&quot;update account_policy set person_type=?,expires_at=?,must_change_password=true where user_id=?&quot;,body.personType().name(),endOf(body.expiresOn()),id);</span>
+<span class="fc" id="L57">        s.audit(actor,&quot;EXTERNAL_CREATE&quot;,id+&quot;:&quot;+body.personType()+&quot;:&quot;+body.expiresOn(),&quot;SUCCESS&quot;,id);</span>
+<span class="fc" id="L58">        return Map.of(&quot;id&quot;,id,&quot;personType&quot;,body.personType().name(),&quot;expiresOn&quot;,body.expiresOn().toString());</span>
+    }
+
+    @Transactional public Map&lt;String,Object&gt; renew(long actor,long id,LocalDate expiresOn){
+<span class="fc" id="L62">        admin(actor);s.requireUser(actor,id);</span>
+<span class="fc" id="L63">        var rows=s.rows(&quot;select person_type from account_policy where user_id=? and deleted=false&quot;,id);</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if(rows.isEmpty())throw new ResourceNotFoundException(&quot;账号不存在&quot;);</span>
+        PersonType type;
+<span class="fc" id="L66">        try{type=PersonType.valueOf((String)rows.getFirst().get(&quot;person_type&quot;));}catch(IllegalArgumentException e){throw new IllegalArgumentException(&quot;只有外部人员和临时人员需要续期&quot;);}</span>
+<span class="fc" id="L67">        validity(type,expiresOn);</span>
+<span class="fc" id="L68">        s.db().update(&quot;update account_policy set expires_at=? where user_id=?&quot;,endOf(expiresOn),id);</span>
+<span class="fc" id="L69">        s.changed(id);s.audit(actor,&quot;EXTERNAL_RENEW&quot;,id+&quot;:&quot;+expiresOn,&quot;SUCCESS&quot;,id);</span>
+<span class="fc" id="L70">        return Map.of(&quot;id&quot;,id,&quot;expiresOn&quot;,expiresOn.toString());</span>
+    }
+
+    public List&lt;Map&lt;String,Object&gt;&gt; list(long actor,int remindDays){
+<span class="pc bpc" id="L74" title="2 of 4 branches missed.">        admin(actor);if(remindDays&lt;1||remindDays&gt;90)throw new IllegalArgumentException(&quot;提醒天数应在 1 到 90 之间&quot;);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        String scope=s.superAdmin(actor)?&quot;&quot;:&quot; and e.department_id in(select department_id from admin_department where user_id=&quot;+actor+&quot;)&quot;;</span>
+<span class="fc" id="L76">        var rows=s.rows(&quot;select u.id,ac.username,u.display_name,u.enabled,p.person_type,p.expires_at,e.company,e.department_id,e.post_id from account_policy p join sys_user u on u.id=p.user_id join sys_account ac on ac.user_id=u.id left join employee_profile e on e.user_id=u.id where p.person_type in('EXTERNAL','TEMPORARY') and p.deleted=false&quot;+scope+&quot; order by p.expires_at,u.id&quot;);</span>
+<span class="fc" id="L77">        LocalDate today=LocalDate.now(ZONE);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for(var row:rows){</span>
+<span class="fc" id="L79">            Object value=row.remove(&quot;expires_at&quot;);</span>
+<span class="pc bpc" id="L80" title="3 of 4 branches missed.">            Instant expires=value instanceof OffsetDateTime offset?offset.toInstant():value instanceof LocalDateTime local?local.toInstant(ZoneOffset.UTC):((java.sql.Timestamp)value).toInstant();</span>
+<span class="fc" id="L81">            LocalDate last=expires.atZone(ZONE).toLocalDate().minusDays(1);long left=Duration.between(today.atStartOfDay(ZONE),last.atStartOfDay(ZONE)).toDays();</span>
+<span class="fc" id="L82">            row.put(&quot;expires_on&quot;,last.toString());row.put(&quot;days_left&quot;,left);</span>
+<span class="pc bpc" id="L83" title="2 of 4 branches missed.">            row.put(&quot;status&quot;,!expires.isAfter(Instant.now())?&quot;EXPIRED&quot;:left&lt;remindDays?&quot;EXPIRING&quot;:&quot;ACTIVE&quot;);</span>
+<span class="fc" id="L84">        }</span>
+<span class="fc" id="L85">        return rows;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

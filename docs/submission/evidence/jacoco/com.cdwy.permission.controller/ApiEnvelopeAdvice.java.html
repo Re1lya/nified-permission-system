@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiEnvelopeAdvice.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.controller</a> &gt; <span class="el_source">ApiEnvelopeAdvice.java</span></div><h1>ApiEnvelopeAdvice.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.controller;
+
+import java.util.*;
+import org.springframework.core.MethodParameter;
+import org.springframework.http.*;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.*;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+/** Versioned representation: preserve legacy classroom clients while the current console uses the DOC-01 contract. */
+@RestControllerAdvice
+<span class="fc" id="L13">public class ApiEnvelopeAdvice implements ResponseBodyAdvice&lt;Object&gt; {</span>
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">    public boolean supports(MethodParameter method,Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converter){return !org.springframework.http.converter.StringHttpMessageConverter.class.isAssignableFrom(converter);}</span>
+    public Object beforeBodyWrite(Object body,MethodParameter method,MediaType media,Class&lt;? extends HttpMessageConverter&lt;?&gt;&gt; converter,ServerHttpRequest request,ServerHttpResponse response){
+<span class="pc bpc" id="L16" title="2 of 4 branches missed.">        if(!request.getURI().getPath().startsWith(&quot;/api/&quot;)||!Objects.toString(request.getHeaders().getFirst(&quot;Accept&quot;),&quot;&quot;).contains(&quot;application/vnd.cdwy.v2+json&quot;))return body;</span>
+<span class="nc" id="L17">        response.getHeaders().add(&quot;Vary&quot;,&quot;Accept&quot;);</span>
+<span class="nc bnc" id="L18" title="All 2 branches missed.">        int status=response instanceof ServletServerHttpResponse servlet?servlet.getServletResponse().getStatus():200;</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        if(status==204)return body;</span>
+<span class="nc bnc" id="L20" title="All 6 branches missed.">        String message=body instanceof Map&lt;?,?&gt; map&amp;&amp;map.get(&quot;message&quot;)!=null?map.get(&quot;message&quot;).toString():status&lt;400?&quot;成功&quot;:&quot;请求失败&quot;;</span>
+<span class="nc bnc" id="L21" title="All 10 branches missed.">        var result=new LinkedHashMap&lt;String,Object&gt;();result.put(&quot;code&quot;,status&lt;400?&quot;SUCCESS&quot;:switch(status){case 400-&gt;&quot;INVALID_ARGUMENT&quot;;case 401-&gt;&quot;UNAUTHENTICATED&quot;;case 403-&gt;&quot;FORBIDDEN&quot;;case 404-&gt;&quot;NOT_FOUND&quot;;case 409-&gt;&quot;CONFLICT&quot;;default-&gt;&quot;SERVER_ERROR&quot;;});result.put(&quot;message&quot;,message);result.put(&quot;data&quot;,status&lt;400?body:null);return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

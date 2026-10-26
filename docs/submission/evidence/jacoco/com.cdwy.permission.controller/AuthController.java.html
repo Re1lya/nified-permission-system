@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.controller;
+
+import com.cdwy.permission.dto.LoginRequest;
+import com.cdwy.permission.dto.LoginResponse;
+import com.cdwy.permission.service.JwtTokenService;
+import com.cdwy.permission.service.RbacService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+public class AuthController {
+
+    private final RbacService rbacService;
+    private final JwtTokenService jwtTokenService;
+
+    private final com.cdwy.permission.platform.PlatformStore platform;
+
+    public AuthController(RbacService rbacService, JwtTokenService jwtTokenService,
+<span class="fc" id="L25">            com.cdwy.permission.platform.PlatformStore platform) {</span>
+<span class="fc" id="L26">        this.rbacService = rbacService;</span>
+<span class="fc" id="L27">        this.jwtTokenService = jwtTokenService;</span>
+<span class="fc" id="L28">        this.platform = platform;</span>
+<span class="fc" id="L29">    }</span>
+
+    @PostMapping(&quot;/login&quot;)
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+<span class="fc" id="L33">        return rbacService.login(request);</span>
+    }
+
+    @PostMapping(&quot;/refresh&quot;)
+    public java.util.Map&lt;String, String&gt; refresh(
+            @org.springframework.web.bind.annotation.RequestHeader(
+                    value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+<span class="fc" id="L40">        return java.util.Map.of(&quot;accessToken&quot;, jwtTokenService.refresh(authorization));</span>
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    public ResponseEntity&lt;Void&gt; logout(
+            @org.springframework.web.bind.annotation.RequestHeader(
+                    value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+<span class="fc" id="L47">        Long userId = jwtTokenService.subjectIfValid(authorization);</span>
+<span class="fc" id="L48">        jwtTokenService.revoke(authorization);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (userId != null) {</span>
+<span class="fc" id="L50">            platform.audit(userId, &quot;LOGOUT&quot;, Long.toString(userId), &quot;SUCCESS&quot;, userId);</span>
+        }
+<span class="fc" id="L52">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

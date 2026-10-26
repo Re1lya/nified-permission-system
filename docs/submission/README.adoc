@@ -1,0 +1,34 @@
+= 统一权限管理系统：课程检查材料
+:lang: zh-CN
+:toc: left
+:toc-title: 目录
+:sectnums:
+:sectanchors:
+:source-highlighter: highlight.js
+:icons: font
+
+小组成员：温家正、姚景云、杜奕含、陈浩贤。
+
+更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。
+
+本目录为当前提交材料入口；答辩复习 PDF 不纳入本次提交。
+
+[cols="2,5",options="header"]
+|===
+|材料 |位置
+|需求与实现 |link:01-requirements.adoc[01 需求与实现说明]；原始基线仍保留在 phase-one
+|详细设计 |link:02-detailed-design.adoc[02 详细设计]：职责、对象关系、交互、事务、设计理由
+|数据库设计 |link:03-database-design.adoc[03 数据库设计]：38 表字典、约束、索引与完整 DDL
+|API 设计 |link:04-api-design.adoc[04 API 设计]：认证、签名、响应和 98 个操作
+|界面设计 |link:05-ui-design.adoc[05 界面设计]：页面、身份范围、流程示意
+|JaCoCo |link:06-jacoco.adoc[06 测试说明]；link:evidence/jacoco/index.html[完整 HTML 报告]
+|===
+
+本次测试：44 项，43 通过，1 跳过，0 失败、0 错误；行覆盖率 72.78%，分支覆盖率 36.92%。
+跳过原因为缺少外部 Excel 输入。报告对应提交与源码摘要见 link:evidence/test-summary.json[证据清单]。
+
+代码目录为仓库根目录 `src` 与 `frontend`；四份历史 Word 保留在 link:../phase-one/README.md[一期材料目录]。
+历史 Word 和早期测试保留原日期，当前检查请以本目录 `.adoc` 与报告为准。
+仓库网页显示 HTML 源码时，下载仓库后本地打开 `docs/submission/evidence/jacoco/index.html`。
+
+课程检查入口仍见 link:../phase-one/http-access.md[HTTP 访问说明]；账号密码不写入提交材料。

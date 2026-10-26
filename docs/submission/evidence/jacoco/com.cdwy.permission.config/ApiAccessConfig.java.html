@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiAccessConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.config</a> &gt; <span class="el_source">ApiAccessConfig.java</span></div><h1>ApiAccessConfig.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.config;
+
+import com.cdwy.permission.exception.ForbiddenException;
+import com.cdwy.permission.repository.UserAccountRepository;
+import com.cdwy.permission.service.JwtTokenService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+/** Deny ordinary users by default on API routes, including future management endpoints. */
+@Configuration
+public class ApiAccessConfig implements WebMvcConfigurer {
+    private final JwtTokenService tokens;
+    private final UserAccountRepository users;
+    private final com.cdwy.permission.platform.PlatformStore platform;
+
+<span class="fc" id="L20">    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users,com.cdwy.permission.platform.PlatformStore platform) {</span>
+<span class="fc" id="L21">        this.tokens = tokens;</span>
+<span class="fc" id="L22">        this.users = users;</span>
+<span class="fc" id="L23">        this.platform = platform;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+<span class="fc" id="L28">        registry.addInterceptor(new HandlerInterceptor() {</span>
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+<span class="fc" id="L31">                response.setHeader(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
+<span class="fc" id="L32">                return true;</span>
+            }
+            @Override public void afterCompletion(HttpServletRequest request,HttpServletResponse response,Object handler,Exception error){
+<span class="pc bpc" id="L35" title="1 of 8 branches missed.">                if(!java.util.Set.of(&quot;GET&quot;,&quot;HEAD&quot;,&quot;OPTIONS&quot;).contains(request.getMethod())&amp;&amp;response.getStatus()&lt;400&amp;&amp;request.getHeader(&quot;Authorization&quot;)!=null&amp;&amp;!request.getRequestURI().startsWith(&quot;/api/integration/&quot;)){</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">                    try{long actor=request.getAttribute(&quot;audit.actor&quot;) instanceof Long saved?saved:tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));platform.audit(actor,&quot;HTTP_&quot;+request.getMethod(),request.getRequestURI(),&quot;SUCCESS&quot;);}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}</span>
+                }
+<span class="fc" id="L38">            }</span>
+<span class="fc" id="L39">        }).addPathPatterns(&quot;/api/**&quot;);</span>
+<span class="fc" id="L40">        registry.addInterceptor(new HandlerInterceptor(){</span>
+            @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler){
+<span class="fc" id="L42">                long id=tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
+<span class="fc" id="L43">                request.setAttribute(&quot;audit.actor&quot;,id);</span>
+<span class="fc bfc" id="L44" title="All 4 branches covered.">                if(platform.mustChange(id)&amp;&amp;!java.util.Set.of(&quot;/api/platform/self&quot;,&quot;/api/platform/self/password&quot;).contains(request.getRequestURI()))throw new ForbiddenException(&quot;请先修改初始密码&quot;);return true;</span>
+            }
+<span class="fc" id="L46">        }).addPathPatterns(&quot;/api/**&quot;).excludePathPatterns(&quot;/api/auth/login&quot;,&quot;/api/auth/logout&quot;,&quot;/api/auth/refresh&quot;,&quot;/api/auth/me&quot;,&quot;/api/integration/**&quot;,&quot;/api/oidc/**&quot;);</span>
+<span class="fc" id="L47">        registry.addInterceptor(new HandlerInterceptor() {</span>
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+<span class="fc" id="L50">                Long id = tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                if (!users.findById(id).map(user -&gt; user.isAdministrator()).orElse(false)) {</span>
+<span class="fc" id="L52">                    throw new ForbiddenException(&quot;管理接口仅允许管理员访问&quot;);</span>
+                }
+<span class="fc" id="L54">                return true;</span>
+            }
+<span class="fc" id="L56">        }).addPathPatterns(&quot;/api/**&quot;)</span>
+<span class="fc" id="L57">          .excludePathPatterns(&quot;/api/auth/login&quot;, &quot;/api/auth/logout&quot;, &quot;/api/auth/refresh&quot;, &quot;/api/auth/me&quot;, &quot;/api/demo/expenses&quot;, &quot;/api/platform/**&quot;, &quot;/api/integration/**&quot;, &quot;/api/oidc/**&quot;);</span>
+<span class="fc" id="L58">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompanyData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.company</a> &gt; <span class="el_source">CompanyData.java</span></div><h1>CompanyData.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.company;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+
+/** Import-owned master data is separate from credentials and live grants. */
+public final class CompanyData {
+    private CompanyData() {}
+<span class="fc" id="L9">    @MappedSuperclass public static class Row {</span>
+        @Id @GeneratedValue(strategy=GenerationType.IDENTITY) public Long id;
+    }
+<span class="fc" id="L12">    @Entity @Table(name=&quot;sys_department&quot;) @org.hibernate.annotations.SQLRestriction(&quot;deleted=false&quot;) public static class Department extends Row {</span>
+        @Column(nullable=false) public boolean deleted;
+        @Column(nullable=false,unique=true,length=128) public String name;
+        @ManyToOne public Department parent;
+        @Column(length=128) public String managerName;
+        @ManyToOne public com.cdwy.permission.entity.UserAccount manager;
+    }
+<span class="fc" id="L19">    @Entity @Table(name=&quot;sys_post&quot;) @org.hibernate.annotations.SQLRestriction(&quot;deleted=false&quot;) public static class Post extends Row {</span>
+        @Column(nullable=false) public boolean deleted;
+        @Column(nullable=false,unique=true,length=128) public String name;
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.Role role;
+    }
+<span class="fc" id="L24">    @Entity @Table(name=&quot;employee_profile&quot;) public static class Employee extends Row {</span>
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.UserAccount user;
+        @ManyToOne(optional=false) public Department department;
+        @ManyToOne(optional=false) public Post post;
+        @Column(nullable=false,length=32) public String phone;
+        @Column(nullable=false,length=128) public String company;
+    }
+    @Entity @Table(name=&quot;sys_module&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;system_id&quot;,&quot;name&quot;}))
+<span class="fc" id="L32">    public static class Module extends Row {</span>
+        @ManyToOne(optional=false) public com.cdwy.permission.entity.BusinessSystem system;
+        @Column(nullable=false,length=128) public String name;
+    }
+    @Entity @Table(name=&quot;sys_function&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;module_id&quot;,&quot;name&quot;}))
+<span class="fc" id="L37">    public static class Function extends Row {</span>
+        @ManyToOne(optional=false) public Module module;
+        @Column(nullable=false,length=128) public String name;
+        @Column(nullable=false,length=2000) public String description;
+    }
+<span class="fc" id="L42">    @Entity @Table(name=&quot;permission_detail&quot;) public static class Detail extends Row {</span>
+        @OneToOne(optional=false) @JoinColumn(unique=true) public com.cdwy.permission.entity.Permission permission;
+        @ManyToOne(optional=false) public Function function;
+        @Column(nullable=false,length=32) public String action;
+    }
+    @Entity @Table(name=&quot;permission_template&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;name&quot;,&quot;permission_id&quot;}))
+<span class="fc" id="L48">    public static class Template extends Row {</span>
+        @Column(nullable=false,length=64) public String name;
+        @ManyToOne(optional=false) public com.cdwy.permission.entity.Permission permission;
+    }
+<span class="fc" id="L52">    @Entity @Table(name=&quot;company_import_batch&quot;) public static class Batch extends Row {</span>
+        @Column(nullable=false,unique=true,length=64) public String fingerprint;
+        @Column(nullable=false) public Instant createdAt;
+        @Column(nullable=false) public Long actorId;
+        @Column(nullable=false) public int employees;
+        @Column(nullable=false) public int departments;
+        @Column(nullable=false) public int functions;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

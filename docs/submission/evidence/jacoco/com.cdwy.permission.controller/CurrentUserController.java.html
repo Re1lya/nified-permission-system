@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CurrentUserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.controller</a> &gt; <span class="el_source">CurrentUserController.java</span></div><h1>CurrentUserController.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.controller;
+
+import com.cdwy.permission.dto.PermissionResponse;
+import com.cdwy.permission.exception.AuthenticationFailedException;
+import com.cdwy.permission.repository.UserAccountRepository;
+import com.cdwy.permission.service.JwtTokenService;
+import com.cdwy.permission.service.RbacService;
+import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class CurrentUserController {
+    private final JwtTokenService tokens;
+    private final RbacService rbac;
+    private final UserAccountRepository users;
+
+<span class="fc" id="L19">    public CurrentUserController(JwtTokenService tokens, RbacService rbac, UserAccountRepository users) {</span>
+<span class="fc" id="L20">        this.tokens = tokens;</span>
+<span class="fc" id="L21">        this.rbac = rbac;</span>
+<span class="fc" id="L22">        this.users = users;</span>
+<span class="fc" id="L23">    }</span>
+
+    @GetMapping(&quot;/api/auth/me&quot;)
+    public CurrentUser me(@RequestHeader(value = &quot;Authorization&quot;, required = false) String authorization) {
+<span class="fc" id="L27">        Long id = tokens.requireUserId(authorization);</span>
+<span class="fc" id="L28">        var user = users.findById(id).orElseThrow(AuthenticationFailedException::new);</span>
+<span class="fc" id="L29">        return new CurrentUser(id, user.getUsername(), user.getDisplayName(), user.isAdministrator(),</span>
+<span class="fc" id="L30">                rbac.effectivePermissions(id));</span>
+    }
+
+<span class="fc" id="L33">    public record CurrentUser(Long userId, String username, String displayName, boolean administrator,</span>
+                              List&lt;PermissionResponse&gt; permissions) { }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

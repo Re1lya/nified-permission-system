@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlatformData.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nified-permission-system</a> &gt; <a href="index.source.html" class="el_package">com.cdwy.permission.platform</a> &gt; <span class="el_source">PlatformData.java</span></div><h1>PlatformData.java</h1><pre class="source lang-java linenums">package com.cdwy.permission.platform;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+import com.cdwy.permission.company.CompanyData;
+import com.cdwy.permission.entity.*;
+
+public final class PlatformData {
+    private PlatformData() {}
+    @Entity @Table(name=&quot;admin_department&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;user_id&quot;,&quot;department_id&quot;}))
+<span class="fc" id="L11">    public static class AdminDepartment extends CompanyData.Row {</span>
+        @ManyToOne(optional=false) public UserAccount user;
+        @ManyToOne(optional=false) public CompanyData.Department department;
+    }
+<span class="nc" id="L15">    @Entity @Table(name=&quot;account_policy&quot;) public static class Policy {</span>
+        @Id public Long userId;
+<span class="nc" id="L17">        @Column(nullable=false,length=24) public String personType=&quot;EMPLOYEE&quot;;</span>
+        public Instant expiresAt;
+        @Column(nullable=false) public boolean mustChangePassword;
+        @Column(nullable=false) public boolean initialPasswordIssued;
+        @Column(nullable=false) public long version;
+        @Column(nullable=false) public boolean deleted;
+    }
+<span class="nc" id="L24">    @Entity @Table(name=&quot;login_attempt&quot;) public static class Attempt {</span>
+        @Id @Column(length=64) public String username;
+        public int failures; public Instant lockedUntil;
+    }
+    @Entity @Table(name=&quot;audit_event&quot;,indexes={@Index(columnList=&quot;actorId&quot;),@Index(columnList=&quot;createdAt&quot;)} )
+<span class="fc" id="L29">    public static class Audit extends CompanyData.Row {</span>
+        public Long actorId; public Long departmentId;
+        /** Department of the affected user, so department admins also see changes made to their staff. */
+        public Long targetDepartmentId;
+        @Column(nullable=false,length=64) public String kind;
+        @Column(nullable=false,length=255) public String target;
+        @Column(nullable=false,length=32) public String result;
+        @Column(nullable=false) public Instant createdAt;
+    }
+    @Entity @Table(name=&quot;integration_event&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;source&quot;,&quot;request_id&quot;}))
+<span class="fc" id="L39">    public static class Integration extends CompanyData.Row {</span>
+        @Column(nullable=false,length=16) public String source;
+        @Column(nullable=false,length=64) public String requestId;
+        @Column(nullable=false,length=64) public String digest;
+        @Column(nullable=false,length=32) public String result;
+        @Column(length=2000000) public String response;
+        @Column(nullable=false) public Instant createdAt;
+        public Long userId;
+    }
+<span class="fc" id="L48">    @Entity @Table(name=&quot;approval_record&quot;) public static class Approval extends CompanyData.Row {</span>
+        @Column(nullable=false,unique=true,length=64) public String requestId;
+        @ManyToOne(optional=false) public UserAccount user;
+        @ManyToOne(optional=false) public Role role;
+        @Column(nullable=false,length=16) public String decision;
+        @Column(nullable=false) public Instant createdAt;
+    }
+    @Entity @Table(name=&quot;data_dictionary&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;category&quot;,&quot;code&quot;}))
+<span class="fc" id="L56">    public static class Dictionary extends CompanyData.Row {</span>
+        @Column(nullable=false) public boolean deleted;
+        @Column(nullable=false,length=64) public String category;
+        @Column(nullable=false,length=64) public String code;
+        @Column(nullable=false,length=128) public String name;
+    }
+<span class="nc" id="L62">    @Entity @Table(name=&quot;managed_role&quot;) public static class ManagedRole {</span>
+        @Id public Long roleId;
+        @ManyToOne(optional=false) public CompanyData.Department department;
+    }
+    @Entity @Table(name=&quot;department_permission&quot;,uniqueConstraints=@UniqueConstraint(columnNames={&quot;department_id&quot;,&quot;permission_id&quot;}))
+<span class="fc" id="L67">    public static class GrantLimit extends CompanyData.Row {</span>
+        @ManyToOne(optional=false) public CompanyData.Department department;
+        @ManyToOne(optional=false) public Permission permission;
+    }
+<span class="nc" id="L71">    @Entity @Table(name=&quot;session_activity&quot;) public static class Activity {</span>
+        @Id @Column(length=36) public String sessionId;
+        @Column(nullable=false) public Instant lastSeen;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
