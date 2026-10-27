@@ -75,11 +75,11 @@ GET /api/platform/audit/search 接收 from、until、actorId、kind、archived�
 
 ## 6 协议适配能力
 
-ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGACY 只提供隔离入口。OAuth2 独立场景、SAML、CAS、LDAP 仅保留扩展边界，不能标为已经实现。应用接入验收必须包含正向登录、错误回调、无权限、撤权后拒绝及隔离检查。
+ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGACY 只提供隔离入口。OAuth2 独立场景、SAML、CAS、LDAP 为后续扩展项，尚未实现。应用接入验收必须包含正向登录、错误回调、无权限、撤权后拒绝及隔离检查。
 
 ## 7 控制器路由清单
 
-以下清单由当前编译类离线导出。接口存在和编译通过不等于运行场景验收通过。
+以下清单由当前编译类离线导出。接口运行验证另见测试及部署记录。
 
 | 方法 | 路径 | 处理入口 |
 | --- | --- | --- |

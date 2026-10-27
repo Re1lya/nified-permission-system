@@ -1,4 +1,4 @@
-= 统一权限管理系统：课程检查材料
+= 统一权限管理系统：设计与检查材料
 :lang: zh-CN
 :toc: left
 :toc-title: 目录
@@ -9,27 +9,39 @@
 
 小组成员：温家正、姚景云、杜奕含、陈浩贤。
 
-更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。
+文档整理日期：2026-10-27。测试及部署日期以相应记录为准。
 
-本目录为当前提交材料入口；答辩复习 PDF 不纳入本次提交。
+本目录汇集一期设计文档、自动测试报告及部署验证记录，作为课程检查材料入口。
+
+== 文档目录
 
 [cols="2,5",options="header"]
 |===
-|材料 |位置
-|需求与实现 |link:01-requirements.adoc[01 需求与实现说明]；原始基线仍保留在 phase-one
-|详细设计 |link:02-detailed-design.adoc[02 详细设计]：职责、对象关系、交互、事务、设计理由
-|数据库设计 |link:03-database-design.adoc[03 数据库设计]：38 表字典、约束、索引与完整 DDL
-|API 设计 |link:04-api-design.adoc[04 API 设计]：认证、签名、响应和 98 个操作
-|界面设计 |link:05-ui-design.adoc[05 界面设计]：页面、身份范围、流程示意
-|JaCoCo |link:06-jacoco.adoc[06 测试说明]；link:evidence/jacoco/index.html[完整 HTML 报告]
-|部署更新 |link:07-deployment.adoc[2026-10-26 修复版本部署与在线核对]
+|文档 |内容
+|link:01-requirements.adoc[01 需求与实现说明] |需求范围、业务规则及用例实现对应关系
+|link:02-detailed-design.adoc[02 详细设计] |模块职责、对象关系、关键交互、事务及设计依据
+|link:03-database-design.adoc[03 数据库设计] |38 张表的字段、关联、约束、索引及完整 DDL
+|link:04-api-design.adoc[04 API 设计] |认证、签名、响应格式及 98 个业务控制器操作
+|link:05-ui-design.adoc[05 界面设计] |页面结构、身份范围、交互流程及设计示意
+|link:06-jacoco.adoc[06 测试与 JaCoCo 说明] |测试环境、结果、覆盖率和复现方法
+|link:07-deployment.adoc[07 部署与验证记录] |部署版本及在线接口检查结果
 |===
 
-本次测试：44 项，43 通过，1 跳过，0 失败、0 错误；行覆盖率 72.78%，分支覆盖率 36.92%。
-跳过原因为缺少外部 Excel 输入。报告对应提交与源码摘要见 link:evidence/test-summary.json[证据清单]。
+原始需求见 link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]；接口契约见 link:../phase-one/apifox/openapi.json[OpenAPI]。
 
-代码目录为仓库根目录 `src` 与 `frontend`；四份历史 Word 保留在 link:../phase-one/README.md[一期材料目录]。
-历史 Word 和早期测试保留原日期，当前检查请以本目录 `.adoc` 与报告为准。
-仓库网页显示 HTML 源码时，下载仓库后本地打开 `docs/submission/evidence/jacoco/index.html`。
+== 测试与部署摘要
 
-课程检查入口仍见 link:../phase-one/http-access.md[HTTP 访问说明]；账号密码不写入提交材料。
+2026-10-26 自动测试共 44 项：43 通过、1 跳过、0 失败、0 错误。
+行覆盖率 72.78%，分支覆盖率 36.92%。跳过项依赖未提供的外部 Excel 数据。
+报告对应提交与源码摘要见 link:evidence/test-summary.json[测试汇总]。
+
+修复版本于 2026-10-26 部署，在线检查结果见 link:deployment-20261026.json[部署核对明细]。
+在线入口：http://120.46.213.158/ui/index.html 。
+
+== 报告查看与资料版本
+
+JaCoCo 提供 link:evidence/jacoco/index.html[HTML]、link:evidence/jacoco/jacoco.xml[XML] 和 link:evidence/jacoco/jacoco.csv[CSV]。
+下载或克隆仓库后，可通过浏览器打开 `docs/submission/evidence/jacoco/index.html` 查看完整交互报告。
+
+本目录描述当前一期实现。link:../phase-one/README.md[一期阶段资料]保存四份 Word 设计快照及历史验证记录；
+link:../first-check/README.md[初版资料]保存 2026-10-21 的设计和测试，按对应版本查阅。

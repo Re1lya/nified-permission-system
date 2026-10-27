@@ -14,7 +14,7 @@ summary = json.loads((D / 'evidence/test-summary.json').read_text())
 counts = {key: sum(int(s[key]) for s in summary['suites']) for key in ('tests','failures','errors','skipped')}
 passed = counts['tests'] - counts['failures'] - counts['errors'] - counts['skipped']
 cov = summary['coverage']
-header = ':lang: zh-CN\n:toc: left\n:toc-title: 目录\n:sectnums:\n:sectanchors:\n:source-highlighter: highlight.js\n:icons: font\n\n小组成员：温家正、姚景云、杜奕含、陈浩贤。\n\n更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。\n\n'
+header = ':lang: zh-CN\n:toc: left\n:toc-title: 目录\n:sectnums:\n:sectanchors:\n:source-highlighter: highlight.js\n:icons: font\n\n小组成员：温家正、姚景云、杜奕含、陈浩贤。\n\n文档整理日期：2026-10-27。测试及部署日期以相应记录为准。\n\n'
 def write(name, title, body):
     (D / name).write_text('= '+title+'\n'+header+body.strip()+'\n', encoding='utf-8')
 def inline(text):
@@ -55,11 +55,11 @@ def markdown(source):
 req=(P/'requirements.md').read_text()
 req=re.sub(r'^> 本文件保留.*\n', '', req, flags=re.M)
 req=req.replace('本次在代码补充与设计修订后，继续执行真实 MySQL 建库、隔离旧结构升级和云端 HTTPS 接口联调，实际通过项目见 cloud-verification.json。没有外部 OA/HR 产品，使用遵循接口契约的调用端验证；没有运行项目单元测试、集成测试套件或压力测试。旧版 44 项测试仅对应旧提交 01b94f06，不能用于证明本次变更正确。',
-    '2026-10-22 完成的 MySQL 建库、隔离旧结构升级和云端接口联调仍作为历史记录保留；没有外部 OA/HR 产品。2026-10-26 对当前代码执行完整 Maven 测试，结果见本目录《JaCoCo 与测试说明》。本次没有重跑云端迁移、外部产品联调或压力测试。')
+    '2026-10-22 完成的 MySQL 建库、隔离旧结构升级和云端接口联调仍作为历史记录保留；没有外部 OA/HR 产品。2026-10-26 对当前代码执行完整 Maven 测试，结果见本目录《JaCoCo 与测试说明》。2026-10-26 另完成修复版本部署及在线检查；云端迁移、外部产品接入和压力测试按各自记录说明。')
 req=req.replace('实际通过的本轮联调项目','2026-10-22 实际通过的联调项目').replace('本轮实际联调项目见 cloud-verification.json','2026-10-22 联调项目见 ../phase-one/cloud-verification.json')
 req=req.replace('四份 Word 分别说明需求、界面、API 和数据库；', '本目录 .adoc 为当前提交入口，四份历史 Word 分别说明需求、界面、API 和数据库；')
 write('01-requirements.adoc','统一权限管理系统：需求与实现说明',
-      '原始需求基线：link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]。设计说明不会把尚未验收的需求当成已完成验收。\n\n'+markdown(req))
+      '原始需求基线：link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]。需求实现与验证状态分别列示。\n\n'+markdown(req))
 
 write('02-detailed-design.adoc','统一权限管理系统：详细设计',r'''
 == 设计目标与边界
@@ -122,7 +122,7 @@ HR 的 `externalId` 经 `hr_identity` 映射本地编号，既不是登录名，
 . 授权变化后旧令牌返回 401。仍存在且有效的数据库会话可通过刷新接口轮换令牌，无需重新输入密码。
 . 禁用、离职、改密和强制下线撤销会话；旧令牌不能刷新。403 表示身份有效但权限不足。
 
-平台 JWT 的刷新不等于 OAuth2 刷新令牌；两条协议路径各自实现，不能混用。
+平台 JWT 刷新与 OAuth2 刷新令牌分别采用独立接口和校验流程。
 管理员也不自动具有业务权限，例如没有 `expense:list` 时不能访问报销示例。
 
 === 岗位授权与撤权
@@ -175,7 +175,7 @@ OIDC 客户端、授权、同意、签名密钥和浏览器会话持久化。LEG
 |事务加数据库约束 |防止半次调岗、重复关系与孤立授权 |并发冲突仍需返回明确错误并由调用端重试
 |JWT 加数据库会话及版本 |支持撤权、改密下线与无密码刷新 |每次校验需要访问服务端状态，不是纯无状态 JWT
 |管理范围独立建模 |部门管理员不能越权到子部门或其他管理员 |管理能力与业务权限需要分别维护
-|协议适配边界 |应用差异集中在接入处 |一期仅实现 OIDC；不能宣称 SAML/CAS/LDAP 已实现
+|协议适配边界 |应用差异集中在接入处 |一期仅实现 OIDC；SAML/CAS/LDAP 暂未实现
 |外部编号、摘要与幂等记录 |重复投递不会重复授权，外部名称可变 |同步仍需遵守依赖顺序；外部系统未接入验收
 |===
 
@@ -213,7 +213,7 @@ dbintro=r'''
 
 * `sys_account.user_id` 是主键并关联人员；登录名唯一，密码只存 BCrypt 摘要。
 * 用户角色和角色权限关系具有复合唯一约束。应用编码、角色编码、权限编码也受唯一约束。
-* `hr_identity` 是多态外部编号映射，其 local_id 依 kind 由服务校验；不能把它误写为统一数据库外键。
+* `hr_identity` 是多态外部编号映射，其 local_id 依 kind 由服务校验；该关系未设置统一数据库外键。
 * 部门、岗位、角色和应用软删除前检查引用；用户删除改写旧登录名、清空凭证并保留历史关联。
 * 权限点失效保留历史授权，查询必须排除已删除父应用；失效权限不能参与有效权限并集。
 * 调岗、授权和权限版本更新保持事务一致；OA 审批使用行锁；幂等编号与摘要一起约束重放行为。
@@ -231,10 +231,10 @@ dbintro += r'''
 
 link:../phase-one/database-mysql-phase-one.sql[全量 SQL] 只用于已选定的空数据库。
 link:../migrations/20261022-phase-one-completion.sql[升级 SQL] 只适用于旧提交 01b94f06 的二十五表结构，执行前停止写入、核对前提并备份。
-MySQL DDL 隐式提交；不能把部分失败的升级当作可随意重跑的事务。
+MySQL DDL 隐式提交；部分失败的升级需核对实际结构后制定恢复方案。
 
 2026-10-22 的真实 MySQL 新建和隔离旧结构升级证据见 link:../phase-one/cloud-verification.json[历史联调记录]。
-本次 Maven 使用 H2，只验证其实际运行路径；不能替代 MySQL 方言、迁移、容量和备份恢复验收。
+2026-10-26 的 Maven 测试使用 H2。MySQL 方言、迁移、容量和备份恢复需在相应环境独立验证。
 '''
 write('03-database-design.adoc','统一权限管理系统：数据库设计',dbintro)
 api=markdown((P/'api-design.md').read_text())
@@ -274,8 +274,8 @@ write('05-ui-design.adoc','统一权限管理系统：界面设计',r'''
 
 == 当前流程设计示意
 
-下列图片来自仓库中 2026-10-22 的设计示意，*不是本次运行截图或验收证据*。
-实际交互以 `App.vue` 与 `CompletionPanel.vue` 为准；本次没有逐页浏览器回归。
+下列图片为 2026-10-22 的界面设计示意，用于说明交互流程。
+页面实现位于 `App.vue` 与 `CompletionPanel.vue`；现有验证记录不包含逐页浏览器回归。
 
 .应用接入配置与人工验收
 image::../phase-one/images/design-applications-current.png[应用接入设计示意,width=1000]
@@ -296,9 +296,9 @@ image::../phase-one/images/design-audit-current.png[审计设计示意,width=100
 suite_rows='\n'.join('|'+s['name'].split('.')[-1]+' |'+' |'.join(str(s[k]) for k in ('tests','failures','errors','skipped')) for s in summary['suites'])
 cov_rows='\n'.join('|'+key+' |'+str(cov[key]['covered'])+' |'+str(cov[key]['missed'])+' |'+str(cov[key]['percentage'])+'%' for key in ('LINE','BRANCH','INSTRUCTION','METHOD','CLASS'))
 write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
-== 本次实际结果
+== 自动测试结果（2026-10-26）
 
-运行环境：本机 Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
+运行环境：Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
 测试源代码提交：`{summary['baseCommit']}`。完整命令为 `mvn -B clean verify`。
 总计 {counts['tests']} 项，{passed} 项通过，失败 {counts['failures']}、错误 {counts['errors']}、跳过 {counts['skipped']}。
 报告导出时间：{summary['exportedAt']}。
@@ -309,8 +309,8 @@ write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 {suite_rows}
 |===
 
-`ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。本机本轮未设置此变量，因此 1 项跳过；跳过不算通过。
-公司导入的合成工作簿集成测试已执行。真实 Excel 测试的断言已按当前分表和初始改密策略更新，但本轮没有执行该条件测试。
+`ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。该次运行未配置此变量，1 项条件测试跳过。
+公司导入的合成工作簿集成测试已执行。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
 
 == 覆盖率
 
@@ -320,9 +320,9 @@ write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 {cov_rows}
 |===
 
-覆盖率由本次 `jacoco.xml` 根节点计数计算，分母包含 JaCoCo 报告内所有生产类，未为提高数字配置覆盖排除。
-行覆盖率衡量执行到的代码行，分支覆盖率衡量已走过的条件分支；不是需求完成比例，也不是负载测试结果。
-新增模块的部分路径仍未覆盖，不能沿用旧版 85.91% 的覆盖率宣称当前版本达到相同水平。
+覆盖率由 `jacoco.xml` 根节点计数计算，统计范围包含报告中的全部生产类；未配置覆盖率排除项。
+行覆盖率表示已执行代码行的比例，分支覆盖率表示已执行条件分支的比例。需求验收和负载测试分别记录。
+当前仍存在未覆盖路径，各模块明细可在 HTML 报告中查看。历史版本的覆盖率按其对应源码范围统计。
 
 == 报告文件与查看方式
 
@@ -343,8 +343,7 @@ python3 scripts/build-submission-docs.py
 ----
 
 Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
-单纯启动后端、登录网页或运行 JMeter，不会自动替代这条 Maven 测试命令。
-`-DskipTests` 或 `-Dmaven.test.skip=true` 不可用于根项目的报告生成命令。
+根项目执行 `clean verify` 时不添加跳过测试参数。网页操作与 JMeter 测试的结果单独记录。
 测试使用隔离 H2，不需要修改云端数据库，也不使用线上管理员凭证。
 
 == 覆盖到的主要行为
@@ -355,43 +354,59 @@ Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 * HR 签名、离职和请求幂等；OA 登记、驳回及冲突；审计范围；导入幂等、回滚和 XML 外部实体拒绝。
 * OIDC discovery 与静态页面可达；这不代表完整 OIDC 授权码流程均被自动测试覆盖。
 
-本轮修正了测试中旧的 `sys_user.username/password_hash` 字段、旧令牌期望和共享软删除数据的清理方式。
-运行中发现并修复两处实现问题：CLOB JSON 结果读取，以及已删除应用留下历史权限时列表映射报错。
-测试保留越权、撤销、回滚和并发断言，没有通过删掉断言或排除生产类来提高通过率。
+测试按当前账号分表、权限版本刷新和逻辑删除规则设置断言，覆盖越权、会话撤销、事务回滚和并发场景。
+相关修复包括 CLOB JSON 读取兼容性，以及已删除应用的历史权限在列表查询中的过滤。
 
-== 验证边界与历史记录
+== 验证范围与记录
 
-本次仅代表当前源码的 Maven 自动测试；未重做云端数据库迁移、生产部署、浏览器逐页回归、压力测试或外部 OA/HR 产品接入。
-2026-10-22 的云端联调见 link:../phase-one/cloud-verification.json[历史记录]；不能与本轮 H2 测试混为一次验证。
-`docs/first-check/evidence` 保留 2026-10-21 早期报告，*当前报告以本目录为准*。
-后续于 2026-10-26 完成生产环境更新及在线检查，详见 link:07-deployment.adoc[部署记录]；部署检查不改变本节 Maven 测试范围。
+[cols="2,3,4",options="header"]
+|===
+|日期 |验证类型 |记录
+|2026-10-26 |Java / H2 自动测试 |本目录 JaCoCo 与 Surefire 报告
+|2026-10-26 |修复版本部署、管理接口及 OIDC 回调 |link:07-deployment.adoc[部署与验证记录]
+|2026-10-22 |MySQL 建库、隔离旧结构升级及接口联调 |link:../phase-one/cloud-verification.json[阶段联调记录]
+|2026-10-21 |初版自动测试 |link:../first-check/testing.md[历史测试记录]
+|===
 
-重新导出必须先成功完成完整 `clean verify`。导出脚本不运行测试，不把文件存在当作测试成功。
-源码 SHA-256 清单可用于核对报告对应代码；后续只改文档的提交不会改变这些摘要。
+上述记录不包含性能与容量、多实例切换、备份恢复、浏览器逐页回归及外部 OA/HR 产品接入验收。
+重新导出前需完成完整 `clean verify`；导出脚本读取已有产物，不执行测试。
+`test-summary.json` 保存源码 SHA-256，可用于核对报告对应版本。
 ''')
 
-write('README.adoc','统一权限管理系统：课程检查材料',f'''
-本目录为当前提交材料入口；答辩复习 PDF 不纳入本次提交。
+write('README.adoc','统一权限管理系统：设计与检查材料',f'''
+本目录汇集一期设计文档、自动测试报告及部署验证记录，作为课程检查材料入口。
+
+== 文档目录
 
 [cols="2,5",options="header"]
 |===
-|材料 |位置
-|需求与实现 |link:01-requirements.adoc[01 需求与实现说明]；原始基线仍保留在 phase-one
-|详细设计 |link:02-detailed-design.adoc[02 详细设计]：职责、对象关系、交互、事务、设计理由
-|数据库设计 |link:03-database-design.adoc[03 数据库设计]：38 表字典、约束、索引与完整 DDL
-|API 设计 |link:04-api-design.adoc[04 API 设计]：认证、签名、响应和 98 个操作
-|界面设计 |link:05-ui-design.adoc[05 界面设计]：页面、身份范围、流程示意
-|JaCoCo |link:06-jacoco.adoc[06 测试说明]；link:evidence/jacoco/index.html[完整 HTML 报告]
-|部署更新 |link:07-deployment.adoc[2026-10-26 修复版本部署与在线核对]
+|文档 |内容
+|link:01-requirements.adoc[01 需求与实现说明] |需求范围、业务规则及用例实现对应关系
+|link:02-detailed-design.adoc[02 详细设计] |模块职责、对象关系、关键交互、事务及设计依据
+|link:03-database-design.adoc[03 数据库设计] |38 张表的字段、关联、约束、索引及完整 DDL
+|link:04-api-design.adoc[04 API 设计] |认证、签名、响应格式及 98 个业务控制器操作
+|link:05-ui-design.adoc[05 界面设计] |页面结构、身份范围、交互流程及设计示意
+|link:06-jacoco.adoc[06 测试与 JaCoCo 说明] |测试环境、结果、覆盖率和复现方法
+|link:07-deployment.adoc[07 部署与验证记录] |部署版本及在线接口检查结果
 |===
 
-本次测试：{counts['tests']} 项，{passed} 通过，{counts['skipped']} 跳过，0 失败、0 错误；行覆盖率 {cov['LINE']['percentage']}%，分支覆盖率 {cov['BRANCH']['percentage']}%。
-跳过原因为缺少外部 Excel 输入。报告对应提交与源码摘要见 link:evidence/test-summary.json[证据清单]。
+原始需求见 link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]；接口契约见 link:../phase-one/apifox/openapi.json[OpenAPI]。
 
-代码目录为仓库根目录 `src` 与 `frontend`；四份历史 Word 保留在 link:../phase-one/README.md[一期材料目录]。
-历史 Word 和早期测试保留原日期，当前检查请以本目录 `.adoc` 与报告为准。
-仓库网页显示 HTML 源码时，下载仓库后本地打开 `docs/submission/evidence/jacoco/index.html`。
+== 测试与部署摘要
 
-课程检查入口仍见 link:../phase-one/http-access.md[HTTP 访问说明]；账号密码不写入提交材料。
+2026-10-26 自动测试共 {counts['tests']} 项：{passed} 通过、{counts['skipped']} 跳过、{counts['failures']} 失败、{counts['errors']} 错误。
+行覆盖率 {cov['LINE']['percentage']}%，分支覆盖率 {cov['BRANCH']['percentage']}%。跳过项依赖未提供的外部 Excel 数据。
+报告对应提交与源码摘要见 link:evidence/test-summary.json[测试汇总]。
+
+修复版本于 2026-10-26 部署，在线检查结果见 link:deployment-20261026.json[部署核对明细]。
+在线入口：http://120.46.213.158/ui/index.html 。
+
+== 报告查看与资料版本
+
+JaCoCo 提供 link:evidence/jacoco/index.html[HTML]、link:evidence/jacoco/jacoco.xml[XML] 和 link:evidence/jacoco/jacoco.csv[CSV]。
+下载或克隆仓库后，可通过浏览器打开 `docs/submission/evidence/jacoco/index.html` 查看完整交互报告。
+
+本目录描述当前一期实现。link:../phase-one/README.md[一期阶段资料]保存四份 Word 设计快照及历史验证记录；
+link:../first-check/README.md[初版资料]保存 2026-10-21 的设计和测试，按对应版本查阅。
 ''')
 print('Generated', len(list(D.glob('*.adoc'))), 'AsciiDoc files')
