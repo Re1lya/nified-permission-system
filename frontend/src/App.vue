@@ -4,6 +4,7 @@ import CompletionPanel from './CompletionPanel.vue';
 type Row=Record<string,any>;
 type Field={key:string;label:string;type?:string;optional?:boolean;options?:Record<string,string>};
 type Screen={id:string;name:string;group:string;url?:string;admin?:boolean;super?:boolean;columns?:string[];fields?:Field[];create?:string;note:string};
+// 页面元数据集中描述菜单、列表字段与新增表单；它不代替服务端的权限和资源范围校验。
 const screens:Screen[]=[
  {id:'home',name:'工作台',group:'开始',note:'按组织、账号、授权的顺序配置，所有操作以服务端校验结果为准。'},
  {id:'portal',name:'应用门户',group:'开始',note:'展示已通过接入验收且本人有权限访问的应用。'},
@@ -54,6 +55,7 @@ function notify(text:string,bad=false){message.value=text;error.value=bad;}
 // Platform JWTs live 15 minutes; rotate after 10 minutes of use, or once after a 401, so 30 minutes of idleness still applies.
 function issuedAt(t:string){try{return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).iat*1000}catch{return 0}}
 async function rotate(){const r=await fetch('/api/auth/refresh',{method:'POST',headers:{Authorization:`Bearer ${token.value}`}});if(!r.ok)return false;token.value=(await r.json()).accessToken;sessionStorage.setItem('permission-token',token.value);return true;}
+// 统一请求入口：携带令牌、处理过期刷新、兼容响应封装；401 表示身份失效，403 表示无权限。
 async function api(path:string,method='GET',body?:any,retried=false){
  if(token.value&&!path.startsWith('/api/auth/')&&Date.now()-issuedAt(token.value)>600_000)await rotate();
  const response=await fetch(path,{method,headers:{Accept:'application/vnd.cdwy.v2+json',...(token.value?{Authorization:`Bearer ${token.value}`} :{}),...(body&&!(body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body instanceof FormData?body:body?JSON.stringify(body):undefined});
@@ -76,6 +78,7 @@ const personTypes:Row={EXTERNAL:'外部人员',TEMPORARY:'临时人员',EMPLOYEE
 function display(key:string,value:any){if(key==='enabled')return value?'启用':'停用';if(key==='active')return value?'有效':'已失效';if(key==='type'&&value)return ({API:'API',BUTTON:'按钮',MENU:'菜单'} as Row)[value]||value;if(key==='person_type'&&value)return personTypes[value]||value;if(key==='status'&&validity[value])return validity[value];if(key==='days_left'&&typeof value==='number')return value<0?'已过期':`${value} 天`;if(value==null||value==='')return '—';if(Array.isArray(value))return value.map(v=>v.action||v.name||v.code).join(' / ');if(typeof value==='object')return JSON.stringify(value);return String(value);}
 function create(){form.value={};editor.value=true;selected.value=null;mode.value='create';}
 function action(row:Row,kind:string){selected.value=row;editor.value=true;mode.value=kind;roleId.value='';permissionId.value='';newPassword.value='';form.value={...row,displayName:row.display_name,parentId:row.parent_id,managerId:row.manager_id};}
+// 交互状态只负责选择对应 API；权限授予、密码规则和事务一致性均由后端决定。
 async function save(){await run(async()=>{
  let url=screen.value.create||'',method='POST',body:any={};
  if(mode.value==='create'){for(const f of screen.value.fields||[]){const v=form.value[f.key];body[f.key]=v==null||v===''?null:f.type==='number'?Number(v):v;}}

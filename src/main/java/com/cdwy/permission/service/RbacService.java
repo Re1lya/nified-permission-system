@@ -39,6 +39,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 核心业务用例入口：账号生命周期、用户—角色、角色—权限关系以及有效权限计算。
+ * 类级 readOnly=true 作为查询默认值，写方法用 @Transactional 覆盖；
+ * 通过 Spring 代理进入的方法才建立事务，同类内部调用不会额外开启新事务。
+ * Repository 负责实体存取，PlatformStore 处理平台扩展表；同一事务可包含两种访问方式。
+ */
 @Service
 @Transactional(readOnly = true)
 public class RbacService {
@@ -73,6 +79,8 @@ public class RbacService {
         this.platform = platform;
     }
 
+    // 创建请求只携带用户名、姓名；管理员身份不能由普通账号创建请求任意传入。
+    // exists 查询便于报错，最终仍由 sys_account.username 的唯一约束防止并发重复。
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -99,6 +107,8 @@ public class RbacService {
         return toUserResponse(userRepository.save(user));
     }
 
+    // 这里执行逻辑删除：撤销会话与角色、禁用账号并标记 deleted，保留历史对象供审计引用。
+    // 这些业务变更在同一事务中完成，不能只删除用户表而留下仍可使用的会话。
     @Transactional
     public void deleteUser(Long userId) {
         if (getUserForUpdate(userId).isAdministrator()) {
@@ -123,6 +133,8 @@ public class RbacService {
         jwtTokenService.revokeAll(userId);
     }
 
+    // 登录是写用例：除了校验密码，还会记录尝试结果、签发令牌并保存会话。
+    // 用户名不存在时仅接受能唯一定位账号的手机号，避免重号登录到错误身份。
     @Transactional
     public LoginResponse login(LoginRequest request) {
         if(request.username()==null||request.username().isBlank()||request.username().length()>64||request.password()==null||request.password().length()>256)throw new AuthenticationFailedException();
@@ -153,6 +165,7 @@ public class RbacService {
         if (roleRepository.existsByCode(request.code())) {
             throw new ConflictException("角色编码已存在: " + request.code());
         }
+    // 岗位与角色一一对应；先 flush 让后续 JDBC INSERT 能引用已写入的角色。flush 不等于提交。
         Role role = roleRepository.saveAndFlush(new Role(request.code(), request.name(), request.description()));
         platform.db().update("insert into sys_post(name,role_id,deleted) values(?,?,false)",request.name(),role.getId());
         return toRoleResponse(role);
@@ -277,6 +290,8 @@ public class RbacService {
                 .forEach(row -> platform.changed(((Number) row.get("user_id")).longValue()));
     }
 
+    // 资源是“用户与角色的关联”，不是修改角色本身；重复授予已有关系不再新增。
+    // 关系变更与权限版本递增一起提交，旧 JWT 下一次校验时会因版本不一致而被拒绝。
     @Transactional
     public void assignRole(Long userId, Long roleId) {
         UserAccount user = getUser(userId);
@@ -332,6 +347,9 @@ public class RbacService {
                 .toList();
     }
 
+    // RBAC0：遍历用户的启用角色，将有效权限且所属系统启用的权限按 code 去重，形成并集。
+    // 没有角色继承、互斥角色或直接给用户授予权限的分支；平台管理身份另由显式边界判断。
+    // 当前是逐角色查询关联，并非单条聚合 SQL；角色多时存在多次数据库往返。
     public List<PermissionResponse> effectivePermissions(Long userId) {
         UserAccount user = getUser(userId);
         if (!user.isEnabled()) {
@@ -369,6 +387,7 @@ public class RbacService {
     }
 
     // Read-write: token validation records session activity. H2 ignores the class-level read-only flag, MySQL rejects the write.
+    // 虽然名字像查询，令牌校验会更新 session_activity，必须使用可写事务。
     @Transactional
     public Long requirePermission(String authorizationHeader, String permissionCode) {
         Long userId = jwtTokenService.requireUserId(authorizationHeader);
@@ -401,6 +420,7 @@ public class RbacService {
                 .orElseThrow(() -> new ResourceNotFoundException("权限不存在: " + permissionId));
     }
 
+    // 在服务事务内完成 DTO 映射，避免把懒加载关联交给 Web 序列化；响应中不含密码哈希。
     private UserResponse toUserResponse(UserAccount user) {
         return CloneFactory.copy(new UserResponse(), user);
     }

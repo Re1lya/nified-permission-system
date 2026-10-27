@@ -3,6 +3,10 @@ package com.cdwy.permission.dto;
 import cn.edu.xmu.clonefactory.CopyFrom;
 import com.cdwy.permission.entity.UserAccount;
 
+/**
+ * 输出白名单：只暴露客户端需要的账号信息，不含 passwordHash。
+ * CloneFactory 按映射复制字段，领域对象与 API 返回格式因此可以分别维护。
+ */
 @CopyFrom(UserAccount.class)
 public class UserResponse {
 

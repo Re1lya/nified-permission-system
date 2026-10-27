@@ -10,6 +10,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * 用户—角色关联实体：一个用户可有多个角色，一个角色可分配给多个用户。
+ * 两条 ManyToOne 关系形成多对多；(user_id, role_id) 唯一约束让相同授权只保存一次。
+ * LAZY 延迟读取关联对象；需要属性时应在事务内访问并转换为响应 DTO。
+ */
 @Entity
 @Table(name = "sys_user_role", uniqueConstraints = {
         @UniqueConstraint(name = "uk_sys_user_role", columnNames = {"user_id", "role_id"})

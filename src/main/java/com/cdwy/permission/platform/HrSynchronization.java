@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /** Runs inside the signed integration transaction; external IDs never depend on a person's name. */
+/**
+ * HR 主数据适配：用 kind + external_id 映射平台 ID，避免用姓名识别员工。
+ * 这些包内方法由 IntegrationService 的 TransactionTemplate 事务调用，不能因为本类未标注事务就认为没有事务。
+ */
 @Service
 class HrSynchronization {
     private final PlatformStore s;private final EntityManager em;private final RbacService rbac;private final AccountNaming naming;private final PasswordEncoder passwords;

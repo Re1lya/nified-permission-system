@@ -8,6 +8,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.*;
 
 /** Restricted XLSX reader for these tabular imports; no formulas or external entities. */
+/**
+ * 受限的 XLSX 解析器：读取 ZIP 内 XML，不是通用 Excel 引擎。
+ * 限制解压规模、工作表数量、行数及单元格长度，拒绝公式和外部实体；不能执行表格中的内容。
+ */
 public final class XlsxReader {
     public record Row(int number, Map<String,String> cells) {
         public String get(String column) { return cells.getOrDefault(column, "").strip(); }

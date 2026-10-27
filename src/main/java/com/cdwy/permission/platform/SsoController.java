@@ -11,6 +11,10 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 管理门户 JWT 与浏览器 SSO 会话的桥接，并为业务应用提供权限查询接口。
+ * 建立 SSO 会话后，业务应用仍走 OIDC 授权码流程；不能直接把平台 JWT 当作各客户端的访问令牌。
+ */
 @RestController
 public class SsoController {
     private final JwtTokenService tokens;private final PlatformStore store;private final RbacService rbac;private final JwtDecoder decoder;

@@ -22,6 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+/**
+ * 用户资源的 HTTP 入口：@Valid 校验请求结构，业务实现交给 RbacService。
+ * /api/users 属于默认管理员接口；带部门范围的管理门户主要走 platform.PlatformController。
+ * 路径中的 /roles/{roleId} 表示授权关系子资源，便于对同一关系使用 PUT 授予、DELETE 回收。
+ */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -63,6 +68,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    // 为什么需要此 API：用户任职与角色权限定义分离，分配角色只变更用户—角色关系。
     @PutMapping("/{userId}/roles/{roleId}")
     public ResponseEntity<Void> assignRole(@PathVariable Long userId, @PathVariable Long roleId) {
         rbacService.assignRole(userId, roleId);

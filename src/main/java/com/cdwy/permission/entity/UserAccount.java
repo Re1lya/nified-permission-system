@@ -8,6 +8,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * Java 中一个账号对象跨两张表映射：sys_user 保存人员和状态，sys_account 保存登录名与密码哈希。
+ * @SecondaryTable 用 user_id 与主表共享主键，因此不能把一个 Entity 简单等同于一张表。
+ * administrator 是平台管理标识；普通岗位角色的名称即使叫“管理员”也不会自动获得此身份。
+ */
 @Entity
 @Table(name = "sys_user")
 @jakarta.persistence.SecondaryTable(name="sys_account", pkJoinColumns=@jakarta.persistence.PrimaryKeyJoinColumn(name="user_id"),
