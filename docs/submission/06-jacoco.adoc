@@ -9,14 +9,16 @@
 
 小组成员：温家正、姚景云、杜奕含、陈浩贤。
 
-文档整理日期：2026-10-27。测试及部署日期以相应记录为准。
+文档整理日期：2026-10-28。测试及部署日期以相应记录为准。
 
-== 自动测试结果（2026-10-26）
+== 自动测试结果（2026-10-28）
 
 运行环境：Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
-测试源代码提交：`33bf7e63eb1d2fdcd7f49061e146daf665fe8a2e`。完整命令为 `mvn -B clean verify`。
-总计 44 项，43 项通过，失败 0、错误 0、跳过 1。
-报告导出时间：2026-10-26T18:05:37.338781+08:00。
+测试以检出基线 `4b992c3ccca145dfae3abe027e0ff0deee149b27` 加本次修复工作区为输入；该基线号不是最终提交号。
+测试文件版本以 link:evidence/test-summary.json[源码 SHA-256 清单] 为准，清单覆盖生产代码、测试、前端源码及静态资源。
+完整命令为 `mvn -B clean verify`。
+总计 45 项，44 项通过，失败 0、错误 0、跳过 1。
+报告导出时间：2026-10-28T01:09:37.400637+08:00。
 
 [cols="5,1,1,1,1",options="header"]
 |===
@@ -24,23 +26,23 @@
 |ActualWorkbookImportTests |1 |0 |0 |1
 |AdminAccessIntegrationTests |7 |0 |0 |0
 |AuthenticationHttpIntegrationTests |11 |0 |0 |0
-|CompanyImportIntegrationTests |5 |0 |0 |0
+|CompanyImportIntegrationTests |6 |0 |0 |0
 |NifiedPermissionSystemApplicationTests |1 |0 |0 |0
 |PhaseOneIntegrationTests |18 |0 |0 |0
 |RbacServiceIntegrationTests |1 |0 |0 |0
 |===
 
 `ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。该次运行未配置此变量，1 项条件测试跳过。
-公司导入的合成工作簿集成测试已执行。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
+公司导入的合成工作簿集成测试已执行，包括一万员工、无密码待发放状态、引用关系、幂等和失败回滚。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
 
 == 覆盖率
 
 [cols="2,1,1,1",options="header"]
 |===
 |指标 |已覆盖 |未覆盖 |比例
-|LINE |1190 |445 |72.78%
-|BRANCH |460 |786 |36.92%
-|INSTRUCTION |8742 |6782 |56.31%
+|LINE |1195 |441 |73.04%
+|BRANCH |472 |774 |37.88%
+|INSTRUCTION |8825 |6692 |56.87%
 |METHOD |450 |178 |71.66%
 |CLASS |111 |24 |82.22%
 |===
@@ -87,8 +89,9 @@ Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 [cols="2,3,4",options="header"]
 |===
 |日期 |验证类型 |记录
-|2026-10-26 |Java / H2 自动测试 |本目录 JaCoCo 与 Surefire 报告
-|2026-10-26 |修复版本部署、管理接口及 OIDC 回调 |link:07-deployment.adoc[部署与验证记录]
+|2026-10-28 |Java / H2 自动测试 |本目录 JaCoCo 与 Surefire 报告
+|2026-10-27 |导入及弹窗修复部署、在线读取检查 |link:07-deployment.adoc[部署与验证记录]
+|2026-10-26 |管理接口及 OIDC 回调 |link:deployment-20261026.json[历史部署记录]
 |2026-10-22 |MySQL 建库、隔离旧结构升级及接口联调 |link:../phase-one/cloud-verification.json[阶段联调记录]
 |2026-10-21 |初版自动测试 |link:../first-check/testing.md[历史测试记录]
 |===

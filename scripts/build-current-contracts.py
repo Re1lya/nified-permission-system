@@ -13,6 +13,8 @@ for route in routes:
  success={'description':'成功'}
  if status!='204':
   success['content']={'application/json':{'schema':route['response']},'application/vnd.cdwy.v2+json':{'schema':{'type':'object','required':['code','message','data'],'properties':{'code':{'type':'string','enum':['SUCCESS']},'message':{'type':'string'},'data':route['response']}}}}
+ if path=='/api/company/imports/preview':
+  op['parameters']=[p for p in op['parameters'] if p['name'] not in ('departments','employees','permissions')]
  op['responses'].pop('200');op['responses'][status]=success;op['responses']['404']={'description':'资源不存在'}
  if path!='/api/auth/login' and not path.startswith('/api/integration/'):op['security']=[{'bearerAuth':[]}]
  if 'request' in route:op['requestBody']={'required':True,'content':{'application/json':{'schema':route['request']}}}
@@ -28,7 +30,7 @@ fields={'action':{'type':'string','enum':['DEPARTMENT','POST','JOIN','UPDATE','T
 components=previous.get('components',{});components.setdefault('schemas',{})['IntegrationEvent']={'type':'object','properties':fields}
 components.setdefault('securitySchemes',{})['bearerAuth']={'type':'http','scheme':'bearer','bearerFormat':'JWT'}
 components['schemas']['Envelope']={'type':'object','required':['code','message','data'],'properties':{'code':{'type':'string'},'message':{'type':'string'},'data':{'nullable':True}}}
-spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.4.1','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'http://120.46.213.158','description':'课程检查 HTTP 演示环境（传输不加密）'},{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
+spec={'openapi':'3.0.3','info':{'title':'统一权限管理系统一期接口','version':'1.4.2','description':'控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。'},'servers':[{'url':'http://120.46.213.158','description':'课程检查 HTTP 演示环境（传输不加密）'},{'url':'http://127.0.0.1:18081','description':'本地开发示例，实际部署替换'}],'paths':paths,'components':components}
 (D/'apifox/openapi.json').write_text(json.dumps(spec,ensure_ascii=False,indent=2))
 text='''# 一期 API 设计说明
 
@@ -120,19 +122,7 @@ for route in routes:text+=f"| {route['method']} | {route['path']} | {route['hand
 (D/'api-design.md').write_text(text)
 # ER relationships come from actual DDL foreign keys, not inferred logical references.
 sql=(D/'database-mysql-phase-one.sql').read_text();tables=re.findall(r'create table(?: if not exists)?\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)\s*(?:engine[^;]*)?;',sql,re.I|re.S)
-lines=['erDiagram']
-for name,body in tables:
- lines.append('    '+name+' {')
- for raw in body.splitlines():
-  m=re.match(r'\s*([A-Za-z_]+)\s+([A-Za-z]+)(?:\([^)]*\))?',raw)
-  if m and m[1].lower() not in ('primary','constraint','foreign','unique'):
-   lines.append(f'        {m[2].lower()} {m[1].lower()}')
- lines.append('    }')
-for statement in sql.split(';'):
- match=re.search(r'alter table\s+([a-z_][a-z0-9_]*).*?foreign key\s*\(([^)]+)\)\s*references\s+([a-z_][a-z0-9_]*)',statement,re.I|re.S)
- if match:
-  child,cols,parent=match.groups();lines.append(f'    {parent} ||--o{{ {child} : "{cols}"')
-lines.append('    SPRING_SESSION ||--o{ SPRING_SESSION_ATTRIBUTES : "session_primary_id"')
-(D/'database-er.mmd').write_text('\n'.join(lines)+'\n')
-(D/'schema-catalog.json').write_text(json.dumps([{'name':name,'ddl':body.strip()} for name,body in tables],ensure_ascii=False,indent=2))
+# Generate ER cardinalities and the catalog from the same physical DDL.
+import runpy
+runpy.run_path(str(R/'scripts/build-er-assets.py'), run_name='__main__')
 print('API operations',len(routes),'tables',len(tables))

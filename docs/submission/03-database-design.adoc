@@ -9,7 +9,7 @@
 
 小组成员：温家正、姚景云、杜奕含、陈浩贤。
 
-文档整理日期：2026-10-27。测试及部署日期以相应记录为准。
+文档整理日期：2026-10-28。测试及部署日期以相应记录为准。
 
 == 数据域与模型
 
@@ -27,6 +27,25 @@
 |会话与凭证策略 |sys_login_session、session_activity、account_policy、login_attempt、platform_signing_key、SPRING_SESSION、SPRING_SESSION_ATTRIBUTES |平台会话和浏览器会话分开；版本、空闲期、锁定与有效期共同校验
 |审计与协作 |audit_event、audit_archive、permission_review、approval_record、integration_event、sync_failure、platform_notification、data_dictionary |审计部门快照；审批幂等；复核；同步异常及通知
 |===
+
+== ER 图与计数口径
+
+当前物理模型共 38 张表、26 个数据库外键；完整图每张表只出现一次。分域图为方便阅读会重复显示域外父表，不能把各分图的方框数相加。
+
+* link:../phase-one/images/er-full.svg[完整 ER 矢量图（可放大）]、link:../phase-one/images/er-full.png[PNG 图片]。
+* link:../phase-one/database-er.mmd[Mermaid 源码]、link:../phase-one/er-manifest.json[表与外键核对清单]。
+* 分域图：link:../phase-one/images/er-rbac.svg[账号与授权]、link:../phase-one/images/er-company.svg[组织与目录]、link:../phase-one/images/er-platform.svg[管理与生命周期]、link:../phase-one/images/er-protocol.svg[接入与协议]。
+
+image::../phase-one/images/er-full.png[完整物理 ER：38 张表、26 个外键,width=1400]
+
+图中 PK 为主键、UK 为单列唯一约束、FK 为数据库外键。组合唯一约束的完整定义见 DDL。
+PNG/SVG 连线箭头由外键表指向被引用表，两端标注数量；Mermaid 的实线为标识关系、虚线为非标识关系，并不表示是否存在数据库外键。
+
+* `sys_account.user_id` 为主键兼外键：每个账号必须对应一个人员；数据库允许人员尚无账号，因此物理基数为人员 1 对账号 0..1，业务要求一人一账号。
+* `employee_profile.user_id`、`permission_detail.permission_id`、`sys_post.role_id` 都有单列唯一约束，父表到子表最多一条。
+* `sys_department.parent_id` 和 `manager_id` 可空，因此根部门可以没有父部门，部门也可以暂未指定经理。
+* `application_access.system_id`、`account_policy.user_id`、`session_activity.session_id`、OAuth2 的客户端引用及多态 `hr_identity.local_id` 等有业务关联，但配套 DDL 未为它们声明外键；图中不伪造物理外键。无连线不等于没有业务关联。
+* 日志、归档及通知等保留历史快照或标量编号，不能仅按字段名将所有 `*_id` 都画成受数据库约束的关联。
 
 == 一致性、约束与历史保留
 
@@ -1226,4 +1245,4 @@ link:../migrations/20261022-phase-one-completion.sql[升级 SQL] 只适用于旧
 MySQL DDL 隐式提交；部分失败的升级需核对实际结构后制定恢复方案。
 
 2026-10-22 的真实 MySQL 新建和隔离旧结构升级证据见 link:../phase-one/cloud-verification.json[历史联调记录]。
-2026-10-26 的 Maven 测试使用 H2。MySQL 方言、迁移、容量和备份恢复需在相应环境独立验证。
+本目录最新 Maven 测试使用 H2。MySQL 方言、迁移、容量和备份恢复需在相应环境独立验证。

@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-10-27T21:10:31.751245+08:00",
+  "serverJarSha256": "7906a9e11426a454f9ac4cf991a1a8b105fa8d65c0a7c95082b77369680a6acf",
+  "serviceStatus": "active",
+  "comparisonScope": "All BOOT-INF/classes entries: compiled production classes and packaged resources",
+  "entryCount": 158,
+  "classCount": 145,
+  "differentEntries": [],
+  "matchesTestedBuild": true,
+  "onlineChecks": {
+    "ui": 200,
+    "oidcDiscovery": 200,
+    "currentUser": 200,
+    "importHistory": 200,
+    "functionCatalog": 200,
+    "platformSelf": 200,
+    "existingJwtSessionSurvived": true
+  },
+  "scopeNote": "Readiness and read-only checks after restart; no new business import or external OA/HR product validation."
+}

@@ -1,3 +1,4 @@
+raise SystemExit("此脚本基于历史 H2 快照，已停用以免覆盖当前材料。请运行 python3 scripts/build-er-assets.py 和 node scripts/render-er.cjs。")
 """Build editable ER diagrams and an Apifox-importable OpenAPI contract."""
 from pathlib import Path
 import json,re,math

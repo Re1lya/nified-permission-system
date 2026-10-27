@@ -11,50 +11,55 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /** Deny ordinary users by default on API routes, including future management endpoints. */
+/**
+ * MVC 层统一守卫：限制初始密码未修改账号，并对未明确放开的管理 API 默认要求管理员。
+ * 被排除的 platform、integration、oidc 路径并不表示无需保护：它们分别校验目标范围、签名或 OIDC 令牌。
+ * 前端隐藏菜单只改善交互，真正授权必须在服务器完成。
+ */
 @Configuration
 public class ApiAccessConfig implements WebMvcConfigurer {
     private final JwtTokenService tokens;
     private final UserAccountRepository users;
     private final com.cdwy.permission.platform.PlatformStore platform;
 
-<span class="fc" id="L20">    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users,com.cdwy.permission.platform.PlatformStore platform) {</span>
-<span class="fc" id="L21">        this.tokens = tokens;</span>
-<span class="fc" id="L22">        this.users = users;</span>
-<span class="fc" id="L23">        this.platform = platform;</span>
-<span class="fc" id="L24">    }</span>
+<span class="fc" id="L25">    public ApiAccessConfig(JwtTokenService tokens, UserAccountRepository users,com.cdwy.permission.platform.PlatformStore platform) {</span>
+<span class="fc" id="L26">        this.tokens = tokens;</span>
+<span class="fc" id="L27">        this.users = users;</span>
+<span class="fc" id="L28">        this.platform = platform;</span>
+<span class="fc" id="L29">    }</span>
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-<span class="fc" id="L28">        registry.addInterceptor(new HandlerInterceptor() {</span>
+<span class="fc" id="L33">        registry.addInterceptor(new HandlerInterceptor() {</span>
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-<span class="fc" id="L31">                response.setHeader(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
-<span class="fc" id="L32">                return true;</span>
+<span class="fc" id="L36">                response.setHeader(&quot;Cache-Control&quot;, &quot;no-store&quot;);</span>
+<span class="fc" id="L37">                return true;</span>
             }
             @Override public void afterCompletion(HttpServletRequest request,HttpServletResponse response,Object handler,Exception error){
-<span class="pc bpc" id="L35" title="1 of 8 branches missed.">                if(!java.util.Set.of(&quot;GET&quot;,&quot;HEAD&quot;,&quot;OPTIONS&quot;).contains(request.getMethod())&amp;&amp;response.getStatus()&lt;400&amp;&amp;request.getHeader(&quot;Authorization&quot;)!=null&amp;&amp;!request.getRequestURI().startsWith(&quot;/api/integration/&quot;)){</span>
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">                    try{long actor=request.getAttribute(&quot;audit.actor&quot;) instanceof Long saved?saved:tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));platform.audit(actor,&quot;HTTP_&quot;+request.getMethod(),request.getRequestURI(),&quot;SUCCESS&quot;);}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}</span>
+<span class="pc bpc" id="L40" title="1 of 8 branches missed.">                if(!java.util.Set.of(&quot;GET&quot;,&quot;HEAD&quot;,&quot;OPTIONS&quot;).contains(request.getMethod())&amp;&amp;response.getStatus()&lt;400&amp;&amp;request.getHeader(&quot;Authorization&quot;)!=null&amp;&amp;!request.getRequestURI().startsWith(&quot;/api/integration/&quot;)){</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">                    try{long actor=request.getAttribute(&quot;audit.actor&quot;) instanceof Long saved?saved:tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));platform.audit(actor,&quot;HTTP_&quot;+request.getMethod(),request.getRequestURI(),&quot;SUCCESS&quot;);}catch(com.cdwy.permission.exception.AuthenticationFailedException ignored){/* Logout/password change intentionally revoked the bearer. */}</span>
                 }
-<span class="fc" id="L38">            }</span>
-<span class="fc" id="L39">        }).addPathPatterns(&quot;/api/**&quot;);</span>
-<span class="fc" id="L40">        registry.addInterceptor(new HandlerInterceptor(){</span>
+<span class="fc" id="L43">            }</span>
+<span class="fc" id="L44">        }).addPathPatterns(&quot;/api/**&quot;);</span>
+<span class="fc" id="L45">        registry.addInterceptor(new HandlerInterceptor(){</span>
             @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler){
-<span class="fc" id="L42">                long id=tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
-<span class="fc" id="L43">                request.setAttribute(&quot;audit.actor&quot;,id);</span>
-<span class="fc bfc" id="L44" title="All 4 branches covered.">                if(platform.mustChange(id)&amp;&amp;!java.util.Set.of(&quot;/api/platform/self&quot;,&quot;/api/platform/self/password&quot;).contains(request.getRequestURI()))throw new ForbiddenException(&quot;请先修改初始密码&quot;);return true;</span>
+<span class="fc" id="L47">                long id=tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
+<span class="fc" id="L48">                request.setAttribute(&quot;audit.actor&quot;,id);</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">                if(platform.mustChange(id)&amp;&amp;!java.util.Set.of(&quot;/api/platform/self&quot;,&quot;/api/platform/self/password&quot;).contains(request.getRequestURI()))throw new ForbiddenException(&quot;请先修改初始密码&quot;);return true;</span>
             }
-<span class="fc" id="L46">        }).addPathPatterns(&quot;/api/**&quot;).excludePathPatterns(&quot;/api/auth/login&quot;,&quot;/api/auth/logout&quot;,&quot;/api/auth/refresh&quot;,&quot;/api/auth/me&quot;,&quot;/api/integration/**&quot;,&quot;/api/oidc/**&quot;);</span>
-<span class="fc" id="L47">        registry.addInterceptor(new HandlerInterceptor() {</span>
+<span class="fc" id="L51">        }).addPathPatterns(&quot;/api/**&quot;).excludePathPatterns(&quot;/api/auth/login&quot;,&quot;/api/auth/logout&quot;,&quot;/api/auth/refresh&quot;,&quot;/api/auth/me&quot;,&quot;/api/integration/**&quot;,&quot;/api/oidc/**&quot;);</span>
+<span class="fc" id="L52">        registry.addInterceptor(new HandlerInterceptor() {</span>
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-<span class="fc" id="L50">                Long id = tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
-<span class="fc bfc" id="L51" title="All 2 branches covered.">                if (!users.findById(id).map(user -&gt; user.isAdministrator()).orElse(false)) {</span>
-<span class="fc" id="L52">                    throw new ForbiddenException(&quot;管理接口仅允许管理员访问&quot;);</span>
+<span class="fc" id="L55">                Long id = tokens.requireUserId(request.getHeader(&quot;Authorization&quot;));</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                if (!users.findById(id).map(user -&gt; user.isAdministrator()).orElse(false)) {</span>
+<span class="fc" id="L57">                    throw new ForbiddenException(&quot;管理接口仅允许管理员访问&quot;);</span>
                 }
-<span class="fc" id="L54">                return true;</span>
+<span class="fc" id="L59">                return true;</span>
             }
-<span class="fc" id="L56">        }).addPathPatterns(&quot;/api/**&quot;)</span>
-<span class="fc" id="L57">          .excludePathPatterns(&quot;/api/auth/login&quot;, &quot;/api/auth/logout&quot;, &quot;/api/auth/refresh&quot;, &quot;/api/auth/me&quot;, &quot;/api/demo/expenses&quot;, &quot;/api/platform/**&quot;, &quot;/api/integration/**&quot;, &quot;/api/oidc/**&quot;);</span>
-<span class="fc" id="L58">    }</span>
+<span class="fc" id="L61">        }).addPathPatterns(&quot;/api/**&quot;)</span>
+<span class="fc" id="L62">          .excludePathPatterns(&quot;/api/auth/login&quot;, &quot;/api/auth/logout&quot;, &quot;/api/auth/refresh&quot;, &quot;/api/auth/me&quot;, &quot;/api/demo/expenses&quot;, &quot;/api/platform/**&quot;, &quot;/api/integration/**&quot;, &quot;/api/oidc/**&quot;);</span>
+<span class="fc" id="L63">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

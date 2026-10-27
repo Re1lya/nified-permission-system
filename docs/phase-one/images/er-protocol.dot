@@ -1,0 +1,15 @@
+digraph ER {
+graph [rankdir=LR, pack=true, packmode="array3", bgcolor="white", pad=0.4, nodesep=0.35, ranksep=0.8, fontname="Arial", fontsize=24, labelloc=t, label="Application access and protocol storage (7 tables; external parent tables repeated)\nPhysical FK constraints only; no line does not mean no business reference"];
+node [shape=plain, fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10, color="#60788a", arrowsize=0.65];
+subgraph cluster_protocol { label="Application access and protocol storage"; color="#cbd5df"; style=rounded;
+"application_access" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>application_access</B></TD></TR><TR><TD ALIGN="LEFT">system_id [PK]</TD></TR><TR><TD ALIGN="LEFT">client_id [UK]</TD></TR></TABLE>>];
+"platform_signing_key" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>platform_signing_key</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"oauth2_registered_client" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>oauth2_registered_client</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"oauth2_authorization" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>oauth2_authorization</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"oauth2_authorization_consent" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>oauth2_authorization_consent</B></TD></TR><TR><TD ALIGN="LEFT">registered_client_id [PK]</TD></TR><TR><TD ALIGN="LEFT">principal_name [PK]</TD></TR></TABLE>>];
+"SPRING_SESSION" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>SPRING_SESSION</B></TD></TR><TR><TD ALIGN="LEFT">primary_id [PK]</TD></TR><TR><TD ALIGN="LEFT">session_id [UK]</TD></TR></TABLE>>];
+"SPRING_SESSION_ATTRIBUTES" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#efe6f8"><B>SPRING_SESSION_ATTRIBUTES</B></TD></TR><TR><TD ALIGN="LEFT">session_primary_id [PK,FK]</TD></TR><TR><TD ALIGN="LEFT">attribute_name [PK]</TD></TR></TABLE>>];
+}
+"SPRING_SESSION_ATTRIBUTES" -> "SPRING_SESSION" [label="session_primary_id -> primary_id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+}

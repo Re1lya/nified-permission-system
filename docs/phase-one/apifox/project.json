@@ -3,8 +3,8 @@
   "projectId": 8955177,
   "projectUrl": "https://app.apifox.com/project/8955177",
   "moduleId": 8752784,
-  "date": "2026-10-22",
-  "version": "1.4.1",
+  "date": "2026-10-28",
+  "version": "1.4.2",
   "status": "SYNCED",
   "imported": {
     "operations": 98,
@@ -18,23 +18,44 @@
     "selectedAfterReload": true
   },
   "sync": {
-    "sourceCommit": "85dde6ea43e0b04e9bf05ae0f0731a4840eb01ea",
-    "openapiSha256": "f7cc5f48b1621500a3f6f54aedef89b6c444985b1ff95e730d4f48075604c26a",
-    "newOperations": 31,
-    "updatedOperations": 67,
-    "removedOperation": "POST /api/platform/self/applications",
-    "removal": "Moved to Apifox recycle bin; recoverable for 30 days",
-    "retainedOperation": "GET /api/platform/self/applications",
+    "sourceBaseline": "d2fbdf39bf3423d9c9ec8c2ba5a0dc11a373cda4",
+    "openapiSha256": "feae1503c84e6b0be61d93e99454f6dd09657dda01e00a6d18063f7731039605",
+    "newOperations": 0,
+    "updatedOperations": 1,
+    "reason": "Remove duplicate query parameters from multipart import preview; retain the three binary form fields.",
     "modelChanges": {
-      "new": 5,
-      "updated": 2,
-      "unchanged": 18
+      "new": 0,
+      "updated": 0,
+      "notImported": 25
     },
-    "newSecuritySchemes": 1,
-    "environmentCreatedManually": true,
-    "verifiedVia": "Apifox browser UI after reload"
+    "preservedExistingEnvironments": true,
+    "preservedSecuritySchemes": true,
+    "verifiedVia": "Apifox browser UI: import success, 98 operations, 25 schemas, version 1.4.2, HTTP environment selected"
   },
   "testScenariosExecuted": false,
   "scenarioCollectionImportedThisSync": false,
-  "deploymentSecretsUploaded": false
+  "deploymentSecretsUploaded": false,
+  "history": [
+    {
+      "date": "2026-10-22",
+      "version": "1.4.1",
+      "sync": {
+        "sourceCommit": "85dde6ea43e0b04e9bf05ae0f0731a4840eb01ea",
+        "openapiSha256": "f7cc5f48b1621500a3f6f54aedef89b6c444985b1ff95e730d4f48075604c26a",
+        "newOperations": 31,
+        "updatedOperations": 67,
+        "removedOperation": "POST /api/platform/self/applications",
+        "removal": "Moved to Apifox recycle bin; recoverable for 30 days",
+        "retainedOperation": "GET /api/platform/self/applications",
+        "modelChanges": {
+          "new": 5,
+          "updated": 2,
+          "unchanged": 18
+        },
+        "newSecuritySchemes": 1,
+        "environmentCreatedManually": true,
+        "verifiedVia": "Apifox browser UI after reload"
+      }
+    }
+  ]
 }

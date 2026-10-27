@@ -28,8 +28,7 @@ public class CompanyImportService {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final com.cdwy.permission.platform.AccountNaming naming;
-    private final org.springframework.security.crypto.password.PasswordEncoder passwords;
-    public CompanyImportService(EntityManager em,JdbcTemplate jdbc,TransactionTemplate tx,com.cdwy.permission.platform.AccountNaming naming,org.springframework.security.crypto.password.PasswordEncoder passwords) {this.em=em;this.jdbc=jdbc;this.tx=tx;this.naming=naming;this.passwords=passwords;}
+    public CompanyImportService(EntityManager em,JdbcTemplate jdbc,TransactionTemplate tx,com.cdwy.permission.platform.AccountNaming naming) {this.em=em;this.jdbc=jdbc;this.tx=tx;this.naming=naming;}
     private static final Map<String,String> ACTIONS=Map.of("查看","view","新增","create","编辑","edit","审批","approve","导出","export","查看本人","view_self","编辑本人","edit_self");
     private static final List<String> TEMPLATES=List.of("系统管理员","公司领导","部门经理","项目经理","普通员工");
 
@@ -146,9 +145,11 @@ public class CompanyImportService {
         for(var e:p.employees()) if(!users.containsKey(e.username())) {
             var generated=naming.generate(e.name(),e.phone());
             var user=new UserAccount(generated.username(),e.name());
-    // 此 GitHub 版本保存未对外发放的随机占位凭据；initial_password_issued=false 表示尚待发放。
-    // 可交付给员工的初始密码由 InitialPasswordService 单独生成；不能把这里的哈希当成可下载密码。
-            user.setPasswordHash(passwords.encode("Aa1!"+UUID.randomUUID()));em.persist(user);em.flush();
+            // 导入先创建无密码账号，initial_password_issued=false；管理员发放前不能密码登录。
+            // 由 InitialPasswordService 单独生成并一次性返回初始密码，省去批量哈希无用随机密码。
+            em.persist(user);em.flush();
+            // flush 后 ID 可供 JDBC 引用；detach 减少后续循环对已有员工的脏检查，不会提交事务。
+            em.detach(user);
             jdbc.update("insert into hr_identity(kind,external_id,local_id) values('EMPLOYEE',?,?)",e.username(),user.getId());
             jdbc.update("insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',true,0,false,false)",user.getId());
             if(generated.manualReview())jdbc.update("insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,'ACCOUNT_NAME_REVIEW',?,?)",deps.get(e.department()).id,user.getId(),"账号存在重名或多音字，请人工核对："+generated.username(),Instant.now());

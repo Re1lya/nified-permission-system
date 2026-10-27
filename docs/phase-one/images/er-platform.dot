@@ -1,0 +1,33 @@
+digraph ER {
+graph [rankdir=LR, pack=true, packmode="array3", bgcolor="white", pad=0.4, nodesep=0.35, ranksep=0.8, fontname="Arial", fontsize=24, labelloc=t, label="Administration and lifecycle (15 tables; external parent tables repeated)\nPhysical FK constraints only; no line does not mean no business reference"];
+node [shape=plain, fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10, color="#60788a", arrowsize=0.65];
+subgraph cluster_platform { label="Administration and lifecycle"; color="#cbd5df"; style=rounded;
+"admin_department" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>admin_department</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">department_id [FK]</TD></TR><TR><TD ALIGN="LEFT">user_id [FK]</TD></TR></TABLE>>];
+"managed_role" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>managed_role</B></TD></TR><TR><TD ALIGN="LEFT">role_id [PK]</TD></TR><TR><TD ALIGN="LEFT">department_id [FK]</TD></TR></TABLE>>];
+"department_permission" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>department_permission</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">department_id [FK]</TD></TR><TR><TD ALIGN="LEFT">permission_id [FK]</TD></TR></TABLE>>];
+"account_policy" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>account_policy</B></TD></TR><TR><TD ALIGN="LEFT">user_id [PK]</TD></TR></TABLE>>];
+"session_activity" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>session_activity</B></TD></TR><TR><TD ALIGN="LEFT">session_id [PK]</TD></TR></TABLE>>];
+"login_attempt" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>login_attempt</B></TD></TR><TR><TD ALIGN="LEFT">username [PK]</TD></TR></TABLE>>];
+"approval_record" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>approval_record</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">request_id [UK]</TD></TR><TR><TD ALIGN="LEFT">role_id [FK]</TD></TR><TR><TD ALIGN="LEFT">user_id [FK]</TD></TR></TABLE>>];
+"integration_event" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>integration_event</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"audit_event" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>audit_event</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"audit_archive" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>audit_archive</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"permission_review" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>permission_review</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"hr_identity" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>hr_identity</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"sync_failure" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>sync_failure</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"platform_notification" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>platform_notification</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"data_dictionary" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#fff1da"><B>data_dictionary</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+}
+"sys_department" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_department</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">name [UK]</TD></TR><TR><TD ALIGN="LEFT">manager_id [FK] nullable</TD></TR><TR><TD ALIGN="LEFT">parent_id [FK] nullable</TD></TR></TABLE>>];
+"sys_permission" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_permission</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR><TR><TD ALIGN="LEFT">system_id [FK]</TD></TR></TABLE>>];
+"sys_role" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_role</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR></TABLE>>];
+"sys_user" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_user</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"admin_department" -> "sys_department" [label="department_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"admin_department" -> "sys_user" [label="user_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"approval_record" -> "sys_role" [label="role_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"approval_record" -> "sys_user" [label="user_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"department_permission" -> "sys_department" [label="department_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"department_permission" -> "sys_permission" [label="permission_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"managed_role" -> "sys_department" [label="department_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+}

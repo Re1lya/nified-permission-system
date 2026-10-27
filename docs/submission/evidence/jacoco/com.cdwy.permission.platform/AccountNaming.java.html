@@ -14,18 +14,18 @@ public class AccountNaming {
 <span class="fc" id="L14">        StringBuilder base=new StringBuilder();boolean review=false;</span>
 <span class="fc bfc" id="L15" title="All 2 branches covered.">        for(char c:name.toCharArray()){</span>
 <span class="fc" id="L16">            String[] values=PinyinHelper.toHanyuPinyinStringArray(c);</span>
-<span class="pc bpc" id="L17" title="3 of 6 branches missed.">            if(values!=null&amp;&amp;values.length&gt;0){base.append(values[0].charAt(0));if(Arrays.stream(values).map(v-&gt;v.charAt(0)).distinct().count()&gt;1)review=true;}</span>
-<span class="nc bnc" id="L18" title="All 4 branches missed.">            else if(c&lt;128&amp;&amp;Character.isLetterOrDigit(c))base.append(Character.toLowerCase(c));</span>
+<span class="pc bpc" id="L17" title="2 of 6 branches missed.">            if(values!=null&amp;&amp;values.length&gt;0){base.append(values[0].charAt(0));if(Arrays.stream(values).map(v-&gt;v.charAt(0)).distinct().count()&gt;1)review=true;}</span>
+<span class="pc bpc" id="L18" title="2 of 4 branches missed.">            else if(c&lt;128&amp;&amp;Character.isLetterOrDigit(c))base.append(Character.toLowerCase(c));</span>
 <span class="nc bnc" id="L19" title="All 2 branches missed.">            else if(!Character.isWhitespace(c))throw new IllegalArgumentException(&quot;姓名含无法自动转写的字符，需要人工确认账号名&quot;);</span>
         }
 <span class="pc bpc" id="L21" title="2 of 4 branches missed.">        if(base.isEmpty()||base.length()&gt;48)throw new IllegalArgumentException(&quot;姓名无法生成有效账号名&quot;);</span>
-<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        String candidate=base.toString();if(!exists(candidate))return new Name(candidate,review);</span>
-<span class="nc bnc" id="L23" title="All 2 branches missed.">        String digits=phone==null?&quot;&quot;:phone.replaceAll(&quot;[^0-9]&quot;,&quot;&quot;);</span>
-<span class="nc bnc" id="L24" title="All 2 branches missed.">        if(digits.length()&lt;4)throw new IllegalArgumentException(&quot;账号重名且手机号不足四位，需要人工处理&quot;);</span>
-<span class="nc bnc" id="L25" title="All 2 branches missed.">        candidate+=digits.substring(digits.length()-4);if(!exists(candidate))return new Name(candidate,review);</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        String candidate=base.toString();if(!exists(candidate))return new Name(candidate,review);</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        String digits=phone==null?&quot;&quot;:phone.replaceAll(&quot;[^0-9]&quot;,&quot;&quot;);</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if(digits.length()&lt;4)throw new IllegalArgumentException(&quot;账号重名且手机号不足四位，需要人工处理&quot;);</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        candidate+=digits.substring(digits.length()-4);if(!exists(candidate))return new Name(candidate,review);</span>
 <span class="nc bnc" id="L26" title="All 4 branches missed.">        for(int i=2;i&lt;100000;i++)if(!exists(candidate+i))return new Name(candidate+i,true);</span>
 <span class="nc" id="L27">        throw new IllegalArgumentException(&quot;账号冲突过多，需要人工处理&quot;);</span>
     }
-<span class="pc bpc" id="L29" title="1 of 2 branches missed.">    private boolean exists(String name){return s.count(&quot;select count(*) from sys_account where username=?&quot;,name)&gt;0;}</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">    private boolean exists(String name){return s.count(&quot;select count(*) from sys_account where username=?&quot;,name)&gt;0;}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

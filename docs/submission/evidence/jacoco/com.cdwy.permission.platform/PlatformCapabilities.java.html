@@ -3,13 +3,17 @@
 import java.util.*;
 
 /** Named platform permissions derive from the explicit administrator boundary, never from job titles. */
+/**
+ * 提供前端可展示操作的能力清单，来源是超级管理员/部门管理员的显式身份。
+ * 能力清单不是后端授权的替代品，真正的目标范围仍由 requireUser、requireDepartment 等方法校验。
+ */
 public final class PlatformCapabilities {
     private PlatformCapabilities(){}
     public static Set&lt;String&gt; forUser(PlatformStore s,long actor){
-<span class="fc" id="L9">        var result=new LinkedHashSet&lt;String&gt;(List.of(&quot;platform:self:read&quot;,&quot;platform:self:write&quot;));</span>
-<span class="pc bpc" id="L10" title="2 of 4 branches missed.">        if(s.superAdmin(actor)||s.departmentAdmin(actor))result.addAll(List.of(&quot;platform:users:read&quot;,&quot;platform:users:write&quot;,&quot;platform:roles:read&quot;,&quot;platform:roles:write&quot;,&quot;platform:audit:read&quot;,&quot;platform:reviews:write&quot;,&quot;platform:organization:read&quot;));</span>
-<span class="pc bpc" id="L11" title="1 of 2 branches missed.">        if(s.superAdmin(actor))result.addAll(List.of(&quot;platform:catalog:write&quot;,&quot;platform:integration:write&quot;,&quot;platform:administrators:write&quot;));</span>
-<span class="fc" id="L12">        return result;</span>
+<span class="fc" id="L13">        var result=new LinkedHashSet&lt;String&gt;(List.of(&quot;platform:self:read&quot;,&quot;platform:self:write&quot;));</span>
+<span class="pc bpc" id="L14" title="2 of 4 branches missed.">        if(s.superAdmin(actor)||s.departmentAdmin(actor))result.addAll(List.of(&quot;platform:users:read&quot;,&quot;platform:users:write&quot;,&quot;platform:roles:read&quot;,&quot;platform:roles:write&quot;,&quot;platform:audit:read&quot;,&quot;platform:reviews:write&quot;,&quot;platform:organization:read&quot;));</span>
+<span class="pc bpc" id="L15" title="1 of 2 branches missed.">        if(s.superAdmin(actor))result.addAll(List.of(&quot;platform:catalog:write&quot;,&quot;platform:integration:write&quot;,&quot;platform:administrators:write&quot;));</span>
+<span class="fc" id="L16">        return result;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

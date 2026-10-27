@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "tables": 38,
+  "mappedTables": 33,
+  "protocolTables": 5,
+  "physicalForeignKeys": 26,
+  "apiOperations": 98,
+  "apiSchemas": 25,
+  "apifoxVersion": "1.4.2",
+  "unchangedTestedSourceFiles": 119,
+  "existingRelativeLinks": 100
+}

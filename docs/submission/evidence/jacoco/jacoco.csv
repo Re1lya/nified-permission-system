@@ -15,7 +15,7 @@ nified-permission-system,com.cdwy.permission.company,CompanyImportService.Issue,
 nified-permission-system,com.cdwy.permission.company,CompanyData.Template,0,3,0,0,0,1,0,1,0,1
 nified-permission-system,com.cdwy.permission.company,XlsxReader.Row,0,17,0,0,0,2,0,2,0,2
 nified-permission-system,com.cdwy.permission.company,CompanyData.Batch,0,3,0,0,0,1,0,1,0,1
-nified-permission-system,com.cdwy.permission.company,CompanyImportService,323,1689,56,124,4,151,52,55,1,16
+nified-permission-system,com.cdwy.permission.company,CompanyImportService,278,1727,53,127,4,152,49,58,1,16
 nified-permission-system,com.cdwy.permission.company,CompanyImportService.Employee,0,21,0,0,0,1,0,1,0,1
 nified-permission-system,com.cdwy.permission.company,CompanyData.Detail,0,3,0,0,0,1,0,1,0,1
 nified-permission-system,com.cdwy.permission.company,CompanyImportService.Plan,0,30,0,0,0,1,0,1,0,1
@@ -34,7 +34,7 @@ nified-permission-system,com.cdwy.permission.platform,ExternalPersonService,33,4
 nified-permission-system,com.cdwy.permission.platform,InitialPasswordService,27,214,1,9,1,20,2,8,1,4
 nified-permission-system,com.cdwy.permission.platform,HrSynchronization,739,80,99,5,37,6,59,2,7,2
 nified-permission-system,com.cdwy.permission.platform,PlatformData.Approval,0,3,0,0,0,1,0,1,0,1
-nified-permission-system,com.cdwy.permission.platform,AccountNaming,98,103,26,12,7,9,18,5,0,4
+nified-permission-system,com.cdwy.permission.platform,AccountNaming,54,147,18,20,3,13,15,8,0,4
 nified-permission-system,com.cdwy.permission.platform,PlatformData.Activity,3,0,0,0,1,0,1,0,1,0
 nified-permission-system,com.cdwy.permission.platform,SsoController,308,21,32,0,26,1,23,1,7,1
 nified-permission-system,com.cdwy.permission.platform,ApplicationController,615,28,98,2,40,5,57,1,7,1
@@ -119,7 +119,7 @@ nified-permission-system,com.cdwy.permission.controller,DemoExpenseController,0,
 nified-permission-system,com.cdwy.permission.controller,BusinessSystemController,4,27,0,0,1,7,1,4,1,4
 nified-permission-system,com.cdwy.permission.service,PasswordPolicy,5,46,6,12,0,10,6,4,0,1
 nified-permission-system,com.cdwy.permission.service,JwtTokenService,33,465,14,40,8,94,16,27,2,14
-nified-permission-system,com.cdwy.permission.service,RbacService,150,1104,23,49,16,190,33,60,11,46
+nified-permission-system,com.cdwy.permission.service,RbacService,149,1105,22,50,16,190,32,61,11,46
 nified-permission-system,com.cdwy.permission.service,AdminBootstrapService,0,87,1,15,0,21,1,9,0,2
 nified-permission-system,com.cdwy.permission.entity,LoginSession,3,27,0,0,1,11,1,5,1,5
 nified-permission-system,com.cdwy.permission.entity,RolePermission,6,15,0,0,2,7,2,3,2,3
