@@ -1,326 +1,328 @@
 erDiagram
+    %% Physical foreign keys only. Parent existence at child side follows nullability.
+    %% Parent rows may have zero children; PK/UK on child FK limits children to one.
     account_policy {
-        bigint user_id
-        bit deleted
-        datetime expires_at
-        bit initial_password_issued
-        bit must_change_password
-        varchar person_type
-        bigint version
+        bigint user_id PK "NOT NULL"
+        bit deleted "NOT NULL"
+        datetime expires_at "NULL"
+        bit initial_password_issued "NOT NULL"
+        bit must_change_password "NOT NULL"
+        varchar person_type "NOT NULL"
+        bigint version "NOT NULL"
     }
     admin_department {
-        bigint id
-        bigint department_id
-        bigint user_id
+        bigint id PK "NOT NULL"
+        bigint department_id FK "NOT NULL"
+        bigint user_id FK "NOT NULL"
     }
     application_access {
-        bigint system_id
-        varchar acceptance
-        varchar client_id
-        varchar compatibility_plan
-        varchar entry_url
-        varchar protocol
-        varchar status
+        bigint system_id PK "NOT NULL"
+        varchar acceptance "NULL"
+        varchar client_id UK "NOT NULL"
+        varchar compatibility_plan "NULL"
+        varchar entry_url "NOT NULL"
+        varchar protocol "NOT NULL"
+        varchar status "NOT NULL"
     }
     approval_record {
-        bigint id
-        datetime created_at
-        varchar decision
-        varchar request_id
-        bigint role_id
-        bigint user_id
+        bigint id PK "NOT NULL"
+        datetime created_at "NOT NULL"
+        varchar decision "NOT NULL"
+        varchar request_id UK "NOT NULL"
+        bigint role_id FK "NOT NULL"
+        bigint user_id FK "NOT NULL"
     }
     audit_archive {
-        bigint id
-        bigint actor_id
-        datetime archived_at
-        datetime created_at
-        bigint department_id
-        varchar kind
-        varchar result
-        varchar target
-        bigint target_department_id
+        bigint id PK "NOT NULL"
+        bigint actor_id "NULL"
+        datetime archived_at "NOT NULL"
+        datetime created_at "NOT NULL"
+        bigint department_id "NULL"
+        varchar kind "NOT NULL"
+        varchar result "NOT NULL"
+        varchar target "NOT NULL"
+        bigint target_department_id "NULL"
     }
     audit_event {
-        bigint id
-        bigint actor_id
-        datetime created_at
-        bigint department_id
-        varchar kind
-        varchar result
-        varchar target
-        bigint target_department_id
+        bigint id PK "NOT NULL"
+        bigint actor_id "NULL"
+        datetime created_at "NOT NULL"
+        bigint department_id "NULL"
+        varchar kind "NOT NULL"
+        varchar result "NOT NULL"
+        varchar target "NOT NULL"
+        bigint target_department_id "NULL"
     }
     biz_system {
-        bigint id
-        varchar base_url
-        varchar code
-        bit deleted
-        bit enabled
-        varchar name
+        bigint id PK "NOT NULL"
+        varchar base_url "NULL"
+        varchar code UK "NOT NULL"
+        bit deleted "NOT NULL"
+        bit enabled "NOT NULL"
+        varchar name "NOT NULL"
     }
     company_import_batch {
-        bigint id
-        bigint actor_id
-        datetime created_at
-        integer departments
-        integer employees
-        varchar fingerprint
-        integer functions
+        bigint id PK "NOT NULL"
+        bigint actor_id "NOT NULL"
+        datetime created_at "NOT NULL"
+        integer departments "NOT NULL"
+        integer employees "NOT NULL"
+        varchar fingerprint UK "NOT NULL"
+        integer functions "NOT NULL"
     }
     data_dictionary {
-        bigint id
-        varchar category
-        varchar code
-        bit deleted
-        varchar name
+        bigint id PK "NOT NULL"
+        varchar category "NOT NULL"
+        varchar code "NOT NULL"
+        bit deleted "NOT NULL"
+        varchar name "NOT NULL"
     }
     department_permission {
-        bigint id
-        bigint department_id
-        bigint permission_id
+        bigint id PK "NOT NULL"
+        bigint department_id FK "NOT NULL"
+        bigint permission_id FK "NOT NULL"
     }
     employee_profile {
-        bigint id
-        varchar company
-        varchar phone
-        bigint department_id
-        bigint post_id
-        bigint user_id
+        bigint id PK "NOT NULL"
+        varchar company "NOT NULL"
+        varchar phone "NOT NULL"
+        bigint department_id FK "NOT NULL"
+        bigint post_id FK "NOT NULL"
+        bigint user_id FK, UK "NOT NULL"
     }
     hr_identity {
-        bigint id
-        varchar external_id
-        varchar kind
-        bigint local_id
+        bigint id PK "NOT NULL"
+        varchar external_id "NOT NULL"
+        varchar kind "NOT NULL"
+        bigint local_id "NOT NULL"
     }
     integration_event {
-        bigint id
-        datetime created_at
-        varchar digest
-        varchar request_id
-        mediumtext response
-        varchar result
-        varchar source
-        bigint user_id
+        bigint id PK "NOT NULL"
+        datetime created_at "NOT NULL"
+        varchar digest "NOT NULL"
+        varchar request_id "NOT NULL"
+        mediumtext response "NULL"
+        varchar result "NOT NULL"
+        varchar source "NOT NULL"
+        bigint user_id "NULL"
     }
     login_attempt {
-        varchar username
-        integer failures
-        datetime locked_until
+        varchar username PK "NOT NULL"
+        integer failures "NOT NULL"
+        datetime locked_until "NULL"
     }
     managed_role {
-        bigint role_id
-        bigint department_id
+        bigint role_id PK "NOT NULL"
+        bigint department_id FK "NOT NULL"
     }
     permission_detail {
-        bigint id
-        varchar action
-        bigint function_id
-        bigint permission_id
+        bigint id PK "NOT NULL"
+        varchar action "NOT NULL"
+        bigint function_id FK "NOT NULL"
+        bigint permission_id FK, UK "NOT NULL"
     }
     permission_review {
-        bigint id
-        bigint actor_id
-        datetime created_at
-        varchar decision
-        varchar reason
-        bigint role_id
-        bigint user_id
+        bigint id PK "NOT NULL"
+        bigint actor_id "NOT NULL"
+        datetime created_at "NOT NULL"
+        varchar decision "NOT NULL"
+        varchar reason "NOT NULL"
+        bigint role_id "NOT NULL"
+        bigint user_id "NOT NULL"
     }
     permission_template {
-        bigint id
-        varchar name
-        bigint permission_id
+        bigint id PK "NOT NULL"
+        varchar name "NOT NULL"
+        bigint permission_id FK "NOT NULL"
     }
     platform_notification {
-        bigint id
-        datetime created_at
-        bigint department_id
-        varchar kind
-        varchar message
-        bigint user_id
+        bigint id PK "NOT NULL"
+        datetime created_at "NOT NULL"
+        bigint department_id "NOT NULL"
+        varchar kind "NOT NULL"
+        varchar message "NOT NULL"
+        bigint user_id "NOT NULL"
     }
     platform_signing_key {
-        varchar id
-        varchar jwk
+        varchar id PK "NOT NULL"
+        varchar jwk "NOT NULL"
     }
     session_activity {
-        varchar session_id
-        datetime last_seen
+        varchar session_id PK "NOT NULL"
+        datetime last_seen "NOT NULL"
     }
     sync_failure {
-        bigint id
-        datetime created_at
-        varchar digest
-        varchar error
-        varchar request_id
-        varchar resolution
-        varchar source
-        varchar status
+        bigint id PK "NOT NULL"
+        datetime created_at "NOT NULL"
+        varchar digest "NOT NULL"
+        varchar error "NOT NULL"
+        varchar request_id "NOT NULL"
+        varchar resolution "NULL"
+        varchar source "NOT NULL"
+        varchar status "NOT NULL"
     }
     sys_account {
-        varchar password_hash
-        varchar username
-        bigint user_id
+        varchar password_hash "NULL"
+        varchar username UK "NOT NULL"
+        bigint user_id PK, FK "NOT NULL"
     }
     sys_department {
-        bigint id
-        bit deleted
-        varchar manager_name
-        varchar name
-        bigint manager_id
-        bigint parent_id
+        bigint id PK "NOT NULL"
+        bit deleted "NOT NULL"
+        varchar manager_name "NULL"
+        varchar name UK "NOT NULL"
+        bigint manager_id FK "NULL"
+        bigint parent_id FK "NULL"
     }
     sys_function {
-        bigint id
-        varchar description
-        varchar name
-        bigint module_id
+        bigint id PK "NOT NULL"
+        varchar description "NOT NULL"
+        varchar name "NOT NULL"
+        bigint module_id FK "NOT NULL"
     }
     sys_login_session {
-        varchar id
-        datetime expires_at
-        datetime issued_at
-        bigint user_id
+        varchar id PK "NOT NULL"
+        datetime expires_at "NOT NULL"
+        datetime issued_at "NOT NULL"
+        bigint user_id FK "NOT NULL"
     }
     sys_module {
-        bigint id
-        varchar name
-        bigint system_id
+        bigint id PK "NOT NULL"
+        varchar name "NOT NULL"
+        bigint system_id FK "NOT NULL"
     }
     sys_permission {
-        bigint id
-        bit active
-        varchar code
-        varchar menu_path
-        varchar name
-        varchar type
-        bigint system_id
+        bigint id PK "NOT NULL"
+        bit active "NOT NULL"
+        varchar code UK "NOT NULL"
+        varchar menu_path "NOT NULL"
+        varchar name "NOT NULL"
+        varchar type "NOT NULL"
+        bigint system_id FK "NOT NULL"
     }
     sys_post {
-        bigint id
-        bit deleted
-        varchar name
-        bigint role_id
+        bigint id PK "NOT NULL"
+        bit deleted "NOT NULL"
+        varchar name UK "NOT NULL"
+        bigint role_id FK, UK "NOT NULL"
     }
     sys_role {
-        bigint id
-        varchar code
-        bit deleted
-        varchar description
-        bit enabled
-        varchar name
+        bigint id PK "NOT NULL"
+        varchar code UK "NOT NULL"
+        bit deleted "NOT NULL"
+        varchar description "NULL"
+        bit enabled "NOT NULL"
+        varchar name "NOT NULL"
     }
     sys_role_permission {
-        bigint id
-        bigint permission_id
-        bigint role_id
+        bigint id PK "NOT NULL"
+        bigint permission_id FK "NOT NULL"
+        bigint role_id FK "NOT NULL"
     }
     sys_user {
-        bigint id
-        bit administrator
-        bit built_in_administrator
-        varchar display_name
-        bit enabled
+        bigint id PK "NOT NULL"
+        bit administrator "NOT NULL"
+        bit built_in_administrator "NOT NULL"
+        varchar display_name "NOT NULL"
+        bit enabled "NOT NULL"
     }
     sys_user_role {
-        bigint id
-        bigint role_id
-        bigint user_id
+        bigint id PK "NOT NULL"
+        bigint role_id FK "NOT NULL"
+        bigint user_id FK "NOT NULL"
     }
     oauth2_authorization {
-        varchar id
-        varchar registered_client_id
-        varchar principal_name
-        varchar authorization_grant_type
-        varchar authorized_scopes
-        blob attributes
-        varchar state
-        blob authorization_code_value
-        timestamp authorization_code_issued_at
-        timestamp authorization_code_expires_at
-        blob authorization_code_metadata
-        blob access_token_value
-        timestamp access_token_issued_at
-        timestamp access_token_expires_at
-        blob access_token_metadata
-        varchar access_token_type
-        varchar access_token_scopes
-        blob oidc_id_token_value
-        timestamp oidc_id_token_issued_at
-        timestamp oidc_id_token_expires_at
-        blob oidc_id_token_metadata
-        blob refresh_token_value
-        timestamp refresh_token_issued_at
-        timestamp refresh_token_expires_at
-        blob refresh_token_metadata
-        blob user_code_value
-        timestamp user_code_issued_at
-        timestamp user_code_expires_at
-        blob user_code_metadata
-        blob device_code_value
-        timestamp device_code_issued_at
-        timestamp device_code_expires_at
-        blob device_code_metadata
+        varchar id PK "NOT NULL"
+        varchar registered_client_id "NOT NULL"
+        varchar principal_name "NOT NULL"
+        varchar authorization_grant_type "NOT NULL"
+        varchar authorized_scopes "NULL"
+        blob attributes "NULL"
+        varchar state "NULL"
+        blob authorization_code_value "NULL"
+        timestamp authorization_code_issued_at "NULL"
+        timestamp authorization_code_expires_at "NULL"
+        blob authorization_code_metadata "NULL"
+        blob access_token_value "NULL"
+        timestamp access_token_issued_at "NULL"
+        timestamp access_token_expires_at "NULL"
+        blob access_token_metadata "NULL"
+        varchar access_token_type "NULL"
+        varchar access_token_scopes "NULL"
+        blob oidc_id_token_value "NULL"
+        timestamp oidc_id_token_issued_at "NULL"
+        timestamp oidc_id_token_expires_at "NULL"
+        blob oidc_id_token_metadata "NULL"
+        blob refresh_token_value "NULL"
+        timestamp refresh_token_issued_at "NULL"
+        timestamp refresh_token_expires_at "NULL"
+        blob refresh_token_metadata "NULL"
+        blob user_code_value "NULL"
+        timestamp user_code_issued_at "NULL"
+        timestamp user_code_expires_at "NULL"
+        blob user_code_metadata "NULL"
+        blob device_code_value "NULL"
+        timestamp device_code_issued_at "NULL"
+        timestamp device_code_expires_at "NULL"
+        blob device_code_metadata "NULL"
     }
     oauth2_authorization_consent {
-        varchar registered_client_id
-        varchar principal_name
-        varchar authorities
+        varchar registered_client_id PK "NOT NULL"
+        varchar principal_name PK "NOT NULL"
+        varchar authorities "NOT NULL"
     }
     oauth2_registered_client {
-        varchar id
-        varchar client_id
-        timestamp client_id_issued_at
-        varchar client_secret
-        timestamp client_secret_expires_at
-        varchar client_name
-        varchar client_authentication_methods
-        varchar authorization_grant_types
-        varchar redirect_uris
-        varchar post_logout_redirect_uris
-        varchar scopes
-        varchar client_settings
-        varchar token_settings
+        varchar id PK "NOT NULL"
+        varchar client_id "NOT NULL"
+        timestamp client_id_issued_at "NOT NULL"
+        varchar client_secret "NULL"
+        timestamp client_secret_expires_at "NULL"
+        varchar client_name "NOT NULL"
+        varchar client_authentication_methods "NOT NULL"
+        varchar authorization_grant_types "NOT NULL"
+        varchar redirect_uris "NULL"
+        varchar post_logout_redirect_uris "NULL"
+        varchar scopes "NOT NULL"
+        varchar client_settings "NOT NULL"
+        varchar token_settings "NOT NULL"
     }
     SPRING_SESSION {
-        char primary_id
-        char session_id
-        bigint creation_time
-        bigint last_access_time
-        int max_inactive_interval
-        bigint expiry_time
-        varchar principal_name
+        char primary_id PK "NOT NULL"
+        char session_id UK "NOT NULL"
+        bigint creation_time "NOT NULL"
+        bigint last_access_time "NOT NULL"
+        int max_inactive_interval "NOT NULL"
+        bigint expiry_time "NOT NULL"
+        varchar principal_name "NULL"
     }
     SPRING_SESSION_ATTRIBUTES {
-        char session_primary_id
-        varchar attribute_name
-        blob attribute_bytes
+        char session_primary_id PK, FK "NOT NULL"
+        varchar attribute_name PK "NOT NULL"
+        blob attribute_bytes "NOT NULL"
     }
-    sys_department ||--o{ admin_department : "department_id"
-    sys_user ||--o{ admin_department : "user_id"
-    sys_role ||--o{ approval_record : "role_id"
-    sys_user ||--o{ approval_record : "user_id"
-    sys_department ||--o{ department_permission : "department_id"
-    sys_permission ||--o{ department_permission : "permission_id"
-    sys_department ||--o{ employee_profile : "department_id"
-    sys_post ||--o{ employee_profile : "post_id"
-    sys_user ||--o{ employee_profile : "user_id"
-    sys_department ||--o{ managed_role : "department_id"
-    sys_function ||--o{ permission_detail : "function_id"
-    sys_permission ||--o{ permission_detail : "permission_id"
-    sys_permission ||--o{ permission_template : "permission_id"
-    sys_user ||--o{ sys_account : "user_id"
-    sys_user ||--o{ sys_department : "manager_id"
-    sys_department ||--o{ sys_department : "parent_id"
-    sys_module ||--o{ sys_function : "module_id"
-    sys_user ||--o{ sys_login_session : "user_id"
-    biz_system ||--o{ sys_module : "system_id"
-    biz_system ||--o{ sys_permission : "system_id"
-    sys_role ||--o{ sys_post : "role_id"
-    sys_permission ||--o{ sys_role_permission : "permission_id"
-    sys_role ||--o{ sys_role_permission : "role_id"
-    sys_role ||--o{ sys_user_role : "role_id"
-    sys_user ||--o{ sys_user_role : "user_id"
     SPRING_SESSION ||--o{ SPRING_SESSION_ATTRIBUTES : "session_primary_id"
+    sys_department ||..o{ admin_department : "department_id"
+    sys_user ||..o{ admin_department : "user_id"
+    sys_role ||..o{ approval_record : "role_id"
+    sys_user ||..o{ approval_record : "user_id"
+    sys_department ||..o{ department_permission : "department_id"
+    sys_permission ||..o{ department_permission : "permission_id"
+    sys_department ||..o{ employee_profile : "department_id"
+    sys_post ||..o{ employee_profile : "post_id"
+    sys_user ||..o| employee_profile : "user_id"
+    sys_department ||..o{ managed_role : "department_id"
+    sys_function ||..o{ permission_detail : "function_id"
+    sys_permission ||..o| permission_detail : "permission_id"
+    sys_permission ||..o{ permission_template : "permission_id"
+    sys_user ||--o| sys_account : "user_id"
+    sys_user |o..o{ sys_department : "manager_id"
+    sys_department |o..o{ sys_department : "parent_id"
+    sys_module ||..o{ sys_function : "module_id"
+    sys_user ||..o{ sys_login_session : "user_id"
+    biz_system ||..o{ sys_module : "system_id"
+    biz_system ||..o{ sys_permission : "system_id"
+    sys_role ||..o| sys_post : "role_id"
+    sys_permission ||..o{ sys_role_permission : "permission_id"
+    sys_role ||..o{ sys_role_permission : "role_id"
+    sys_role ||..o{ sys_user_role : "role_id"
+    sys_user ||..o{ sys_user_role : "user_id"

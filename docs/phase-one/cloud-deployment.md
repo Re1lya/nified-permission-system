@@ -50,4 +50,4 @@
 
 `verify-cloud-deployment.py` 读取私有配置和 CA 文件，在真实系统中创建合成数据，并在服务重启前暂停；操作者重启后继续验证。报告不写入密码、令牌、授权码或私钥。`oidc-cloud-client.py` 运行两个契约调用端，采用 BASIC 客户端认证、S256 PKCE 和严格回调验证，不记录回调查询串。重复运行会增加合成记录，不能当作生产负载工具。
 
-性能、容量、多实例切换、备份恢复、逐页浏览器交互和外部 OA/HR 产品接入均不在本轮通过声明中。此处 HTTPS 联调完成时，Apifox 云端同步曾按用户要求暂缓。后续 HTTP 切换及本次同步已完成，云端当前为 OpenAPI 1.4.1、98 个接口和 HTTP 检查环境；实际同步结果见 `apifox/project.json`。旧 `cloud-verification.json` 保留当时的验收状态。
+性能、容量、多实例切换、备份恢复、逐页浏览器交互和外部 OA/HR 产品接入均不在本轮通过声明中。此处 HTTPS 联调完成时，Apifox 云端同步曾按用户要求暂缓。后续 HTTP 切换及本次同步已完成，云端当前为 OpenAPI 1.4.2、98 个接口和 HTTP 检查环境；实际同步结果见 `apifox/project.json`。旧 `cloud-verification.json` 保留当时的验收状态。

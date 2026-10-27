@@ -38,10 +38,13 @@ shutil.copytree(root / 'target/site/jacoco', destination / 'jacoco')
 for path in (root / 'target/surefire-reports').glob('*.txt'):
     shutil.copy2(path, destination / 'surefire' / path.name)
 sources = [root / 'pom.xml'] + list((root / 'src').rglob('*.java')) + list((root / 'src/main/resources').rglob('*')) + list((root / 'src/test/resources').rglob('*'))
+sources += list((root / 'frontend/src').rglob('*')) + [root / 'frontend/package.json', root / 'frontend/package-lock.json', root / 'third-party/clonefactory/pom.xml'] + list((root / 'third-party/clonefactory/src').rglob('*'))
 manifest = {p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in sorted(sources) if p.is_file()}
 report = dict(exportedAt=datetime.now(timezone(timedelta(hours=8))).isoformat(),
               baseCommit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+              sourceIdentity='Source files are identified by sourceSha256; baseCommit is the checkout baseline before report publication, not necessarily the final submission commit.',
+              workingTreeChangesIncluded=bool(subprocess.check_output(['git', 'status', '--porcelain', '--', 'src', 'frontend', 'pom.xml', 'third-party/clonefactory'], cwd=root, text=True).strip()),
               branch=subprocess.check_output(['git', 'branch', '--show-current'], cwd=root, text=True).strip(),
               command='mvn clean verify', suites=suites, coverage=counters, sourceSha256=manifest)
 (destination / 'test-summary.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

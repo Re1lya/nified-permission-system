@@ -1,0 +1,433 @@
+{
+  "ddlSha256": "d32bd97b355bba7714b221e27c3a461d6fd255a37d364fc0a1316784ac74ae3c",
+  "tableCount": 38,
+  "foreignKeyCount": 26,
+  "tables": [
+    "account_policy",
+    "admin_department",
+    "application_access",
+    "approval_record",
+    "audit_archive",
+    "audit_event",
+    "biz_system",
+    "company_import_batch",
+    "data_dictionary",
+    "department_permission",
+    "employee_profile",
+    "hr_identity",
+    "integration_event",
+    "login_attempt",
+    "managed_role",
+    "permission_detail",
+    "permission_review",
+    "permission_template",
+    "platform_notification",
+    "platform_signing_key",
+    "session_activity",
+    "sync_failure",
+    "sys_account",
+    "sys_department",
+    "sys_function",
+    "sys_login_session",
+    "sys_module",
+    "sys_permission",
+    "sys_post",
+    "sys_role",
+    "sys_role_permission",
+    "sys_user",
+    "sys_user_role",
+    "oauth2_authorization",
+    "oauth2_authorization_consent",
+    "oauth2_registered_client",
+    "SPRING_SESSION",
+    "SPRING_SESSION_ATTRIBUTES"
+  ],
+  "foreignKeys": [
+    {
+      "child": "SPRING_SESSION_ATTRIBUTES",
+      "columns": [
+        "session_primary_id"
+      ],
+      "parent": "SPRING_SESSION",
+      "parentColumns": [
+        "primary_id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": true
+    },
+    {
+      "child": "admin_department",
+      "columns": [
+        "department_id"
+      ],
+      "parent": "sys_department",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "admin_department",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "approval_record",
+      "columns": [
+        "role_id"
+      ],
+      "parent": "sys_role",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "approval_record",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "department_permission",
+      "columns": [
+        "department_id"
+      ],
+      "parent": "sys_department",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "department_permission",
+      "columns": [
+        "permission_id"
+      ],
+      "parent": "sys_permission",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "employee_profile",
+      "columns": [
+        "department_id"
+      ],
+      "parent": "sys_department",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "employee_profile",
+      "columns": [
+        "post_id"
+      ],
+      "parent": "sys_post",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "employee_profile",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": true,
+      "identifying": false
+    },
+    {
+      "child": "managed_role",
+      "columns": [
+        "department_id"
+      ],
+      "parent": "sys_department",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "permission_detail",
+      "columns": [
+        "function_id"
+      ],
+      "parent": "sys_function",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "permission_detail",
+      "columns": [
+        "permission_id"
+      ],
+      "parent": "sys_permission",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": true,
+      "identifying": false
+    },
+    {
+      "child": "permission_template",
+      "columns": [
+        "permission_id"
+      ],
+      "parent": "sys_permission",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_account",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": true,
+      "identifying": true
+    },
+    {
+      "child": "sys_department",
+      "columns": [
+        "manager_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": true,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_department",
+      "columns": [
+        "parent_id"
+      ],
+      "parent": "sys_department",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": true,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_function",
+      "columns": [
+        "module_id"
+      ],
+      "parent": "sys_module",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_login_session",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_module",
+      "columns": [
+        "system_id"
+      ],
+      "parent": "biz_system",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_permission",
+      "columns": [
+        "system_id"
+      ],
+      "parent": "biz_system",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_post",
+      "columns": [
+        "role_id"
+      ],
+      "parent": "sys_role",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": true,
+      "identifying": false
+    },
+    {
+      "child": "sys_role_permission",
+      "columns": [
+        "permission_id"
+      ],
+      "parent": "sys_permission",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_role_permission",
+      "columns": [
+        "role_id"
+      ],
+      "parent": "sys_role",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_user_role",
+      "columns": [
+        "role_id"
+      ],
+      "parent": "sys_role",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    },
+    {
+      "child": "sys_user_role",
+      "columns": [
+        "user_id"
+      ],
+      "parent": "sys_user",
+      "parentColumns": [
+        "id"
+      ],
+      "optionalParent": false,
+      "uniqueChild": false,
+      "identifying": false
+    }
+  ],
+  "groups": {
+    "rbac": [
+      "sys_user",
+      "sys_account",
+      "sys_role",
+      "sys_permission",
+      "sys_user_role",
+      "sys_role_permission",
+      "biz_system",
+      "sys_login_session"
+    ],
+    "company": [
+      "sys_department",
+      "employee_profile",
+      "sys_post",
+      "sys_module",
+      "sys_function",
+      "permission_detail",
+      "permission_template",
+      "company_import_batch"
+    ],
+    "platform": [
+      "admin_department",
+      "managed_role",
+      "department_permission",
+      "account_policy",
+      "session_activity",
+      "login_attempt",
+      "approval_record",
+      "integration_event",
+      "audit_event",
+      "audit_archive",
+      "permission_review",
+      "hr_identity",
+      "sync_failure",
+      "platform_notification",
+      "data_dictionary"
+    ],
+    "protocol": [
+      "application_access",
+      "platform_signing_key",
+      "oauth2_registered_client",
+      "oauth2_authorization",
+      "oauth2_authorization_consent",
+      "SPRING_SESSION",
+      "SPRING_SESSION_ATTRIBUTES"
+    ]
+  }
+}

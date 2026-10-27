@@ -34,7 +34,7 @@ SERVER_SERVLET_SESSION_COOKIE_NAME=CDWY_HTTP_SESSION
 
 仅运行本次协议切换相关的真实 HTTP 流程验证，没有重新运行 Maven 测试套件或全部业务生命周期验收。之前完整业务联调结果仍在 `cloud-verification.json`，不能混同为本次重新执行。
 
-四份 Word 不因环境切换重新定义功能需求。OpenAPI 1.4.1 的默认服务地址已更新为 HTTP；Apifox 云端也已同步到 1.4.1，并配置 `云服务器 HTTP 检查` 环境，前置 URL 为 `http://120.46.213.158`。同步记录见 `apifox/project.json`。
+四份 Word 不因环境切换重新定义功能需求。OpenAPI 1.4.2 的默认服务地址已更新为 HTTP；Apifox 云端也已同步到 1.4.2，并配置 `云服务器 HTTP 检查` 环境，前置 URL 为 `http://120.46.213.158`。同步记录见 `apifox/project.json`。
 
 ## 恢复原部署
 

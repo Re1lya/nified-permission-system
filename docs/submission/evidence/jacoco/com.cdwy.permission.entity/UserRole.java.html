@@ -10,6 +10,11 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * 用户—角色关联实体：一个用户可有多个角色，一个角色可分配给多个用户。
+ * 两条 ManyToOne 关系形成多对多；(user_id, role_id) 唯一约束让相同授权只保存一次。
+ * LAZY 延迟读取关联对象；需要属性时应在事务内访问并转换为响应 DTO。
+ */
 @Entity
 @Table(name = &quot;sys_user_role&quot;, uniqueConstraints = {
         @UniqueConstraint(name = &quot;uk_sys_user_role&quot;, columnNames = {&quot;user_id&quot;, &quot;role_id&quot;})
@@ -28,24 +33,24 @@ public class UserRole {
     @JoinColumn(name = &quot;role_id&quot;, nullable = false)
     private Role role;
 
-<span class="fc" id="L31">    protected UserRole() {</span>
-<span class="fc" id="L32">    }</span>
-
-<span class="fc" id="L34">    public UserRole(UserAccount user, Role role) {</span>
-<span class="fc" id="L35">        this.user = user;</span>
-<span class="fc" id="L36">        this.role = role;</span>
+<span class="fc" id="L36">    protected UserRole() {</span>
 <span class="fc" id="L37">    }</span>
 
+<span class="fc" id="L39">    public UserRole(UserAccount user, Role role) {</span>
+<span class="fc" id="L40">        this.user = user;</span>
+<span class="fc" id="L41">        this.role = role;</span>
+<span class="fc" id="L42">    }</span>
+
     public Long getId() {
-<span class="nc" id="L40">        return id;</span>
+<span class="nc" id="L45">        return id;</span>
     }
 
     public UserAccount getUser() {
-<span class="fc" id="L44">        return user;</span>
+<span class="fc" id="L49">        return user;</span>
     }
 
     public Role getRole() {
-<span class="fc" id="L48">        return role;</span>
+<span class="fc" id="L53">        return role;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

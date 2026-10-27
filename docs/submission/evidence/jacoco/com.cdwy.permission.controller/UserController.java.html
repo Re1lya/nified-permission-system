@@ -22,74 +22,80 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+/**
+ * 用户资源的 HTTP 入口：@Valid 校验请求结构，业务实现交给 RbacService。
+ * /api/users 属于默认管理员接口；带部门范围的管理门户主要走 platform.PlatformController。
+ * 路径中的 /roles/{roleId} 表示授权关系子资源，便于对同一关系使用 PUT 授予、DELETE 回收。
+ */
 @RestController
 @RequestMapping(&quot;/api/users&quot;)
 public class UserController {
 
     private final RbacService rbacService;
 
-<span class="fc" id="L31">    public UserController(RbacService rbacService) {</span>
-<span class="fc" id="L32">        this.rbacService = rbacService;</span>
-<span class="fc" id="L33">    }</span>
+<span class="fc" id="L36">    public UserController(RbacService rbacService) {</span>
+<span class="fc" id="L37">        this.rbacService = rbacService;</span>
+<span class="fc" id="L38">    }</span>
 
     @PostMapping
     public ResponseEntity&lt;UserResponse&gt; create(@Valid @RequestBody CreateUserRequest request) {
-<span class="fc" id="L37">        return ResponseEntity.status(HttpStatus.CREATED).body(rbacService.createUser(request));</span>
+<span class="fc" id="L42">        return ResponseEntity.status(HttpStatus.CREATED).body(rbacService.createUser(request));</span>
     }
 
     @GetMapping
     public List&lt;UserResponse&gt; list() {
-<span class="nc" id="L42">        return rbacService.listUsers();</span>
+<span class="nc" id="L47">        return rbacService.listUsers();</span>
     }
 
     @PutMapping(&quot;/{userId}&quot;)
     public UserResponse update(
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserRequest request) {
-<span class="fc" id="L49">        return rbacService.updateUser(userId, request);</span>
+<span class="fc" id="L54">        return rbacService.updateUser(userId, request);</span>
     }
 
     @DeleteMapping(&quot;/{userId}&quot;)
     public ResponseEntity&lt;Void&gt; delete(@PathVariable Long userId) {
-<span class="fc" id="L54">        rbacService.deleteUser(userId);</span>
-<span class="fc" id="L55">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L59">        rbacService.deleteUser(userId);</span>
+<span class="fc" id="L60">        return ResponseEntity.noContent().build();</span>
     }
 
     @PutMapping(&quot;/{userId}/password&quot;)
     public ResponseEntity&lt;Void&gt; setPassword(
             @PathVariable Long userId,
             @Valid @RequestBody SetPasswordRequest request) {
-<span class="fc" id="L62">        rbacService.setPassword(userId, request);</span>
-<span class="fc" id="L63">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L67">        rbacService.setPassword(userId, request);</span>
+<span class="fc" id="L68">        return ResponseEntity.noContent().build();</span>
     }
 
+    // 为什么需要此 API：用户任职与角色权限定义分离，分配角色只变更用户—角色关系。
     @PutMapping(&quot;/{userId}/roles/{roleId}&quot;)
     public ResponseEntity&lt;Void&gt; assignRole(@PathVariable Long userId, @PathVariable Long roleId) {
-<span class="fc" id="L68">        rbacService.assignRole(userId, roleId);</span>
-<span class="fc" id="L69">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L74">        rbacService.assignRole(userId, roleId);</span>
+<span class="fc" id="L75">        return ResponseEntity.noContent().build();</span>
     }
 
     @DeleteMapping(&quot;/{userId}/roles/{roleId}&quot;)
     public ResponseEntity&lt;Void&gt; removeRole(@PathVariable Long userId, @PathVariable Long roleId) {
-<span class="fc" id="L74">        rbacService.removeRole(userId, roleId);</span>
-<span class="fc" id="L75">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L80">        rbacService.removeRole(userId, roleId);</span>
+<span class="fc" id="L81">        return ResponseEntity.noContent().build();</span>
     }
 
     @GetMapping(&quot;/{userId}/roles&quot;)
     public List&lt;RoleResponse&gt; listRoles(@PathVariable Long userId) {
-<span class="nc" id="L80">        return rbacService.listUserRoles(userId);</span>
+<span class="nc" id="L86">        return rbacService.listUserRoles(userId);</span>
     }
 
     @GetMapping(&quot;/{userId}/permissions&quot;)
     public List&lt;PermissionResponse&gt; listPermissions(@PathVariable Long userId) {
-<span class="fc" id="L85">        return rbacService.effectivePermissions(userId);</span>
+<span class="fc" id="L91">        return rbacService.effectivePermissions(userId);</span>
     }
 
     @GetMapping(&quot;/{userId}/permissions/check&quot;)
     public PermissionCheckResponse checkPermission(
             @PathVariable Long userId,
             @RequestParam String code) {
-<span class="nc" id="L92">        return new PermissionCheckResponse(userId, code, rbacService.hasPermission(userId, code));</span>
+<span class="nc" id="L98">        return new PermissionCheckResponse(userId, code, rbacService.hasPermission(userId, code));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

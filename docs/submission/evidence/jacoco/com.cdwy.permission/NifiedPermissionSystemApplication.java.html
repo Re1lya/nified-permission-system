@@ -3,14 +3,19 @@
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * 启动入口：自动扫描本包及子包，装配 Web、JPA、数据源和业务组件。
+ * 定时任务用于到期提醒等后台工作；JDBC HTTP Session 服务于浏览器 SSO，
+ * 与 JwtTokenService 使用的 sys_login_session（平台 JWT 会话）是两套不同记录。
+ */
 @org.springframework.scheduling.annotation.EnableScheduling
 @org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession(maxInactiveIntervalInSeconds=1800)
 @SpringBootApplication
-<span class="fc" id="L9">public class NifiedPermissionSystemApplication {</span>
+<span class="fc" id="L14">public class NifiedPermissionSystemApplication {</span>
 
 	public static void main(String[] args) {
-<span class="nc" id="L12">		SpringApplication.run(NifiedPermissionSystemApplication.class, args);</span>
-<span class="nc" id="L13">	}</span>
+<span class="nc" id="L17">		SpringApplication.run(NifiedPermissionSystemApplication.class, args);</span>
+<span class="nc" id="L18">	}</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,30 @@
+digraph ER {
+graph [rankdir=LR, pack=true, packmode="array3", bgcolor="white", pad=0.4, nodesep=0.35, ranksep=0.8, fontname="Arial", fontsize=24, labelloc=t, label="Organization and permission catalog (8 tables; external parent tables repeated)\nPhysical FK constraints only; no line does not mean no business reference"];
+node [shape=plain, fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10, color="#60788a", arrowsize=0.65];
+subgraph cluster_company { label="Organization and permission catalog"; color="#cbd5df"; style=rounded;
+"sys_department" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>sys_department</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">name [UK]</TD></TR><TR><TD ALIGN="LEFT">manager_id [FK] nullable</TD></TR><TR><TD ALIGN="LEFT">parent_id [FK] nullable</TD></TR></TABLE>>];
+"employee_profile" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>employee_profile</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">department_id [FK]</TD></TR><TR><TD ALIGN="LEFT">post_id [FK]</TD></TR><TR><TD ALIGN="LEFT">user_id [FK,UK]</TD></TR></TABLE>>];
+"sys_post" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>sys_post</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">name [UK]</TD></TR><TR><TD ALIGN="LEFT">role_id [FK,UK]</TD></TR></TABLE>>];
+"sys_module" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>sys_module</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">system_id [FK]</TD></TR></TABLE>>];
+"sys_function" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>sys_function</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">module_id [FK]</TD></TR></TABLE>>];
+"permission_detail" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>permission_detail</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">function_id [FK]</TD></TR><TR><TD ALIGN="LEFT">permission_id [FK,UK]</TD></TR></TABLE>>];
+"permission_template" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>permission_template</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">permission_id [FK]</TD></TR></TABLE>>];
+"company_import_batch" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e4edfa"><B>company_import_batch</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">fingerprint [UK]</TD></TR></TABLE>>];
+}
+"biz_system" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>biz_system</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR></TABLE>>];
+"sys_permission" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_permission</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR><TR><TD ALIGN="LEFT">system_id [FK]</TD></TR></TABLE>>];
+"sys_role" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_role</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR></TABLE>>];
+"sys_user" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#f1f5f9"><B>sys_user</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"employee_profile" -> "sys_department" [label="department_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"employee_profile" -> "sys_post" [label="post_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"employee_profile" -> "sys_user" [label="user_id -> id", taillabel="0..1", headlabel="1", labeldistance=1.8];
+"permission_detail" -> "sys_function" [label="function_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"permission_detail" -> "sys_permission" [label="permission_id -> id", taillabel="0..1", headlabel="1", labeldistance=1.8];
+"permission_template" -> "sys_permission" [label="permission_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_department" -> "sys_user" [label="manager_id -> id", taillabel="0..N", headlabel="0..1", labeldistance=1.8];
+"sys_department" -> "sys_department" [label="parent_id -> id", taillabel="0..N", headlabel="0..1", labeldistance=1.8];
+"sys_function" -> "sys_module" [label="module_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_module" -> "biz_system" [label="system_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_post" -> "sys_role" [label="role_id -> id", taillabel="0..1", headlabel="1", labeldistance=1.8];
+}

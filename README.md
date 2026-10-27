@@ -14,7 +14,7 @@
 | 数据存储 | 部署环境使用 MySQL；自动测试使用 H2 |
 | 认证与授权 | 平台 JWT、OIDC 授权码与 PKCE、RBAC0、部门管理范围 |
 | 在线系统 | [统一权限管理门户](http://120.46.213.158/ui/index.html) |
-| 最近部署 | 2026-10-26，详见[部署与验证记录](docs/submission/07-deployment.adoc) |
+| 最近部署 | 2026-10-27，详见[部署与验证记录](docs/submission/07-deployment.adoc) |
 
 ## 主要功能
 
@@ -45,21 +45,23 @@
 | [测试与 JaCoCo 报告说明](docs/submission/06-jacoco.adoc) | 测试环境、结果、覆盖率和复现方法 |
 | [部署与验证记录](docs/submission/07-deployment.adoc) | 部署版本、运行状态及在线接口检查结果 |
 
-配套文件：[OpenAPI 契约](docs/phase-one/apifox/openapi.json)、[MySQL 建表脚本](docs/phase-one/database-mysql-phase-one.sql)、[数据库升级脚本](docs/migrations/20261022-phase-one-completion.sql)。
+配套文件：[完整 ER 图](docs/phase-one/images/er-full.svg)、[OpenAPI 契约](docs/phase-one/apifox/openapi.json)、[MySQL 建表脚本](docs/phase-one/database-mysql-phase-one.sql)、[数据库升级脚本](docs/migrations/20261022-phase-one-completion.sql)。
+
+本 GitHub 仓库保留中文代码注释与阅读索引；2026-10-28 同步 ER、API 文档及已部署的导入、弹窗修复。
 
 ## 测试结果
 
-2026-10-26 在 Java 21、Maven 3.9.16、H2 环境执行 `mvn -B clean verify`，结果如下。
+2026-10-28 在 Java 21、Maven 3.9.16、H2 环境执行 `mvn -B clean verify`，结果如下。
 
 | 测试总数 | 通过 | 跳过 | 失败 | 错误 | 行覆盖率 | 分支覆盖率 |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 44 | 43 | 1 | 0 | 0 | 72.78% | 36.92% |
+| 45 | 44 | 1 | 0 | 0 | 73.04% | 37.88% |
 
-跳过项为依赖外部 Excel 文件的 `ActualWorkbookImportTests`；合成工作簿导入测试已执行。覆盖率统计范围及源码摘要见[测试汇总](docs/submission/evidence/test-summary.json)。
+跳过项为依赖外部 Excel 文件的 `ActualWorkbookImportTests`；合成工作簿导入测试已执行，包括一万员工、无密码待发放、幂等及事务回滚。覆盖率统计范围及源码摘要见[测试汇总](docs/submission/evidence/test-summary.json)。
 
 JaCoCo 提供 [HTML](docs/submission/evidence/jacoco/index.html)、[XML](docs/submission/evidence/jacoco/jacoco.xml) 和 [CSV](docs/submission/evidence/jacoco/jacoco.csv) 文件。完整交互报告可在下载或克隆仓库后，通过浏览器打开 `docs/submission/evidence/jacoco/index.html` 查看。
 
-部署环境于 2026-10-26 完成 48 项在线检查，涵盖管理接口、会话延续及 OA/HR 演示端 OIDC 回调。性能、容量、多实例切换和外部 OA/HR 产品接入不在上述验证范围内。
+2026-10-27 对导入优化和弹窗修复后的代码完成完整测试，并将同一测试构建更新到服务器，核对编译类与打包资源一致；部署及在线读取检查见[当前部署记录](docs/submission/07-deployment.adoc)。2026-10-26 的 48 项在线检查作为历史记录保留，涵盖管理接口、会话延续及 OA/HR 演示端 OIDC 回调。性能、容量、多实例切换和外部 OA/HR 产品接入不在上述验证范围内。
 
 ## 构建与运行
 

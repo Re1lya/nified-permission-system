@@ -14,7 +14,8 @@ summary = json.loads((D / 'evidence/test-summary.json').read_text())
 counts = {key: sum(int(s[key]) for s in summary['suites']) for key in ('tests','failures','errors','skipped')}
 passed = counts['tests'] - counts['failures'] - counts['errors'] - counts['skipped']
 cov = summary['coverage']
-header = ':lang: zh-CN\n:toc: left\n:toc-title: 目录\n:sectnums:\n:sectanchors:\n:source-highlighter: highlight.js\n:icons: font\n\n小组成员：温家正、姚景云、杜奕含、陈浩贤。\n\n文档整理日期：2026-10-27。测试及部署日期以相应记录为准。\n\n'
+test_date = summary['exportedAt'][:10]
+header = ':lang: zh-CN\n:toc: left\n:toc-title: 目录\n:sectnums:\n:sectanchors:\n:source-highlighter: highlight.js\n:icons: font\n\n小组成员：温家正、姚景云、杜奕含、陈浩贤。\n\n文档整理日期：2026-10-28。测试及部署日期以相应记录为准。\n\n'
 def write(name, title, body):
     (D / name).write_text('= '+title+'\n'+header+body.strip()+'\n', encoding='utf-8')
 def inline(text):
@@ -55,8 +56,10 @@ def markdown(source):
 req=(P/'requirements.md').read_text()
 req=re.sub(r'^> 本文件保留.*\n', '', req, flags=re.M)
 req=req.replace('本次在代码补充与设计修订后，继续执行真实 MySQL 建库、隔离旧结构升级和云端 HTTPS 接口联调，实际通过项目见 cloud-verification.json。没有外部 OA/HR 产品，使用遵循接口契约的调用端验证；没有运行项目单元测试、集成测试套件或压力测试。旧版 44 项测试仅对应旧提交 01b94f06，不能用于证明本次变更正确。',
-    '2026-10-22 完成的 MySQL 建库、隔离旧结构升级和云端接口联调仍作为历史记录保留；没有外部 OA/HR 产品。2026-10-26 对当前代码执行完整 Maven 测试，结果见本目录《JaCoCo 与测试说明》。2026-10-26 另完成修复版本部署及在线检查；云端迁移、外部产品接入和压力测试按各自记录说明。')
+    '2026-10-22 完成的 MySQL 建库、隔离旧结构升级和云端接口联调仍作为历史记录保留；没有外部 OA/HR 产品。2026-10-28 对同步修复并保留中文注释的 GitHub 代码执行完整 Maven 测试，结果见本目录《JaCoCo 与测试说明》。2026-10-27 部署记录作为历史证据保留，本次 GitHub 同步不重新部署服务器；云端迁移、外部产品接入和压力测试按各自记录说明。')
+req=req.replace('初始密码随机生成并以 BCrypt 保存，首次登录必须修改。', 'HR 同步创建的初始密码随机生成并以 BCrypt 保存；公司 Excel 批量导入创建无密码账号，由管理员另行生成并发放初始密码，发放前不能通过密码登录。首次登录必须修改密码。')
 req=req.replace('实际通过的本轮联调项目','2026-10-22 实际通过的联调项目').replace('本轮实际联调项目见 cloud-verification.json','2026-10-22 联调项目见 ../phase-one/cloud-verification.json')
+req=req.replace('随机初始密码与强制改密', 'HR 创建随机初始密码，Excel 导入先创建无密码账号；发放后首次改密')
 req=req.replace('四份 Word 分别说明需求、界面、API 和数据库；', '本目录 .adoc 为当前提交入口，四份历史 Word 分别说明需求、界面、API 和数据库；')
 write('01-requirements.adoc','统一权限管理系统：需求与实现说明',
       '原始需求基线：link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]。需求实现与验证状态分别列示。\n\n'+markdown(req))
@@ -158,6 +161,14 @@ HR 的 `externalId` 经 `hr_identity` 映射本地编号，既不是登录名，
 OIDC 客户端、授权、同意、签名密钥和浏览器会话持久化。LEGACY 只聚合入口并保留原系统登录。
 接入验收接口保存人工结果，不自动证明五项验证已执行。
 
+=== Excel 批量导入
+
+预览校验表头、组织引用和权限动作；确认阶段在同一事务写入组织、账号及权限目录。
+公司导入的账号不设置密码、不分配角色，保留首次改密和未发放状态；管理员通过初始密码接口另行生成并一次性领取。
+导入不再为每个员工计算随后会被替换的 BCrypt 摘要；逐个账号落库后从持久化上下文分离，避免后续 flush 重复扫描全部已处理账号。
+实体分离不提交事务，后续失败仍整体回滚。摘要幂等检查防止相同工作簿重复导入。
+一万员工的合成工作簿测试覆盖首次导入、引用关系、无密码无授权和重复导入；本地 H2 用时不能代表云端 MySQL 导入用时。
+
 === 权限复核与审计
 
 复核按受管员工与角色逐项执行 KEEP/REVOKE，理由必填；回收关系和复核结果同事务提交。
@@ -209,6 +220,25 @@ dbintro=r'''
 |审计与协作 |audit_event、audit_archive、permission_review、approval_record、integration_event、sync_failure、platform_notification、data_dictionary |审计部门快照；审批幂等；复核；同步异常及通知
 |===
 
+== ER 图与计数口径
+
+当前物理模型共 38 张表、26 个数据库外键；完整图每张表只出现一次。分域图为方便阅读会重复显示域外父表，不能把各分图的方框数相加。
+
+* link:../phase-one/images/er-full.svg[完整 ER 矢量图（可放大）]、link:../phase-one/images/er-full.png[PNG 图片]。
+* link:../phase-one/database-er.mmd[Mermaid 源码]、link:../phase-one/er-manifest.json[表与外键核对清单]。
+* 分域图：link:../phase-one/images/er-rbac.svg[账号与授权]、link:../phase-one/images/er-company.svg[组织与目录]、link:../phase-one/images/er-platform.svg[管理与生命周期]、link:../phase-one/images/er-protocol.svg[接入与协议]。
+
+image::../phase-one/images/er-full.png[完整物理 ER：38 张表、26 个外键,width=1400]
+
+图中 PK 为主键、UK 为单列唯一约束、FK 为数据库外键。组合唯一约束的完整定义见 DDL。
+PNG/SVG 连线箭头由外键表指向被引用表，两端标注数量；Mermaid 的实线为标识关系、虚线为非标识关系，并不表示是否存在数据库外键。
+
+* `sys_account.user_id` 为主键兼外键：每个账号必须对应一个人员；数据库允许人员尚无账号，因此物理基数为人员 1 对账号 0..1，业务要求一人一账号。
+* `employee_profile.user_id`、`permission_detail.permission_id`、`sys_post.role_id` 都有单列唯一约束，父表到子表最多一条。
+* `sys_department.parent_id` 和 `manager_id` 可空，因此根部门可以没有父部门，部门也可以暂未指定经理。
+* `application_access.system_id`、`account_policy.user_id`、`session_activity.session_id`、OAuth2 的客户端引用及多态 `hr_identity.local_id` 等有业务关联，但配套 DDL 未为它们声明外键；图中不伪造物理外键。无连线不等于没有业务关联。
+* 日志、归档及通知等保留历史快照或标量编号，不能仅按字段名将所有 `*_id` 都画成受数据库约束的关联。
+
 == 一致性、约束与历史保留
 
 * `sys_account.user_id` 是主键并关联人员；登录名唯一，密码只存 BCrypt 摘要。
@@ -234,7 +264,7 @@ link:../migrations/20261022-phase-one-completion.sql[升级 SQL] 只适用于旧
 MySQL DDL 隐式提交；部分失败的升级需核对实际结构后制定恢复方案。
 
 2026-10-22 的真实 MySQL 新建和隔离旧结构升级证据见 link:../phase-one/cloud-verification.json[历史联调记录]。
-2026-10-26 的 Maven 测试使用 H2。MySQL 方言、迁移、容量和备份恢复需在相应环境独立验证。
+本目录最新 Maven 测试使用 H2。MySQL 方言、迁移、容量和备份恢复需在相应环境独立验证。
 '''
 write('03-database-design.adoc','统一权限管理系统：数据库设计',dbintro)
 api=markdown((P/'api-design.md').read_text())
@@ -288,6 +318,9 @@ image::../phase-one/images/design-audit-current.png[审计设计示意,width=100
 
 == 前后端一致性
 
+新增、编辑、设置密码和角色分配等表单使用居中对话框展示，支持取消和 Escape 关闭；错误信息显示在表单内，避免表单落在长表格下方不可见。
+批量导入期间展示等待提示并禁用重复提交；关闭页面不等于取消后端事务。
+
 导航或按钮隐藏仅改善交互；服务端仍复核身份、目标用户、部门范围及委派上限。
 写入期间防止重复点击；成功后重新查询。409 表示引用或重复冲突，提示用户刷新数据。
 授权变化后旧 JWT 返回 401，前端可以旋转仍有效会话；会话已撤销则需重新登录。
@@ -296,10 +329,12 @@ image::../phase-one/images/design-audit-current.png[审计设计示意,width=100
 suite_rows='\n'.join('|'+s['name'].split('.')[-1]+' |'+' |'.join(str(s[k]) for k in ('tests','failures','errors','skipped')) for s in summary['suites'])
 cov_rows='\n'.join('|'+key+' |'+str(cov[key]['covered'])+' |'+str(cov[key]['missed'])+' |'+str(cov[key]['percentage'])+'%' for key in ('LINE','BRANCH','INSTRUCTION','METHOD','CLASS'))
 write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
-== 自动测试结果（2026-10-26）
+== 自动测试结果（{test_date}）
 
 运行环境：Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
-测试源代码提交：`{summary['baseCommit']}`。完整命令为 `mvn -B clean verify`。
+测试以检出基线 `{summary['baseCommit']}` 加本次修复工作区为输入；该基线号不是最终提交号。
+测试文件版本以 link:evidence/test-summary.json[源码 SHA-256 清单] 为准，清单覆盖生产代码、测试、前端源码及静态资源。
+完整命令为 `mvn -B clean verify`。
 总计 {counts['tests']} 项，{passed} 项通过，失败 {counts['failures']}、错误 {counts['errors']}、跳过 {counts['skipped']}。
 报告导出时间：{summary['exportedAt']}。
 
@@ -310,7 +345,7 @@ write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 |===
 
 `ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。该次运行未配置此变量，1 项条件测试跳过。
-公司导入的合成工作簿集成测试已执行。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
+公司导入的合成工作簿集成测试已执行，包括一万员工、无密码待发放状态、引用关系、幂等和失败回滚。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
 
 == 覆盖率
 
@@ -362,8 +397,9 @@ Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 [cols="2,3,4",options="header"]
 |===
 |日期 |验证类型 |记录
-|2026-10-26 |Java / H2 自动测试 |本目录 JaCoCo 与 Surefire 报告
-|2026-10-26 |修复版本部署、管理接口及 OIDC 回调 |link:07-deployment.adoc[部署与验证记录]
+|{test_date} |Java / H2 自动测试 |本目录 JaCoCo 与 Surefire 报告
+|2026-10-27 |导入及弹窗修复部署、在线读取检查 |link:07-deployment.adoc[部署与验证记录]
+|2026-10-26 |管理接口及 OIDC 回调 |link:deployment-20261026.json[历史部署记录]
 |2026-10-22 |MySQL 建库、隔离旧结构升级及接口联调 |link:../phase-one/cloud-verification.json[阶段联调记录]
 |2026-10-21 |初版自动测试 |link:../first-check/testing.md[历史测试记录]
 |===
@@ -388,17 +424,18 @@ write('README.adoc','统一权限管理系统：设计与检查材料',f'''
 |link:05-ui-design.adoc[05 界面设计] |页面结构、身份范围、交互流程及设计示意
 |link:06-jacoco.adoc[06 测试与 JaCoCo 说明] |测试环境、结果、覆盖率和复现方法
 |link:07-deployment.adoc[07 部署与验证记录] |部署版本及在线接口检查结果
+|link:08-material-audit.adoc[08 材料一致性核查] |ER、代码、接口契约、报告版本及未核实事项
 |===
 
 原始需求见 link:../phase-one/需求分析基线-V1.0.md[DOC-01 V1.0]；接口契约见 link:../phase-one/apifox/openapi.json[OpenAPI]。
 
 == 测试与部署摘要
 
-2026-10-26 自动测试共 {counts['tests']} 项：{passed} 通过、{counts['skipped']} 跳过、{counts['failures']} 失败、{counts['errors']} 错误。
+{test_date} 自动测试共 {counts['tests']} 项：{passed} 通过、{counts['skipped']} 跳过、{counts['failures']} 失败、{counts['errors']} 错误。
 行覆盖率 {cov['LINE']['percentage']}%，分支覆盖率 {cov['BRANCH']['percentage']}%。跳过项依赖未提供的外部 Excel 数据。
 报告对应提交与源码摘要见 link:evidence/test-summary.json[测试汇总]。
 
-修复版本于 2026-10-26 部署，在线检查结果见 link:deployment-20261026.json[部署核对明细]。
+导入优化与弹窗修复版本于 2026-10-27 部署，当前核对及历史记录见 link:07-deployment.adoc[部署与验证记录]。
 在线入口：http://120.46.213.158/ui/index.html 。
 
 == 报告查看与资料版本

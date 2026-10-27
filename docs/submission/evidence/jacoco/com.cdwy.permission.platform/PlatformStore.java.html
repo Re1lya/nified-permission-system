@@ -7,58 +7,72 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
 
+/**
+ * 公共 SQL 与平台规则辅助组件：JdbcTemplate 使用 Spring 管理的数据源，SQL 主要通过占位符绑定值。
+ * 少量范围片段拼接已解析的数字 ID 或代码指定列名，不能把这种方式扩展到任意用户字符串。
+ * 业务调用位于同一数据源的 JPA 事务中时，JdbcTemplate 可参与同一事务；JPA 未 flush 的变更不能假定已被 SQL 看见。
+ * 直接 SQL 不会自动刷新已加载的实体状态；修改路径应明确持久化上下文和数据库的先后关系。
+ */
 @Service
 public class PlatformStore {
     private final JdbcTemplate db;private final org.springframework.transaction.support.TransactionTemplate separate;
-<span class="fc" id="L13">    public PlatformStore(JdbcTemplate db,org.springframework.transaction.PlatformTransactionManager transactions){</span>
-<span class="fc" id="L14">        this.db=db;this.separate=new org.springframework.transaction.support.TransactionTemplate(transactions);</span>
-<span class="fc" id="L15">        separate.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);</span>
-<span class="fc" id="L16">    }</span>
-<span class="fc" id="L17">    public JdbcTemplate db(){return db;}</span>
-<span class="fc bfc" id="L18" title="All 2 branches covered.">    public List&lt;Map&lt;String,Object&gt;&gt; rows(String sql,Object...args){return db.query(sql,(rs,n)-&gt;{Map&lt;String,Object&gt; row=new LinkedHashMap&lt;&gt;();var m=rs.getMetaData();for(int i=1;i&lt;=m.getColumnCount();i++){</span>
-<span class="fc" id="L19">            Object value=rs.getObject(i);</span>
+<span class="fc" id="L19">    public PlatformStore(JdbcTemplate db,org.springframework.transaction.PlatformTransactionManager transactions){</span>
+<span class="fc" id="L20">        this.db=db;this.separate=new org.springframework.transaction.support.TransactionTemplate(transactions);</span>
+    // 审计使用独立事务，业务失败仍能保留操作痕迹；不是整个业务用例都使用 REQUIRES_NEW。
+<span class="fc" id="L22">        separate.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);</span>
+<span class="fc" id="L23">    }</span>
+<span class="fc" id="L24">    public JdbcTemplate db(){return db;}</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">    public List&lt;Map&lt;String,Object&gt;&gt; rows(String sql,Object...args){return db.query(sql,(rs,n)-&gt;{Map&lt;String,Object&gt; row=new LinkedHashMap&lt;&gt;();var m=rs.getMetaData();for(int i=1;i&lt;=m.getColumnCount();i++){</span>
+<span class="fc" id="L26">            Object value=rs.getObject(i);</span>
             // H2 returns a Clob for @Lob text; MySQL returns a String. Materialize text while the result set is open.
-<span class="fc bfc" id="L21" title="All 2 branches covered.">            row.put(m.getColumnLabel(i).toLowerCase(Locale.ROOT),value instanceof java.sql.Clob?rs.getString(i):value);</span>
-<span class="fc" id="L22">        }return row;},args);}</span>
-<span class="fc" id="L23">    public long count(String sql,Object...args){return db.queryForObject(sql,Long.class,args);}</span>
-<span class="fc bfc" id="L24" title="All 2 branches covered.">    public boolean superAdmin(long id){return count(&quot;select count(*) from sys_user where id=? and administrator=true and enabled=true&quot;,id)&gt;0;}</span>
-<span class="fc bfc" id="L25" title="All 2 branches covered.">    public boolean departmentAdmin(long id){return count(&quot;select count(*) from admin_department where user_id=?&quot;,id)&gt;0;}</span>
-<span class="fc bfc" id="L26" title="All 2 branches covered.">    public void requireSuper(long id){if(!superAdmin(id))throw new ForbiddenException(&quot;仅超级管理员可以执行此操作&quot;);}</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">            row.put(m.getColumnLabel(i).toLowerCase(Locale.ROOT),value instanceof java.sql.Clob?rs.getString(i):value);</span>
+<span class="fc" id="L29">        }return row;},args);}</span>
+<span class="fc" id="L30">    public long count(String sql,Object...args){return db.queryForObject(sql,Long.class,args);}</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">    public boolean superAdmin(long id){return count(&quot;select count(*) from sys_user where id=? and administrator=true and enabled=true&quot;,id)&gt;0;}</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">    public boolean departmentAdmin(long id){return count(&quot;select count(*) from admin_department where user_id=?&quot;,id)&gt;0;}</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">    public void requireSuper(long id){if(!superAdmin(id))throw new ForbiddenException(&quot;仅超级管理员可以执行此操作&quot;);}</span>
     public void requireDepartment(long actor,long department){
-<span class="fc bfc" id="L28" title="All 4 branches covered.">        if(!superAdmin(actor)&amp;&amp;count(&quot;select count(*) from admin_department where user_id=? and department_id=?&quot;,actor,department)==0)throw new ForbiddenException(&quot;不在当前管理员管辖部门内&quot;);</span>
-<span class="fc" id="L29">    }</span>
+<span class="fc bfc" id="L35" title="All 4 branches covered.">        if(!superAdmin(actor)&amp;&amp;count(&quot;select count(*) from admin_department where user_id=? and department_id=?&quot;,actor,department)==0)throw new ForbiddenException(&quot;不在当前管理员管辖部门内&quot;);</span>
+<span class="fc" id="L36">    }</span>
+    // 既检查操作者身份，也检查目标员工范围，防止部门管理员替换 URL 中的 id 越权管理。
     public void requireUser(long actor,long target){
-<span class="fc bfc" id="L31" title="All 2 branches covered.">        if(superAdmin(actor))return;</span>
-<span class="pc bpc" id="L32" title="2 of 4 branches missed.">        if(superAdmin(target)||departmentAdmin(target))throw new ForbiddenException(&quot;部门管理员不能维护管理员账号&quot;);</span>
-<span class="fc bfc" id="L33" title="All 2 branches covered.">        if(count(&quot;select count(*) from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=? and e.user_id=?&quot;,actor,target)==0)throw new ForbiddenException(&quot;只能管理绑定部门的员工&quot;);</span>
-<span class="fc" id="L34">    }</span>
-<span class="fc" id="L35">    public void audit(Long actor,String kind,String target,String result){audit(actor,kind,target,result,null);}</span>
-<span class="fc" id="L36">    public void audit(Long actor,String kind,String target,String result,Long targetUser){auditDepartment(actor,kind,target,result,departmentOf(targetUser));}</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if(superAdmin(actor))return;</span>
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">        if(superAdmin(target)||departmentAdmin(target))throw new ForbiddenException(&quot;部门管理员不能维护管理员账号&quot;);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if(count(&quot;select count(*) from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=? and e.user_id=?&quot;,actor,target)==0)throw new ForbiddenException(&quot;只能管理绑定部门的员工&quot;);</span>
+<span class="fc" id="L42">    }</span>
+<span class="fc" id="L43">    public void audit(Long actor,String kind,String target,String result){audit(actor,kind,target,result,null);}</span>
+<span class="fc" id="L44">    public void audit(Long actor,String kind,String target,String result,Long targetUser){auditDepartment(actor,kind,target,result,departmentOf(targetUser));}</span>
     /**
      * Departments are resolved in the caller's transaction, so a user created in it is visible; the row itself is written
      * in a separate transaction and survives a rollback (failed logins, denials).
      */
+    // 先在调用方事务解析部门，再单独落审计，避免新建但未提交的员工在另一事务不可见。
+    // 独立审计不会跟随外层回滚；审计中的 SUCCESS 不能单独作为外层事务最终提交的证明。
     public void auditDepartment(Long actor,String kind,String target,String result,Long targetDepartment){
-<span class="fc" id="L42">        Long actorDepartment=departmentOf(actor);String text=target.substring(0,Math.min(255,target.length()));</span>
-<span class="fc" id="L43">        separate.executeWithoutResult(status-&gt;db.update(&quot;insert into audit_event(actor_id,department_id,target_department_id,kind,target,result,created_at) values (?,?,?,?,?,?,?)&quot;,actor,actorDepartment,targetDepartment,kind,text,result,Instant.now()));</span>
-<span class="fc" id="L44">    }</span>
-<span class="fc bfc" id="L45" title="All 2 branches covered.">    private Long departmentOf(Long user){return user==null?null:rows(&quot;select department_id from employee_profile where user_id=?&quot;,user).stream().map(r-&gt;((Number)r.get(&quot;department_id&quot;)).longValue()).findFirst().orElse(null);}</span>
+<span class="fc" id="L52">        Long actorDepartment=departmentOf(actor);String text=target.substring(0,Math.min(255,target.length()));</span>
+<span class="fc" id="L53">        separate.executeWithoutResult(status-&gt;db.update(&quot;insert into audit_event(actor_id,department_id,target_department_id,kind,target,result,created_at) values (?,?,?,?,?,?,?)&quot;,actor,actorDepartment,targetDepartment,kind,text,result,Instant.now()));</span>
+<span class="fc" id="L54">    }</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">    private Long departmentOf(Long user){return user==null?null:rows(&quot;select department_id from employee_profile where user_id=?&quot;,user).stream().map(r-&gt;((Number)r.get(&quot;department_id&quot;)).longValue()).findFirst().orElse(null);}</span>
     /** SQL condition limiting rows whose user_id column belongs to the actor's bound departments; empty for super admins. */
-<span class="pc bpc" id="L47" title="1 of 2 branches missed.">    public String managedUsers(long actor,String column){return superAdmin(actor)?&quot;&quot;:&quot; and &quot;+column+&quot; in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=&quot;+actor+&quot;)&quot;;}</span>
-<span class="fc" id="L48">    public long version(long user){return rows(&quot;select version from account_policy where user_id=?&quot;,user).stream().mapToLong(r-&gt;((Number)r.get(&quot;version&quot;)).longValue()).findFirst().orElse(0);}</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">    public String managedUsers(long actor,String column){return superAdmin(actor)?&quot;&quot;:&quot; and &quot;+column+&quot; in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=&quot;+actor+&quot;)&quot;;}</span>
+<span class="fc" id="L58">    public long version(long user){return rows(&quot;select version from account_policy where user_id=?&quot;,user).stream().mapToLong(r-&gt;((Number)r.get(&quot;version&quot;)).longValue()).findFirst().orElse(0);}</span>
     // A plain count + insert: H2 reuses the result of a repeated INSERT ... SELECT ... WHERE NOT EXISTS within one transaction.
-<span class="fc bfc" id="L50" title="All 2 branches covered.">    @Transactional public void ensurePolicy(long user){if(count(&quot;select count(*) from account_policy where user_id=?&quot;,user)==0)db.update(&quot;insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',false,0,false,false)&quot;,user);}</span>
-<span class="fc" id="L51">    @Transactional public void changed(long user){ensurePolicy(user);db.update(&quot;update account_policy set version=version+1 where user_id=?&quot;,user);}</span>
-<span class="fc" id="L52">    @Transactional public void permissionsChanged(){db.update(&quot;update account_policy set version=version+1&quot;);}</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">    @Transactional public void ensurePolicy(long user){if(count(&quot;select count(*) from account_policy where user_id=?&quot;,user)==0)db.update(&quot;insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',false,0,false,false)&quot;,user);}</span>
+    // 原子 SQL 自增避免“读版本再写回”的覆盖；默认 REQUIRED 加入外层业务事务。
+    // 同类 ensurePolicy 调用沿用当前事务，不能把自调用误解为另开事务。
+<span class="fc" id="L63">    @Transactional public void changed(long user){ensurePolicy(user);db.update(&quot;update account_policy set version=version+1 where user_id=?&quot;,user);}</span>
+<span class="fc" id="L64">    @Transactional public void permissionsChanged(){db.update(&quot;update account_policy set version=version+1&quot;);}</span>
     public void validAccount(long user){
-<span class="fc bfc" id="L54" title="All 2 branches covered.">        if(count(&quot;select count(*) from account_policy where user_id=? and (deleted=true or (expires_at is not null and expires_at&lt;=?))&quot;,user,Instant.now())&gt;0)throw new AuthenticationFailedException(&quot;账号已过期或停用&quot;);</span>
-<span class="fc" id="L55">    }</span>
-<span class="fc bfc" id="L56" title="All 2 branches covered.">    public boolean mustChange(long user){return count(&quot;select count(*) from account_policy where user_id=? and must_change_password=true&quot;,user)&gt;0;}</span>
-<span class="fc bfc" id="L57" title="All 2 branches covered.">    public void notLocked(String username){if(count(&quot;select count(*) from login_attempt where username=? and locked_until&gt;?&quot;,username,Instant.now())&gt;0)throw new AuthenticationFailedException(&quot;登录暂时锁定，请稍后重试&quot;);}</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if(count(&quot;select count(*) from account_policy where user_id=? and (deleted=true or (expires_at is not null and expires_at&lt;=?))&quot;,user,Instant.now())&gt;0)throw new AuthenticationFailedException(&quot;账号已过期或停用&quot;);</span>
+<span class="fc" id="L67">    }</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">    public boolean mustChange(long user){return count(&quot;select count(*) from account_policy where user_id=? and must_change_password=true&quot;,user)&gt;0;}</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">    public void notLocked(String username){if(count(&quot;select count(*) from login_attempt where username=? and locked_until&gt;?&quot;,username,Instant.now())&gt;0)throw new AuthenticationFailedException(&quot;登录暂时锁定，请稍后重试&quot;);}</span>
+    // 登录失败通常会抛异常使外层事务回滚；尝试计数需要独立提交，才能真正累积到锁定阈值。
+    // synchronized 仅约束本 JVM，多实例下仍需数据库并发策略，不能宣称它是分布式锁。
     @Transactional(propagation=Propagation.REQUIRES_NEW) public synchronized void loginResult(String username,boolean ok){
-<span class="fc" id="L59">        db.update(&quot;insert into login_attempt(username,failures) select ?,0 where not exists(select 1 from login_attempt where username=?)&quot;,username,username);</span>
-<span class="fc bfc" id="L60" title="All 2 branches covered.">        if(ok)db.update(&quot;update login_attempt set failures=0,locked_until=null where username=?&quot;,username);</span>
-<span class="fc" id="L61">        else {db.update(&quot;update login_attempt set failures=failures+1 where username=?&quot;,username);db.update(&quot;update login_attempt set locked_until=? where username=? and failures&gt;=5&quot;,Instant.now().plusSeconds(300),username);}</span>
-<span class="fc" id="L62">    }</span>
+<span class="fc" id="L73">        db.update(&quot;insert into login_attempt(username,failures) select ?,0 where not exists(select 1 from login_attempt where username=?)&quot;,username,username);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if(ok)db.update(&quot;update login_attempt set failures=0,locked_until=null where username=?&quot;,username);</span>
+<span class="fc" id="L75">        else {db.update(&quot;update login_attempt set failures=failures+1 where username=?&quot;,username);db.update(&quot;update login_attempt set locked_until=? where username=? and failures&gt;=5&quot;,Instant.now().plusSeconds(300),username);}</span>
+<span class="fc" id="L76">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

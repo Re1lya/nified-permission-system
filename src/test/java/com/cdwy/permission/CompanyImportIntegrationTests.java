@@ -34,7 +34,9 @@ class CompanyImportIntegrationTests {
   String id=(String)p.get("previewId");assertThrows(IllegalArgumentException.class,()->service.commit(2L,id,true));
   assertThrows(IllegalArgumentException.class,()->service.commit(1L,id,false));
   service.commit(1L,id,true);assertEquals(true,service.commit(1L,id,true).get("reused"));
-  assertEquals(1,db.queryForObject("select count(*) from hr_identity h join sys_user u on u.id=h.local_id join sys_account a on a.user_id=u.id join account_policy p on p.user_id=u.id where h.kind='EMPLOYEE' and h.external_id=? and u.administrator=false and a.password_hash is not null and p.must_change_password=true and p.initial_password_issued=false",Integer.class,"SG"+s));
+  assertEquals(1,db.queryForObject("select count(*) from hr_identity h join sys_user u on u.id=h.local_id join sys_account a on a.user_id=u.id join account_policy p on p.user_id=u.id where h.kind='EMPLOYEE' and h.external_id=? and u.administrator=false and a.password_hash is null and p.must_change_password=true and p.initial_password_issued=false",Integer.class,"SG"+s));
+  String username=db.queryForObject("select a.username from sys_account a join hr_identity h on h.local_id=a.user_id where h.kind='EMPLOYEE' and h.external_id=?",String.class,"SG"+s);
+  assertThrows(com.cdwy.permission.exception.AuthenticationFailedException.class,()->rbac.login(new com.cdwy.permission.dto.LoginRequest(username,"Arbitrary123!")));
   assertEquals(0,db.queryForObject("select count(*) from sys_user_role ur join hr_identity h on h.local_id=ur.user_id where h.kind='EMPLOYEE' and h.external_id=?",Integer.class,"SG"+s));
   assertTrue(db.queryForObject("select count(*) from permission_detail where action='view_self'",Integer.class)>0);
  }
@@ -42,6 +44,19 @@ class CompanyImportIntegrationTests {
   String s="b"+System.nanoTime();var p=service.preview(1L,deps(s),employees(s+"missing"),permissions(s));
   assertTrue((int)p.get("errorCount")>0);assertThrows(IllegalArgumentException.class,()->service.commit(1L,(String)p.get("previewId"),true));
   assertEquals(0,db.queryForObject("select count(*) from sys_department where name=?",Integer.class,"部门"+s));
+ }
+ @Test void largeImportKeepsProfilesAndManagerLinksWithoutIssuingPasswords() throws Exception {
+  String s="bulk"+System.nanoTime();
+  String[][] employees=new String[10001][];
+  employees[0]=new String[]{"姓名","用户名","分公司","部门","岗位","电话号码"};
+  for(int i=1;i<=10000;i++)employees[i]=new String[]{i==1?"测试员工":"员工"+i,"SG"+s+"_"+i,"总公司","部门"+s,"岗位"+s,"139000"+String.format("%05d",i)};
+  var p=service.preview(1L,deps(s),xlsx(employees),permissions(s));
+  assertEquals(0,p.get("errorCount"));
+  var result=service.commit(1L,(String)p.get("previewId"),true);
+  assertEquals(10000,result.get("createdUsers"));
+  assertEquals(10000,db.queryForObject("select count(*) from employee_profile e join sys_account a on a.user_id=e.user_id join sys_department d on d.id=e.department_id where d.name=? and a.password_hash is null",Integer.class,"部门"+s));
+  assertNotNull(db.queryForObject("select manager_id from sys_department where name=?",Long.class,"部门"+s));
+  assertEquals(true,service.commit(1L,(String)p.get("previewId"),true).get("reused"));
  }
  @Test void collisionRollsBackPreviouslyInsertedDepartmentsAndRoles() throws Exception {
   String s="c"+System.nanoTime();long existing=rbac.createUser(new com.cdwy.permission.dto.CreateUserRequest("manual"+s,"已有手工账号")).id();

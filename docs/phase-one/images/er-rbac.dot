@@ -1,0 +1,22 @@
+digraph ER {
+graph [rankdir=LR, pack=true, packmode="array3", bgcolor="white", pad=0.4, nodesep=0.35, ranksep=0.8, fontname="Arial", fontsize=24, labelloc=t, label="Identity and RBAC (8 tables; external parent tables repeated)\nPhysical FK constraints only; no line does not mean no business reference"];
+node [shape=plain, fontname="Arial", fontsize=12];
+edge [fontname="Arial", fontsize=10, color="#60788a", arrowsize=0.65];
+subgraph cluster_rbac { label="Identity and RBAC"; color="#cbd5df"; style=rounded;
+"sys_user" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_user</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR></TABLE>>];
+"sys_account" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_account</B></TD></TR><TR><TD ALIGN="LEFT">username [UK]</TD></TR><TR><TD ALIGN="LEFT">user_id [PK,FK]</TD></TR></TABLE>>];
+"sys_role" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_role</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR></TABLE>>];
+"sys_permission" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_permission</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR><TR><TD ALIGN="LEFT">system_id [FK]</TD></TR></TABLE>>];
+"sys_user_role" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_user_role</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">role_id [FK]</TD></TR><TR><TD ALIGN="LEFT">user_id [FK]</TD></TR></TABLE>>];
+"sys_role_permission" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_role_permission</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">permission_id [FK]</TD></TR><TR><TD ALIGN="LEFT">role_id [FK]</TD></TR></TABLE>>];
+"biz_system" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>biz_system</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">code [UK]</TD></TR></TABLE>>];
+"sys_login_session" [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="6"><TR><TD BGCOLOR="#e0f2e9"><B>sys_login_session</B></TD></TR><TR><TD ALIGN="LEFT">id [PK]</TD></TR><TR><TD ALIGN="LEFT">user_id [FK]</TD></TR></TABLE>>];
+}
+"sys_account" -> "sys_user" [label="user_id -> id", taillabel="0..1", headlabel="1", labeldistance=1.8];
+"sys_login_session" -> "sys_user" [label="user_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_permission" -> "biz_system" [label="system_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_role_permission" -> "sys_permission" [label="permission_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_role_permission" -> "sys_role" [label="role_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_user_role" -> "sys_role" [label="role_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+"sys_user_role" -> "sys_user" [label="user_id -> id", taillabel="0..N", headlabel="1", labeldistance=1.8];
+}

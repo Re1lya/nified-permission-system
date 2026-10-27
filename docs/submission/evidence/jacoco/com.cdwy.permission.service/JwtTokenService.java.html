@@ -19,6 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 平台 JWT 认证：签名确认令牌未被篡改，数据库会话、账号状态和权限版本决定当前是否仍有效。
+ * JWT 不是发出后一直可信的纯无状态凭据；撤销会话或递增版本可以让旧令牌失效。
+ * 本类的平台 JWT 与 OIDC 授权服务器给业务应用签发的令牌分开处理。
+ */
 @Service
 @Transactional(readOnly = true)
 public class JwtTokenService {
@@ -35,173 +40,178 @@ public class JwtTokenService {
             @Value(&quot;${permission.jwt.secret}&quot;) String secret,
             @Value(&quot;${permission.jwt.expiration-seconds:7200}&quot;) long expirationSeconds,
             UserAccountRepository userRepository,
-<span class="fc" id="L38">            LoginSessionRepository sessionRepository, com.cdwy.permission.platform.PlatformStore platform) {</span>
-<span class="fc" id="L39">        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);</span>
-<span class="pc bpc" id="L40" title="1 of 4 branches missed.">        if (secretBytes.length &gt; 0 &amp;&amp; secretBytes.length &lt; 32) {</span>
-<span class="nc" id="L41">            throw new IllegalArgumentException(&quot;permission.jwt.secret 至少需要 32 个字节&quot;);</span>
+<span class="fc" id="L43">            LoginSessionRepository sessionRepository, com.cdwy.permission.platform.PlatformStore platform) {</span>
+<span class="fc" id="L44">        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);</span>
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">        if (secretBytes.length &gt; 0 &amp;&amp; secretBytes.length &lt; 32) {</span>
+<span class="nc" id="L46">            throw new IllegalArgumentException(&quot;permission.jwt.secret 至少需要 32 个字节&quot;);</span>
         }
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (expirationSeconds &lt;= 0) {</span>
-<span class="nc" id="L44">            throw new IllegalArgumentException(&quot;permission.jwt.expiration-seconds 必须大于 0&quot;);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (expirationSeconds &lt;= 0) {</span>
+<span class="nc" id="L49">            throw new IllegalArgumentException(&quot;permission.jwt.expiration-seconds 必须大于 0&quot;);</span>
         }
-<span class="fc bfc" id="L46" title="All 2 branches covered.">        this.signingKey = secretBytes.length == 0 ? Jwts.SIG.HS256.key().build() : Keys.hmacShaKeyFor(secretBytes);</span>
-<span class="fc" id="L47">        this.expirationSeconds = expirationSeconds;</span>
-<span class="fc" id="L48">        this.userRepository = userRepository;</span>
-<span class="fc" id="L49">        this.sessionRepository = sessionRepository;</span>
-<span class="fc" id="L50">        this.platform = platform;</span>
-<span class="fc" id="L51">    }</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        this.signingKey = secretBytes.length == 0 ? Jwts.SIG.HS256.key().build() : Keys.hmacShaKeyFor(secretBytes);</span>
+<span class="fc" id="L52">        this.expirationSeconds = expirationSeconds;</span>
+<span class="fc" id="L53">        this.userRepository = userRepository;</span>
+<span class="fc" id="L54">        this.sessionRepository = sessionRepository;</span>
+<span class="fc" id="L55">        this.platform = platform;</span>
+<span class="fc" id="L56">    }</span>
 
+    // 登录、改密、停用等路径以同一账号行锁协调；会话保存与调用方业务事务保持一致。
     @Transactional
     public String issue(Long userId) {
         // The same row is locked by login, password reset, disable and delete.
-<span class="fc" id="L56">        UserAccount user = userRepository.findByIdForUpdate(userId)</span>
-<span class="fc" id="L57">                .filter(UserAccount::isEnabled)</span>
-<span class="fc" id="L58">                .orElseThrow(JwtTokenService::invalidToken);</span>
-<span class="fc" id="L59">        Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);</span>
-<span class="fc" id="L60">        Instant expiresAt = issuedAt.plusSeconds(expirationSeconds);</span>
-<span class="fc" id="L61">        String tokenId = UUID.randomUUID().toString();</span>
-<span class="fc" id="L62">        String token = Jwts.builder()</span>
-<span class="fc" id="L63">                .id(tokenId)</span>
-<span class="fc" id="L64">                .claim(&quot;permission_version&quot;, platform.version(userId))</span>
-<span class="fc" id="L65">                .subject(userId.toString())</span>
-<span class="fc" id="L66">                .issuedAt(Date.from(issuedAt))</span>
-<span class="fc" id="L67">                .expiration(Date.from(expiresAt))</span>
-<span class="fc" id="L68">                .signWith(signingKey)</span>
-<span class="fc" id="L69">                .compact();</span>
-<span class="fc" id="L70">        sessionRepository.save(new LoginSession(tokenId, user, issuedAt, expiresAt));</span>
-<span class="fc" id="L71">        return token;</span>
+<span class="fc" id="L62">        UserAccount user = userRepository.findByIdForUpdate(userId)</span>
+<span class="fc" id="L63">                .filter(UserAccount::isEnabled)</span>
+<span class="fc" id="L64">                .orElseThrow(JwtTokenService::invalidToken);</span>
+<span class="fc" id="L65">        Instant issuedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);</span>
+<span class="fc" id="L66">        Instant expiresAt = issuedAt.plusSeconds(expirationSeconds);</span>
+<span class="fc" id="L67">        String tokenId = UUID.randomUUID().toString();</span>
+<span class="fc" id="L68">        String token = Jwts.builder()</span>
+<span class="fc" id="L69">                .id(tokenId)</span>
+<span class="fc" id="L70">                .claim(&quot;permission_version&quot;, platform.version(userId))</span>
+<span class="fc" id="L71">                .subject(userId.toString())</span>
+<span class="fc" id="L72">                .issuedAt(Date.from(issuedAt))</span>
+<span class="fc" id="L73">                .expiration(Date.from(expiresAt))</span>
+<span class="fc" id="L74">                .signWith(signingKey)</span>
+<span class="fc" id="L75">                .compact();</span>
+<span class="fc" id="L76">        sessionRepository.save(new LoginSession(tokenId, user, issuedAt, expiresAt));</span>
+<span class="fc" id="L77">        return token;</span>
     }
 
+    // 按签名/有效期 → 账号策略 → 权限版本 → 会话记录 → 闲置时间的顺序校验，最后记录活动时间。
+    // “认证成功”只得到身份，具体能否访问目标资源仍要由后续权限/部门范围判断。
     @Transactional
     public Long requireUserId(String authorizationHeader) {
-<span class="fc" id="L76">        Claims claims = parse(extractToken(authorizationHeader));</span>
-<span class="fc" id="L77">        Long userId = subject(claims);</span>
-<span class="fc" id="L78">        platform.validAccount(userId);</span>
-<span class="fc" id="L79">        Number version=claims.get(&quot;permission_version&quot;,Number.class);</span>
-<span class="fc bfc" id="L80" title="All 4 branches covered.">        if(version==null||version.longValue()!=platform.version(userId))throw new AuthenticationFailedException(&quot;权限版本已变化，请刷新令牌&quot;);</span>
-<span class="fc" id="L81">        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)</span>
-<span class="fc" id="L82">                .orElseThrow(JwtTokenService::invalidToken);</span>
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (!session.getUser().isEnabled()</span>
-<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                || !session.getExpiresAt().isAfter(Instant.now())</span>
-<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())</span>
-<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {</span>
-<span class="nc" id="L87">            throw invalidToken();</span>
+<span class="fc" id="L84">        Claims claims = parse(extractToken(authorizationHeader));</span>
+<span class="fc" id="L85">        Long userId = subject(claims);</span>
+<span class="fc" id="L86">        platform.validAccount(userId);</span>
+<span class="fc" id="L87">        Number version=claims.get(&quot;permission_version&quot;,Number.class);</span>
+<span class="fc bfc" id="L88" title="All 4 branches covered.">        if(version==null||version.longValue()!=platform.version(userId))throw new AuthenticationFailedException(&quot;权限版本已变化，请刷新令牌&quot;);</span>
+<span class="fc" id="L89">        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)</span>
+<span class="fc" id="L90">                .orElseThrow(JwtTokenService::invalidToken);</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (!session.getUser().isEnabled()</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                || !session.getExpiresAt().isAfter(Instant.now())</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                || !session.getExpiresAt().equals(claims.getExpiration().toInstant())) {</span>
+<span class="nc" id="L95">            throw invalidToken();</span>
         }
-<span class="fc bfc" id="L89" title="All 2 branches covered.">        if(lastSeen(claims.getId(),session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now()))throw invalidToken();</span>
-<span class="fc" id="L90">        platform.db().update(&quot;insert into session_activity(session_id,last_seen) select ?,? where not exists(select 1 from session_activity where session_id=?)&quot;,claims.getId(),Instant.now(),claims.getId());</span>
-<span class="fc" id="L91">        platform.db().update(&quot;update session_activity set last_seen=? where session_id=?&quot;,Instant.now(),claims.getId());</span>
-<span class="fc" id="L92">        return userId;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if(lastSeen(claims.getId(),session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now()))throw invalidToken();</span>
+<span class="fc" id="L98">        platform.db().update(&quot;insert into session_activity(session_id,last_seen) select ?,? where not exists(select 1 from session_activity where session_id=?)&quot;,claims.getId(),Instant.now(),claims.getId());</span>
+<span class="fc" id="L99">        platform.db().update(&quot;update session_activity set last_seen=? where session_id=?&quot;,Instant.now(),claims.getId());</span>
+<span class="fc" id="L100">        return userId;</span>
     }
 
     @Transactional
     public void revoke(String authorizationHeader) {
-<span class="pc bpc" id="L97" title="1 of 4 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank()) {</span>
-<span class="fc" id="L98">            return;</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank()) {</span>
+<span class="fc" id="L106">            return;</span>
         }
         try {
-<span class="fc" id="L101">            Claims claims = parse(extractToken(authorizationHeader));</span>
-<span class="fc" id="L102">            sessionRepository.deleteSession(claims.getId(), subject(claims));</span>
-<span class="fc" id="L103">        } catch (AuthenticationFailedException ignored) {</span>
+<span class="fc" id="L109">            Claims claims = parse(extractToken(authorizationHeader));</span>
+<span class="fc" id="L110">            sessionRepository.deleteSession(claims.getId(), subject(claims));</span>
+<span class="fc" id="L111">        } catch (AuthenticationFailedException ignored) {</span>
             // Logging out with an expired or malformed token is already complete.
-<span class="fc" id="L105">        }</span>
-<span class="fc" id="L106">    }</span>
+<span class="fc" id="L113">        }</span>
+<span class="fc" id="L114">    }</span>
 
     /** The user behind a still-valid bearer, or null; used to attribute logout without failing it. */
     @Transactional
     public Long subjectIfValid(String authorizationHeader) {
         try {
-<span class="fc" id="L112">            return requireUserId(authorizationHeader);</span>
-<span class="fc" id="L113">        } catch (AuthenticationFailedException exception) {</span>
-<span class="fc" id="L114">            return null;</span>
+<span class="fc" id="L120">            return requireUserId(authorizationHeader);</span>
+<span class="fc" id="L121">        } catch (AuthenticationFailedException exception) {</span>
+<span class="fc" id="L122">            return null;</span>
         }
     }
 
     @Transactional
     public void revokeAll(Long userId) {
         // Account commands hold the user lock until both changes commit.
-<span class="fc" id="L121">        sessionRepository.deleteAllForUser(userId);</span>
-<span class="fc" id="L122">        platform.db().update(&quot;delete from oauth2_authorization where principal_name=?&quot;,userId.toString());</span>
-<span class="fc" id="L123">        platform.changed(userId);</span>
-<span class="fc" id="L124">    }</span>
+<span class="fc" id="L129">        sessionRepository.deleteAllForUser(userId);</span>
+<span class="fc" id="L130">        platform.db().update(&quot;delete from oauth2_authorization where principal_name=?&quot;,userId.toString());</span>
+<span class="fc" id="L131">        platform.changed(userId);</span>
+<span class="fc" id="L132">    }</span>
 
     /**
      * Rotate a platform JWT. The presented token may already be expired, but its session must still exist,
      * the account must be usable and the last activity must lie within the 30-minute idle window (BR-17).
      */
+    // 刷新不会复活已撤销的会话：数据库记录必须仍存在，账号可用且未超过闲置窗口。
+    // 允许用旧版本令牌换取当前版本，但会删除旧会话再签发新会话。
     @Transactional
     public String refresh(String authorizationHeader) {
-<span class="fc" id="L132">        Claims claims = parse(extractToken(authorizationHeader), IDLE_SECONDS);</span>
-<span class="fc" id="L133">        Long userId = subject(claims);</span>
-<span class="fc" id="L134">        platform.validAccount(userId);</span>
-<span class="fc" id="L135">        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)</span>
-<span class="fc" id="L136">                .orElseThrow(JwtTokenService::invalidToken);</span>
-<span class="pc bpc" id="L137" title="2 of 4 branches missed.">        if (!session.getUser().isEnabled() || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())) {</span>
-<span class="nc" id="L138">            throw invalidToken();</span>
+<span class="fc" id="L142">        Claims claims = parse(extractToken(authorizationHeader), IDLE_SECONDS);</span>
+<span class="fc" id="L143">        Long userId = subject(claims);</span>
+<span class="fc" id="L144">        platform.validAccount(userId);</span>
+<span class="fc" id="L145">        LoginSession session = sessionRepository.findByIdAndUser_Id(claims.getId(), userId)</span>
+<span class="fc" id="L146">                .orElseThrow(JwtTokenService::invalidToken);</span>
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">        if (!session.getUser().isEnabled() || !session.getIssuedAt().equals(claims.getIssuedAt().toInstant())) {</span>
+<span class="nc" id="L148">            throw invalidToken();</span>
         }
-<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (lastSeen(claims.getId(), session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now())) {</span>
-<span class="fc" id="L141">            throw invalidToken();</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (lastSeen(claims.getId(), session.getIssuedAt()).plusSeconds(IDLE_SECONDS).isBefore(Instant.now())) {</span>
+<span class="fc" id="L151">            throw invalidToken();</span>
         }
-<span class="fc" id="L143">        sessionRepository.deleteSession(claims.getId(), userId);</span>
-<span class="fc" id="L144">        return issue(userId);</span>
+<span class="fc" id="L153">        sessionRepository.deleteSession(claims.getId(), userId);</span>
+<span class="fc" id="L154">        return issue(userId);</span>
     }
 
     private Instant lastSeen(String sessionId, Instant issuedAt) {
-<span class="fc" id="L148">        var activity = platform.db().query(&quot;select last_seen from session_activity where session_id=?&quot;,</span>
-<span class="fc" id="L149">                (rs, row) -&gt; rs.getTimestamp(&quot;last_seen&quot;, java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone(&quot;UTC&quot;))).toInstant(), sessionId);</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">        return activity.isEmpty() ? issuedAt : activity.getFirst();</span>
+<span class="fc" id="L158">        var activity = platform.db().query(&quot;select last_seen from session_activity where session_id=?&quot;,</span>
+<span class="fc" id="L159">                (rs, row) -&gt; rs.getTimestamp(&quot;last_seen&quot;, java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone(&quot;UTC&quot;))).toInstant(), sessionId);</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        return activity.isEmpty() ? issuedAt : activity.getFirst();</span>
     }
 
-<span class="nc" id="L153">    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}</span>
-<span class="nc" id="L154">    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}</span>
+<span class="nc" id="L163">    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}</span>
+<span class="nc" id="L164">    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}</span>
 
     private Claims parse(String token) {
-<span class="fc" id="L157">        return parse(token, 0);</span>
+<span class="fc" id="L167">        return parse(token, 0);</span>
     }
 
     private Claims parse(String token, long allowedExpirySeconds) {
         try {
-<span class="fc" id="L162">            Claims claims = Jwts.parser()</span>
-<span class="fc" id="L163">                    .verifyWith(signingKey)</span>
-<span class="fc" id="L164">                    .clockSkewSeconds(allowedExpirySeconds)</span>
-<span class="fc" id="L165">                    .build()</span>
-<span class="fc" id="L166">                    .parseSignedClaims(token)</span>
-<span class="fc" id="L167">                    .getPayload();</span>
-<span class="pc bpc" id="L168" title="1 of 4 branches missed.">            if (claims.getId() == null || claims.getId().isBlank()</span>
-<span class="fc bfc" id="L169" title="All 4 branches covered.">                    || claims.getIssuedAt() == null || claims.getExpiration() == null</span>
-<span class="pc bpc" id="L170" title="1 of 2 branches missed.">                    || claims.getIssuedAt().after(new Date())</span>
-<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                    || !claims.getExpiration().after(claims.getIssuedAt())) {</span>
-<span class="fc" id="L172">                throw invalidToken();</span>
+<span class="fc" id="L172">            Claims claims = Jwts.parser()</span>
+<span class="fc" id="L173">                    .verifyWith(signingKey)</span>
+<span class="fc" id="L174">                    .clockSkewSeconds(allowedExpirySeconds)</span>
+<span class="fc" id="L175">                    .build()</span>
+<span class="fc" id="L176">                    .parseSignedClaims(token)</span>
+<span class="fc" id="L177">                    .getPayload();</span>
+<span class="pc bpc" id="L178" title="1 of 4 branches missed.">            if (claims.getId() == null || claims.getId().isBlank()</span>
+<span class="fc bfc" id="L179" title="All 4 branches covered.">                    || claims.getIssuedAt() == null || claims.getExpiration() == null</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                    || claims.getIssuedAt().after(new Date())</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">                    || !claims.getExpiration().after(claims.getIssuedAt())) {</span>
+<span class="fc" id="L182">                throw invalidToken();</span>
             }
-<span class="fc" id="L174">            return claims;</span>
-<span class="fc" id="L175">        } catch (JwtException | IllegalArgumentException exception) {</span>
-<span class="fc" id="L176">            throw invalidToken();</span>
+<span class="fc" id="L184">            return claims;</span>
+<span class="fc" id="L185">        } catch (JwtException | IllegalArgumentException exception) {</span>
+<span class="fc" id="L186">            throw invalidToken();</span>
         }
     }
 
     private Long subject(Claims claims) {
         try {
-<span class="fc" id="L182">            long userId = Long.parseLong(claims.getSubject());</span>
-<span class="pc bpc" id="L183" title="1 of 2 branches missed.">            if (userId &lt;= 0) {</span>
-<span class="nc" id="L184">                throw invalidToken();</span>
+<span class="fc" id="L192">            long userId = Long.parseLong(claims.getSubject());</span>
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">            if (userId &lt;= 0) {</span>
+<span class="nc" id="L194">                throw invalidToken();</span>
             }
-<span class="fc" id="L186">            return userId;</span>
-<span class="fc" id="L187">        } catch (JwtException | IllegalArgumentException exception) {</span>
-<span class="fc" id="L188">            throw invalidToken();</span>
+<span class="fc" id="L196">            return userId;</span>
+<span class="fc" id="L197">        } catch (JwtException | IllegalArgumentException exception) {</span>
+<span class="fc" id="L198">            throw invalidToken();</span>
         }
     }
 
     private String extractToken(String authorizationHeader) {
-<span class="fc bfc" id="L193" title="All 4 branches covered.">        if (authorizationHeader == null || !authorizationHeader.regionMatches(true, 0, &quot;Bearer &quot;, 0, 7)) {</span>
-<span class="fc" id="L194">            throw invalidToken();</span>
+<span class="fc bfc" id="L203" title="All 4 branches covered.">        if (authorizationHeader == null || !authorizationHeader.regionMatches(true, 0, &quot;Bearer &quot;, 0, 7)) {</span>
+<span class="fc" id="L204">            throw invalidToken();</span>
         }
-<span class="fc" id="L196">        String token = authorizationHeader.substring(&quot;Bearer &quot;.length()).trim();</span>
-<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (token.isEmpty()) {</span>
-<span class="nc" id="L198">            throw invalidToken();</span>
+<span class="fc" id="L206">        String token = authorizationHeader.substring(&quot;Bearer &quot;.length()).trim();</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        if (token.isEmpty()) {</span>
+<span class="nc" id="L208">            throw invalidToken();</span>
         }
-<span class="fc" id="L200">        return token;</span>
+<span class="fc" id="L210">        return token;</span>
     }
 
     private static AuthenticationFailedException invalidToken() {
-<span class="fc" id="L204">        return new AuthenticationFailedException(&quot;登录状态无效或已过期，请重新登录&quot;);</span>
+<span class="fc" id="L214">        return new AuthenticationFailedException(&quot;登录状态无效或已过期，请重新登录&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

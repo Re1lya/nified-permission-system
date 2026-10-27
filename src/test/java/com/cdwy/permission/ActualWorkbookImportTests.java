@@ -21,7 +21,7 @@ class ActualWorkbookImportTests {
   assertEquals(359,db.queryForObject("select count(*) from sys_function",Integer.class));
   assertEquals(0,db.queryForObject("select count(*) from sys_user_role",Integer.class));
   assertEquals(0,db.queryForObject("select count(*) from sys_user where administrator=true",Integer.class));
-  assertEquals(10000,db.queryForObject("select count(*) from sys_account a join account_policy p on p.user_id=a.user_id where a.password_hash is not null and p.must_change_password=true and p.initial_password_issued=false",Integer.class));
+  assertEquals(10000,db.queryForObject("select count(*) from sys_account a join account_policy p on p.user_id=a.user_id where a.password_hash is null and p.must_change_password=true and p.initial_password_issued=false",Integer.class));
   assertEquals(true,imports.commit(1L,(String)preview.get("previewId"),true).get("reused"));
   Files.createDirectories(Path.of("output"));
   Files.writeString(Path.of("output/actual-import-result.txt"),"counts="+preview.get("counts")+"\nwarnings="+preview.get("warningCount")+"\nresult="+result+"\nrolesAssigned=0\nrepeat=reused\n");

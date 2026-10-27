@@ -1,3 +1,4 @@
+raise SystemExit("此脚本基于历史 H2 快照，已停用以免覆盖当前材料。请运行 python3 scripts/build-er-assets.py 和 node scripts/render-er.cjs。")
 """Draw the complete ER diagram (from the exported H2 schema) and the UI navigation diagram.
 Run after the tests have exported output/phase-one-h2.sql. Output: docs/phase-one/images/er-full.png, ui-navigation.png.
 """

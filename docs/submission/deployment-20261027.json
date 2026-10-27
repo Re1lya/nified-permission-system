@@ -1,0 +1,17 @@
+{
+  "localChangesIncluded": true,
+  "sourceCommit": "bd3485e3d09e352b781ac050229a35439bec804d",
+  "jarSha256": "7906a9e11426a454f9ac4cf991a1a8b105fa8d65c0a7c95082b77369680a6acf",
+  "previousJarSha256": "e0ef16794c276bccf3fc2168c9aeae3a9521945164f96c274ff0ff88e6267875",
+  "previousJar": "/opt/unified-permission/releases/cloud-e0ef16794c27.jar",
+  "jar": "/opt/unified-permission/releases/cloud-7906a9e11426.jar",
+  "backup": "/var/backups/unified-permission/update-20261027-210920",
+  "databaseMigration": false,
+  "configurationChanged": false,
+  "databasePublicAccessChanged": false,
+  "status": "PASS",
+  "updatedAt": "2026-10-27T21:09:34.333393+08:00",
+  "restartToReadySeconds": 11.9,
+  "existingJwtSessionSurvived": true,
+  "sourceIdentity": "sourceCommit is the pre-publication checkout baseline. Exact tested sources are listed in evidence/test-summary.json; deployed BOOT-INF/classes entries match that test build."
+}

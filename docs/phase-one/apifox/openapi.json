@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "统一权限管理系统一期接口",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "控制器接口由当前编译类离线导出。默认兼容旧响应；Accept: application/vnd.cdwy.v2+json 返回 code/message/data。OAuth/OIDC 协议端点不包装。本文件不是运行验收报告。"
   },
   "servers": [
@@ -23,32 +23,7 @@
         "tags": [
           "CompanyController"
         ],
-        "parameters": [
-          {
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "object"
-            },
-            "name": "departments"
-          },
-          {
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "object"
-            },
-            "name": "employees"
-          },
-          {
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "object"
-            },
-            "name": "permissions"
-          }
-        ],
+        "parameters": [],
         "responses": {
           "400": {
             "description": "参数不合法"
