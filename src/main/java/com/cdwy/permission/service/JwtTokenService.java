@@ -19,6 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 平台 JWT 认证：签名确认令牌未被篡改，数据库会话、账号状态和权限版本决定当前是否仍有效。
+ * JWT 不是发出后一直可信的纯无状态凭据；撤销会话或递增版本可以让旧令牌失效。
+ * 本类的平台 JWT 与 OIDC 授权服务器给业务应用签发的令牌分开处理。
+ */
 @Service
 @Transactional(readOnly = true)
 public class JwtTokenService {
@@ -50,6 +55,7 @@ public class JwtTokenService {
         this.platform = platform;
     }
 
+    // 登录、改密、停用等路径以同一账号行锁协调；会话保存与调用方业务事务保持一致。
     @Transactional
     public String issue(Long userId) {
         // The same row is locked by login, password reset, disable and delete.
@@ -71,6 +77,8 @@ public class JwtTokenService {
         return token;
     }
 
+    // 按签名/有效期 → 账号策略 → 权限版本 → 会话记录 → 闲置时间的顺序校验，最后记录活动时间。
+    // “认证成功”只得到身份，具体能否访问目标资源仍要由后续权限/部门范围判断。
     @Transactional
     public Long requireUserId(String authorizationHeader) {
         Claims claims = parse(extractToken(authorizationHeader));
@@ -127,6 +135,8 @@ public class JwtTokenService {
      * Rotate a platform JWT. The presented token may already be expired, but its session must still exist,
      * the account must be usable and the last activity must lie within the 30-minute idle window (BR-17).
      */
+    // 刷新不会复活已撤销的会话：数据库记录必须仍存在，账号可用且未超过闲置窗口。
+    // 允许用旧版本令牌换取当前版本，但会删除旧会话再签发新会话。
     @Transactional
     public String refresh(String authorizationHeader) {
         Claims claims = parse(extractToken(authorizationHeader), IDLE_SECONDS);

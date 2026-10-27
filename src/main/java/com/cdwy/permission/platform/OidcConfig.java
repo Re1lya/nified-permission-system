@@ -27,6 +27,10 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.http.MediaType;
 
 /** Persistent OIDC provider; business applications are registered through the onboarding API. */
+/**
+ * OIDC 认证服务器的装配入口：按 Order 区分协议端点、Bearer API、浏览器页面三条安全链。
+ * 协议交换复用 Spring Authorization Server；平台补充账号状态、权限版本、客户端启用状态与持久化。
+ */
 @Configuration
 public class OidcConfig {
     @Bean @Order(1) SecurityFilterChain authorizationServer(HttpSecurity http,com.cdwy.permission.service.JwtTokenService tokens,RbacService rbac,PlatformStore store) throws Exception {
@@ -58,6 +62,7 @@ public class OidcConfig {
         },org.springframework.security.web.access.intercept.AuthorizationFilter.class);
         return http.build();
     }
+    // permitAll 仅表示此安全过滤链不做角色授权；随后 MVC 拦截器及业务代码仍检查 API 身份与范围。
     @Bean @Order(2) SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
         // Bearer APIs are authorized by ApiAccessConfig and service-level scope checks.
         http.securityMatcher("/api/**").authorizeHttpRequests(a->a.anyRequest().permitAll()).csrf(c->c.disable());

@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 /** Scoped administration and self service. Every route authorizes its actor explicitly. */
+/**
+ * 带部门边界的管理门面：先从令牌识别 actor，再校验管理身份、目标员工及可授予角色范围。
+ * 这里部分 HTTP 方法直接编排业务、SQL 与审计，事务放在入口方法；并非每个接口都有独立 Service 类。
+ */
 @RestController @RequestMapping("/api/platform")
 public class PlatformController {
     private final PlatformStore s; private final JwtTokenService tokens; private final RbacService rbac;
@@ -38,6 +42,7 @@ public class PlatformController {
     public record State(boolean enabled) {}
     @PutMapping("/users/{id}/state") @Transactional public void state(@RequestHeader("Authorization") String auth,@PathVariable long id,@RequestBody State body){long a=admin(auth);s.requireUser(a,id);if(a==id||s.superAdmin(id))throw new ForbiddenException("不能停用本人或超级管理员");var u=users.findById(id).orElseThrow(()->new ResourceNotFoundException("账号不存在"));rbac.updateUser(id,new UpdateUserRequest(u.getDisplayName(),body.enabled()));s.audit(a,"ACCOUNT_STATE",Long.toString(id),"SUCCESS",id);}
     @DeleteMapping("/users/{id}") @Transactional public void delete(@RequestHeader("Authorization") String auth,@PathVariable long id){long a=admin(auth);s.requireUser(a,id);if(a==id||s.superAdmin(id))throw new ForbiddenException("不能删除本人或超级管理员");rbac.deleteUser(id);s.audit(a,"ACCOUNT_DELETE",Long.toString(id),"SUCCESS",id);}
+    // 授权必须同时覆盖“能管理这个人”和“能授予这个角色”；只检查操作者是管理员还不够。
     private void grantable(long actor,long user,long role){s.requireUser(actor,user);if(s.superAdmin(actor))return;if(s.count("select count(*) from managed_role r join employee_profile e on e.department_id=r.department_id where r.role_id=? and e.user_id=?",role,user)==0)throw new ForbiddenException("只能授予目标员工所属部门的受管角色");}
     @PutMapping("/users/{id}/roles/{role}") @Transactional public void grant(@RequestHeader("Authorization") String auth,@PathVariable long id,@PathVariable long role){long a=admin(auth);grantable(a,id,role);rbac.assignRole(id,role);s.audit(a,"ROLE_GRANT",id+":"+role,"SUCCESS",id);}
     @DeleteMapping("/users/{id}/roles/{role}") @Transactional public void revoke(@RequestHeader("Authorization") String auth,@PathVariable long id,@PathVariable long role){long a=admin(auth);grantable(a,id,role);rbac.removeRole(id,role);s.audit(a,"ROLE_REVOKE",id+":"+role,"SUCCESS",id);}

@@ -37,6 +37,8 @@ class InitialPasswordService {
 
     public Map<String,Object> pending(long actor,long department){scope(actor,department);return Map.of("departmentId",department,"pending",s.count("select count(*)"+WITHOUT_PASSWORD,department));}
 
+    // 按部门检查管理范围，批量生成密码、编码落库、标记首次必须改密，并仅在本次响应返回明文。
+    // 后续查询不返回密码；日志只记录数量。批次上限用于控制单次处理规模。
     @Transactional public Map<String,Object> issue(long actor,long department,int limit){
         scope(actor,department);
         var rows=s.rows("select u.id,ac.username,u.display_name"+WITHOUT_PASSWORD+" order by u.id limit ?",department,limit);

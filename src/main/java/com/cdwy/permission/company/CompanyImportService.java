@@ -10,6 +10,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/**
+ * 三表导入用例：预览只解析和校验，确认后才在一个 TransactionTemplate 事务中写入。
+ * 预览方案绑定管理员、文件指纹与有效期；进程内方案重启会丢失，不能视为持久化任务队列。
+ * 导入组织、岗位及功能目录不等于给员工授权；模板仍需管理员明确应用。
+ */
 @Service
 public class CompanyImportService {
     public record Department(String name,String parent,String manager) {}
@@ -28,6 +33,7 @@ public class CompanyImportService {
     private static final Map<String,String> ACTIONS=Map.of("查看","view","新增","create","编辑","edit","审批","approve","导出","export","查看本人","view_self","编辑本人","edit_self");
     private static final List<String> TEMPLATES=List.of("系统管理员","公司领导","部门经理","项目经理","普通员工");
 
+    // 先校验表头、组织树、人员关联和操作词，再展示错误/警告；此阶段没有业务数据落库。
     public synchronized Map<String,Object> preview(Long actor,byte[] departmentFile,byte[] employeeFile,byte[] permissionFile) {
         plans.values().removeIf(p->p.expires().isBefore(Instant.now()));
         if(plans.size()>=10) throw new IllegalArgumentException("预览任务已满，请稍后重试，或先完成已有导入");
@@ -103,9 +109,12 @@ public class CompanyImportService {
         var p=plans.get(id);
         if(p==null||!p.actor().equals(actor)||p.expires().isBefore(Instant.now())) throw new IllegalArgumentException("预览不存在、已过期或不属于当前管理员，请重新上传");
         if(!p.errors().isEmpty()||!acknowledged) throw new IllegalArgumentException("请先修复错误，并确认未确定权限不授予及保留已有数据的规则");
+    // 事务边界覆盖整批 insertPlan：运行时异常向外传播时整体回滚，不会留下半批组织和员工。
+    // 这是同步 HTTP 处理；浏览器断开不等于取消服务端事务。synchronized 也只在单个 JVM 内串行化。
         return tx.execute(status->importPlan(p));
     }
     private Map<String,Object> importPlan(Plan p) {
+    // 三份文件共同的 SHA-256 指纹用于重复识别；数据库唯一键兜底，字节变化会得到不同指纹。
         var old=jdbc.queryForList("select id from company_import_batch where fingerprint=?",p.fingerprint());
         if(!old.isEmpty()) return Map.of("reused",true,"message","相同三表已导入，不重复执行","fingerprint",p.fingerprint());
         Map<String,CompanyData.Department> departments=new HashMap<>();
@@ -129,6 +138,7 @@ public class CompanyImportService {
             var role=new Role("post_"+key(name),name,"导入岗位；权限需管理员配置");em.persist(role);
             var post=new CompanyData.Post();post.name=name;post.role=role;em.persist(post);posts.put(name,post);
         }
+    // JPA 与 JDBC 交替写入：先 flush 组织和岗位，使后续 SQL 能引用它们；最终提交仍在 tx.execute 结束时。
         em.flush();
         var users=new HashMap<String,Long>();
         jdbc.query("select external_id,local_id from hr_identity where kind='EMPLOYEE'",(org.springframework.jdbc.core.RowCallbackHandler)rs->users.put(rs.getString(1),rs.getLong(2)));
@@ -136,6 +146,8 @@ public class CompanyImportService {
         for(var e:p.employees()) if(!users.containsKey(e.username())) {
             var generated=naming.generate(e.name(),e.phone());
             var user=new UserAccount(generated.username(),e.name());
+    // 此 GitHub 版本保存未对外发放的随机占位凭据；initial_password_issued=false 表示尚待发放。
+    // 可交付给员工的初始密码由 InitialPasswordService 单独生成；不能把这里的哈希当成可下载密码。
             user.setPasswordHash(passwords.encode("Aa1!"+UUID.randomUUID()));em.persist(user);em.flush();
             jdbc.update("insert into hr_identity(kind,external_id,local_id) values('EMPLOYEE',?,?)",e.username(),user.getId());
             jdbc.update("insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',true,0,false,false)",user.getId());
@@ -189,6 +201,7 @@ public class CompanyImportService {
                 }
             }
         }
+    // 完成记录和业务数据同事务保存：批次记录可见意味着整批已提交；失败则两者一起回滚。
         var batch=new CompanyData.Batch();batch.actorId=p.actor();batch.fingerprint=p.fingerprint();batch.createdAt=Instant.now();batch.employees=p.employees().size();batch.departments=p.departments().size();batch.functions=p.features().size();em.persist(batch);em.flush();
         return Map.of("reused",false,"batchId",batch.id,"createdUsers",createdUsernames.size(),"createdPermissions",createdPermissions,"unresolvedManagers",unresolvedManagers,"message","导入成功；新员工无密码、无角色，已有账号状态及授权保持不变");
     }

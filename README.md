@@ -27,6 +27,10 @@
 
 一期采用 RBAC0，不包含角色继承和互斥。OA、HR 联调使用接口契约演示端，尚未接入外部业务产品；报销页面为权限校验示例。
 
+## 代码阅读
+
+[代码阅读与答辩索引](docs/code-reading-guide.adoc)串联架构职责、API 资源、对象关系、事务边界和关键调用链。各主要 Java 包的 `package-info.java` 及核心类中的中文注释提供就地阅读说明。
+
 ## 设计文档与检查材料
 
 [材料总目录（AsciiDoc）](docs/submission/README.adoc)

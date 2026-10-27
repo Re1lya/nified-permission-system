@@ -4,6 +4,12 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 /** Import-owned master data is separate from credentials and live grants. */
+/**
+ * 组织结构与授权结构分开建模：Department.parent 是组织树，不是角色继承。
+ * Post.role 一一对应岗位角色，但 Employee.post 本身不会产生 UserRole 授权。
+ * 功能目录按系统 → 模块 → 功能 → 操作展开，Template 是授权候选来源，不是生效授权。
+ * SQLRestriction 作用于 Hibernate 实体查询；直接 JdbcTemplate 查询仍须显式处理 deleted 条件。
+ */
 public final class CompanyData {
     private CompanyData() {}
     @MappedSuperclass public static class Row {

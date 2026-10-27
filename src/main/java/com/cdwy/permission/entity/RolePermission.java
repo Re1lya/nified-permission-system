@@ -10,6 +10,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * 角色—权限关联实体。联合唯一键防止重复授权，独立关联行便于精确授予或回收一个权限。
+ * 回收关联不等于删除权限定义；权限定义失效也可以保留历史关联。
+ */
 @Entity
 @Table(name = "sys_role_permission", uniqueConstraints = {
         @UniqueConstraint(name = "uk_sys_role_permission", columnNames = {"role_id", "permission_id"})

@@ -11,6 +11,11 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /** Deny ordinary users by default on API routes, including future management endpoints. */
+/**
+ * MVC 层统一守卫：限制初始密码未修改账号，并对未明确放开的管理 API 默认要求管理员。
+ * 被排除的 platform、integration、oidc 路径并不表示无需保护：它们分别校验目标范围、签名或 OIDC 令牌。
+ * 前端隐藏菜单只改善交互，真正授权必须在服务器完成。
+ */
 @Configuration
 public class ApiAccessConfig implements WebMvcConfigurer {
     private final JwtTokenService tokens;

@@ -1,0 +1,111 @@
+= 代码阅读与答辩索引
+:toc: left
+:toclevels: 2
+
+本索引用于沿当前 GitHub 源码解释设计：先说业务需求与资源，再展示调用链、事务边界和数据约束。它不代替需求、API 和数据库设计文档，也不表示已实现源码中没有的功能。
+
+== 快速打开源码
+
+* link:../src/main/java/com/cdwy/permission/package-info.java[整体架构与包职责]
+* link:../src/main/java/com/cdwy/permission/controller/UserController.java[用户与授权 API]、link:../src/main/java/com/cdwy/permission/service/RbacService.java[核心业务与有效权限]
+* link:../src/main/java/com/cdwy/permission/entity/UserAccount.java[账号跨表映射]、link:../src/main/java/com/cdwy/permission/entity/UserRole.java[用户角色关联]、link:../src/main/java/com/cdwy/permission/repository/UserAccountRepository.java[查询与悲观锁]
+* link:../src/main/java/com/cdwy/permission/platform/PlatformStore.java[事务、审计与部门范围]、link:../src/main/java/com/cdwy/permission/service/JwtTokenService.java[令牌与会话]
+* link:../src/main/java/com/cdwy/permission/company/CompanyImportService.java[导入预览与整批事务]、link:../src/main/java/com/cdwy/permission/platform/IntegrationController.java[集成验签、幂等与调岗]
+* link:../src/main/java/com/cdwy/permission/platform/OidcConfig.java[OIDC 安全链]、link:../src/main/resources/application-prod.yml[生产数据库连接配置]
+
+== 先说明架构，再找具体代码
+
+系统是一个 Spring Boot 单体应用，Vue 前端通过 HTTP API 访问。可以按表现、业务、持久化三类职责说明，数据库是基础设施；Java 包数量不等于架构层数。
+
+[cols="1,2,3",options="header"]
+|===
+|职责 |代码位置 |说明重点
+|页面与请求 |`frontend/src/App.vue`、`CompletionPanel.vue` |前端收集输入、选择接口、展示结果；菜单可见性不是后端授权。
+|HTTP 适配 |`controller`、`company.CompanyController` |路径与 HTTP 方法定位资源，DTO 和 `@Valid` 限定输入输出，异常处理器转换状态码。
+|业务用例 |`service.RbacService`、`JwtTokenService`、`company.CompanyImportService` |组合多个对象完成账号、授权、登录和导入规则；事务通常围绕完整用例设置。
+|持久化 |`repository`、`EntityManager`、`platform.PlatformStore` |核心实体走 JPA，扩展表和范围查询常用 JdbcTemplate；连接到同一个配置的数据源。
+|横切机制 |`config.ApiAccessConfig`、`platform.OidcConfig` |认证、管理范围、协议端点和审计。需结合具体路径查看安全链。
+|===
+
+实际边界：`platform` 中有控制器直接调用 SQL，也有一个文件同时包含 Controller 与包内 Service。不能说每个请求都经过独立的三层类，或已经按微服务拆分。实体主要保存状态与关系，主要业务规则位于服务和平台用例代码。
+
+每个主要包的 `package-info.java` 提供职责说明；可以先打开根包的 `package-info.java`，再进入对应类。
+
+== 六条优先阅读的调用链
+
+=== 1. API 为什么存在：给用户分配角色
+
+* 业务需求：人员任职变化时调整授权，不要求逐个修改功能权限点。
+* 资源：用户—角色关联。`PUT /api/users/{userId}/roles/{roleId}` 创建该关系，`DELETE` 回收；这里不是编辑角色定义。
+* 代码：`UserController.assignRole` → `RbacService.assignRole` → `UserRoleRepository` → `sys_user_role`。
+* 管理门户实际走带范围校验的 `PUT /api/platform/users/{id}/roles/{role}`：`PlatformController.grant` → `grantable` → 同一个 `RbacService.assignRole`。
+* 校验理由：部门管理员既要能管理目标员工，也要能授予目标部门的受管角色。只判断“是管理员”不够。
+* 数据一致性：关联写入与 `account_policy.version` 自增同事务提交。重复授权通过存在性检查避免重复写，联合唯一约束负责数据库兜底；并发冲突不等于每个请求都一定返回成功。
+
+=== 2. 数据库为什么这么设计：RBAC0 与组织模型
+
+先看 `entity.UserRole`、`RolePermission` 和 `company.CompanyData`，再对照数据库文档。
+
+* `sys_user_role` 和 `sys_role_permission` 是显式关联实体，实现两组多对多；不把角色或权限用逗号拼成用户表中的字符串。
+* `UserAccount` 用 `@SecondaryTable` 跨 `sys_user` 与 `sys_account` 映射，人员状态与登录凭据分表，共享账号主键。Java 类与数据库表不是机械的一对一。
+* `employee_profile` 保存组织岗位关系。`sys_post` 对应一个角色，但员工属于某岗位不会自动生成 `sys_user_role`。
+* 部门 `parent_id` 构成组织树；本系统没有角色继承。不要把部门上下级解释成 RBAC1。
+* 系统、模块、功能和操作用于组织权限目录；权限模板只是候选授权配置，不会自动给员工权限。
+* 前置业务校验给出可理解错误；唯一键、外键和非空约束限制最终持久化状态。两者不能互相取代。
+
+=== 3. 数据怎么查出来：计算有效权限
+
+从 `RbacService.effectivePermissions` 开始：用户启用 → 用户角色 → 启用角色 → 角色权限 → 有效权限且业务系统启用 → 按 code 去重。
+
+多个角色的有效权限取并集；没有直接给用户授权、角色继承或互斥角色的计算分支。`UserResponse` 等 DTO 控制返回字段，密码哈希不在普通用户响应中。
+
+当前实现逐角色查询关联，不能声称已优化成单条 SQL 或完全避免 N+1 类问题。`PermissionRepository.findVisibleBySystemId` 的 `join fetch` 是另一个具体目录查询的优化，并不自动覆盖所有查询。
+
+=== 4. 谁在控制事务：授权、调岗与失败回滚
+
+[cols="2,2,3",options="header"]
+|入口 |边界 |保证与限制
+|`RbacService` 写方法 |`@Transactional`，默认 REQUIRED |没有外层事务时开启，有外层时加入。业务异常向外传播，事务代理按规则回滚。
+|`CompanyImportService.commit` |`TransactionTemplate.execute` |组织、岗位、员工、目录和成功批次记录整批提交或回滚；预览不写业务表。
+|`IntegrationService.accept` |签名校验后进入 `tx.execute` |调岗回收旧授权、写新组织岗位和新授权，以及成功事件记录处于同一事务。
+|`PlatformStore.auditDepartment` |显式 REQUIRES_NEW 模板 |独立审计可在外层失败后保留；其 SUCCESS 不能单独证明外层最终提交。
+|`PlatformStore.loginResult` |`@Transactional(REQUIRES_NEW)` |登录失败后外层会抛异常，失败计数仍需提交，否则锁定次数无法累积。
+|===
+
+常见追问的回答依据：
+
+* `flush` 把 JPA 待执行 SQL 发给数据库，使后续 JDBC 可以引用；它不提交事务，之后仍能回滚。
+* `save` 不应解释为“整笔事务已经提交”。采用 IDENTITY 时获取主键可能先执行 INSERT，提交边界仍由事务决定。
+* JPA 与 JdbcTemplate 在同一数据源、同一 Spring 事务管理下可以共同提交；若换成独立连接或其他数据源，不能自动套用此结论。
+* 同类方法自调用不会再经过 Spring 事务代理。没有方法级注解也可能已经位于调用方事务内，例如 `HrSynchronization` 的包内方法。
+* 默认回滚覆盖运行时异常和 Error；受检异常并非一律自动回滚。不要说“任何异常都一定回滚”。
+* `readOnly=true` 是事务只读设置，不是 HTTP GET 的同义词。`requirePermission` 校验令牌时还更新活动时间，因此使用可写事务。
+* `synchronized` 只约束当前 JVM；多实例并发不能靠它保证。账号行锁、唯一约束、幂等键各解决不同问题，不能笼统叫“防并发”。
+
+=== 5. 为什么有 JWT 还查数据库
+
+从 `RbacService.login` → `JwtTokenService.issue` → `requireUserId` → `PlatformStore.changed` 阅读。
+
+签名证明令牌未被篡改，数据库检查账号状态、会话是否撤销、权限版本和闲置时间。授权变化后版本递增，旧令牌在下一次校验时被拒绝；刷新流程还必须确认原会话存在、账号可用且未超过闲置窗口。
+
+`UserAccountRepository` 的悲观写锁协调账号关键写路径。它锁定选中的账号行，不是锁住全部用户，也不解决所有跨表并发问题。
+
+认证得到“是谁”，授权决定“能对哪个对象做什么”。超级管理员和部门管理员由明确标识与部门绑定决定，不由岗位名字决定。前端 capability 用于界面展示，后端仍须检查范围。
+
+=== 6. 三表导入和外部系统为什么要单独设计
+
+`CompanyImportService.preview` 校验表头、部门树、人员关联和操作词；`commit` 检查预览归属、有效期、错误与警告确认，再进入事务。三份文件共同的指纹识别重复提交，文件字节变化会改变指纹；预览保存在内存，重启后需重新预览。它是同步导入接口，关闭浏览器不等于取消后台事务。
+
+本 GitHub 版本的导入代码仍生成未发放的随机占位凭据，实际供员工使用的初始密码由 `InitialPasswordService` 单独生成并只返回一次。不要把“尚未发放密码”与“数据库中必然没有哈希”混为一谈。线上批量导入优化与弹窗修复未包含在本次注释变更中；讲具体实现时应先确认所展示的版本。
+
+`IntegrationService.accept` 用 HMAC 和时间窗口认证 HR/OA 调用，再以 `source + request_id + digest` 区分重试与冲突。成功事件和业务一起提交，失败记录在业务回滚后另行保存。`HrSynchronization` 使用稳定外部编号，避免同名人员误关联；对账发现缺失不会自动删除本地账号。
+
+`OidcConfig` 复用框架实现 OIDC 授权服务器；`SsoController` 负责门户身份桥接和业务应用的权限查询。平台 JWT、OIDC 令牌与浏览器 HTTP Session 是不同机制。`ApplicationProtocol` 是协议能力扩展边界，当前只描述 OIDC 和 LEGACY，不代表实现了其他 SSO 协议。
+
+== 被随机点到一段代码时
+
+按“入口参数 → 身份与范围 → 业务规则 → 数据访问 → 事务结束 → 响应/异常”解释，不必逐行翻译语法。
+
+遇到数据库连接问题，打开 `src/main/resources/application-prod.yml`：Spring Boot 根据环境变量创建 DataSource，JPA 与 JdbcTemplate 使用该数据源；Hibernate 根据实体映射生成 SQL，JDBC 模板直接执行参数化 SQL。`ddl-auto=validate` 校验映射，结构升级通过仓库的迁移 SQL 完成。
+
+遇到设计方法问题，用代码证明：DTO 分离请求与持久化对象；关联实体表达多对多；构造器注入分离依赖创建；协议接口表达可扩展能力；事务表达业务原子性。不要把所有接口都叫策略模式，或把 `PlatformStore` 说成完全无业务的持久层。

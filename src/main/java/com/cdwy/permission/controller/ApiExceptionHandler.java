@@ -12,6 +12,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * 统一错误出口：参数不合法 400、身份无效 401、权限不足 403、资源不存在 404、冲突 409。
+ * 事务代理先对抛出的业务异常执行回滚，再由这里转换 HTTP 响应；返回错误本身不是回滚机制。
+ */
 @RestControllerAdvice
 public class ApiExceptionHandler {
 

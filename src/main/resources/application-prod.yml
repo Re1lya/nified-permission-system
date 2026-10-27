@@ -1,3 +1,5 @@
+# 数据库连接由环境变量提供给 Spring Boot 创建的 DataSource，JPA 与 JdbcTemplate 复用该数据源。
+# ddl-auto=validate 只校验映射，不执行生产结构升级；结构变化由版本化迁移 SQL 完成。
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: ${SERVER_PORT:8080}
