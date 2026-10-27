@@ -1,32 +1,42 @@
-# 统一权限管理系统一期设计与实现
+# 一期设计与阶段资料
 
-> 2026-10-26 当前提交入口：[AsciiDoc 材料](../submission/README.adoc)及[最新 JaCoCo 说明](../submission/06-jacoco.adoc)。本页四份 Word 保留 2026-10-22 快照。
+本目录保存需求基线、2026-10-22 的 Word 设计快照、接口契约、数据库结构及阶段验证记录。当前检查文档、测试报告和部署状态统一见 [AsciiDoc 材料目录](../submission/README.adoc)。
 
-当前修订以 `需求分析基线-V1.0.md` 为准。功能与实现边界见 `requirements.md`，接口见 `api-design.md`，数据库新建脚本见 `database-mysql-phase-one.sql`，旧版升级脚本见 `../migrations/20261022-phase-one-completion.sql`。
+## 设计文件
 
-前次完成 Java 编译打包、前端类型检查与构建、离线元数据导出和 Word 渲染，记录为 `completion-verification.json`。本次进一步完成真实 MySQL 建库、隔离旧结构升级和云端接口联调，详见 [部署联调说明](cloud-deployment.md) 与 `cloud-verification.json`。上述 2026-10-22 联调未运行项目测试套件。2026-10-26 已运行当前源码完整 Maven 测试（43 通过、1 跳过），见最新报告；未进行性能测试。
+| 文件 | 内容与版本 |
+| --- | --- |
+| [需求分析基线 V1.0](需求分析基线-V1.0.md) | 原始需求、业务规则及用例 |
+| [需求分析与实现说明](01-需求分析文档.docx) | 2026-10-22 Word 设计快照 |
+| [界面原型](02-界面原型文档.docx) | 页面范围及交互设计 |
+| [API 设计](03-API设计文档.docx) | 业务接口与集成契约 |
+| [数据库设计](04-数据库设计文档.docx) | 数据模型、字段和约束 |
+| [需求说明源文件](requirements.md) | AsciiDoc 生成使用的阶段设计资料 |
+| [API 说明源文件](api-design.md) | AsciiDoc 生成使用的接口说明 |
 
-`verification.json`、`mysql-verification.json`、`http-verification.json`、Apifox 运行报告和旧截图仅为提交 `01b94f06` 及之前版本的历史证据，不能代表本修订已通过测试。实际通过的本轮联调项目单独列在 `cloud-verification.json`，未列项目不能视为已验收。
+## 接口与数据库
 
-当前课程检查使用 [HTTP 门户](http://120.46.213.158/ui/index.html)，无需处理证书。切换说明见 [http-access.md](http-access.md)，增量验证见 `http-access-verification.json`；与旧版 `http-verification.json` 区分。
+- [OpenAPI 1.4.1](apifox/openapi.json)：98 个业务控制器操作、25 个数据模型；[Apifox 同步记录](apifox/project.json)记录 2026-10-22 的同步状态。
+- [MySQL 完整建表脚本](database-mysql-phase-one.sql)：适用于空数据库，共 38 张表。
+- [数据库升级脚本](../migrations/20261022-phase-one-completion.sql)：适用于提交 `01b94f06` 的二十五表结构。执行前需要检查前提条件、停止写入并备份。
+- [HTTP 访问说明](http-access.md)：课程演示入口及相关配置。
 
-## 构建
+## 验证记录索引
 
-先安装 third-party/clonefactory，再在仓库根目录运行 `mvn -Dmaven.test.skip=true package`；前端先运行 `npm ci` 和 `npm run build`，再打包 Java 以包含最新静态资源。使用 Java 21。
+| 日期或版本 | 记录 | 验证范围 |
+| --- | --- | --- |
+| `01b94f06` 及更早版本 | `verification.json`、`mysql-verification.json`、`http-verification.json` | 早期一期实现的验证 |
+| 2026-10-22 | [编译与文档记录](completion-verification.json) | 后端编译、前端构建及文档导出 |
+| 2026-10-22 | [云端联调记录](cloud-verification.json) | MySQL 建库、隔离旧结构升级及接口契约联调 |
+| 2026-10-22 | [HTTP 切换记录](http-access-verification.json) | 入口、Cookie、OIDC 回调和会话持久化 |
+| 2026-10-22 | [目录修复记录](catalog-verification.json) | 功能权限目录的 MySQL 查询与响应 |
+| 2026-10-26 | [JaCoCo 与测试说明](../submission/06-jacoco.adoc) | 当前源码自动测试：43 通过、1 跳过 |
+| 2026-10-26 | [部署与验证记录](../submission/07-deployment.adoc) | 修复版本部署及 48 项在线检查 |
 
-生产配置使用 prod。需先创建全部表或执行一次升级脚本，配置数据库凭证、平台 JWT 密钥和公开 OIDC issuer。HR、OA 使用不同的环境变量密钥 PERMISSION_HR_SECRET 和 PERMISSION_OA_SECRET。默认不注册本地演示客户端；phase-one 配置显式开启本地演示客户端，但这些客户端不是已验收的企业应用。
+各记录按其日期、提交号和验证范围解释。OA/HR 联调采用接口契约演示端。
 
-## 文档再生成
+## 文档维护
 
-`scripts/ExportSchema.java` 与 `scripts/ExportApi.java` 只读取编译后的类型及注解，不启动服务、不连接数据库。先生成当前结构和路由，再运行 `scripts/build-current-schema.py`、`scripts/build-current-contracts.py`、`scripts/build-phase-one-documents.py`。文档生成不依赖测试产物，也不会覆盖旧版验收报告。
+`ExportSchema.java` 与 `ExportApi.java` 从编译后的实体及控制器提取结构和接口信息；相关生成脚本位于 `scripts`。当前 AsciiDoc 文档由 `scripts/build-submission-docs.py` 生成，测试证据由 `scripts/export-evidence.py` 在完整测试成功后导出。
 
-旧库升级前需先排查独立角色的重名岗位映射；升级脚本中的所有预检都应在第一条 DDL 之前完成。迁移仅适用于旧提交 `01b94f06` 的结构，不应盲目用于其他版本。
-
-## 当前设计文件
-
-- [需求分析与实现](01-需求分析文档.docx)
-- [界面原型](02-界面原型文档.docx)
-- [API 设计](03-API设计文档.docx)
-- [数据库设计](04-数据库设计文档.docx)
-
-OpenAPI 含 98 个业务控制器操作，已移除平台直接创建 OA 申请的旧 POST，保留 GET 本人状态查询。2026-10-22 已完成 Apifox 云端同步：98 个接口、25 个数据模型、OpenAPI 1.4.1，并创建和选中 HTTP 检查环境；刷新后核对通过，记录见 `apifox/project.json`。该次 Apifox 同步未执行测试场景。
+Word 文件作为阶段快照保留。更新文档时应同步修改生成脚本或源文件，并检查链接、表格及渲染结果。

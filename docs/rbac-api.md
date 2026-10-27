@@ -1,5 +1,7 @@
 # API 与验收说明
 
+> 历史接口说明：适用于 2026-10-21 初版。当前接口见 [API 设计](submission/04-api-design.adoc)及 [OpenAPI 契约](phase-one/apifox/openapi.json)。
+
 启动方式见 [本地启动](first-check/local-run.md)。以下示例中的密码仅表示请求格式，运行时换成自己的临时演示密码。
 
 ## 访问边界（2026-10-21 更新）

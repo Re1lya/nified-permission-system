@@ -9,7 +9,7 @@
 
 小组成员：温家正、姚景云、杜奕含、陈浩贤。
 
-更新日期：2026-10-26。依据当前一期实现；历史记录均保留其原日期。
+文档整理日期：2026-10-27。测试及部署日期以相应记录为准。
 
 接口清单为 98 个业务控制器操作。OIDC 协议端点由 Spring Authorization Server 提供，不与业务控制器计数混淆。
 
@@ -113,11 +113,11 @@ GET /api/platform/audit/search 接收 from、until、actorId、kind、archived�
 
 == 协议适配能力
 
-ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGACY 只提供隔离入口。OAuth2 独立场景、SAML、CAS、LDAP 仅保留扩展边界，不能标为已经实现。应用接入验收必须包含正向登录、错误回调、无权限、撤权后拒绝及隔离检查。
+ApplicationProtocol 表示协议能力，OIDC 是一期唯一 SSO 实现；LEGACY 只提供隔离入口。OAuth2 独立场景、SAML、CAS、LDAP 为后续扩展项，尚未实现。应用接入验收必须包含正向登录、错误回调、无权限、撤权后拒绝及隔离检查。
 
 == 控制器路由清单
 
-以下清单由当前编译类离线导出。接口存在和编译通过不等于运行场景验收通过。
+以下清单由当前编译类离线导出。接口运行验证另见测试及部署记录。
 
 [cols="1,1,1",options="header"]
 |===

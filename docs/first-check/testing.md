@@ -1,5 +1,7 @@
 # 测试结果与验证边界
 
+> 历史资料：适用于 2026-10-21 初版。当前文档见 [课程检查材料目录](../submission/README.adoc)。
+
 运行日期：2026-10-21（Asia/Shanghai）。本机 Windows、Microsoft OpenJDK 21.0.12、Maven 3.9.14、H2。测试和 HTTP 演示均在本地，不使用已有服务器服务。
 
 ## 构建与测试
