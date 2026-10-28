@@ -1,18 +1,18 @@
 {
-  "exportedAt": "2026-10-28T01:09:37.400637+08:00",
-  "baseCommit": "4b992c3ccca145dfae3abe027e0ff0deee149b27",
+  "exportedAt": "2026-10-28T10:28:53.725918+08:00",
+  "baseCommit": "a76748a4d9af658f10e3696e6848a9b4df5cd863",
   "sourceIdentity": "Source files are identified by sourceSha256; baseCommit is the checkout baseline before report publication, not necessarily the final submission commit.",
   "workingTreeChangesIncluded": true,
   "branch": "codex/sync-current-design-20261028",
-  "command": "mvn clean verify",
+  "command": "COMPANY_WORKBOOK_DIR=<external-workbooks> mvn -B clean verify",
   "suites": [
     {
       "name": "com.cdwy.permission.ActualWorkbookImportTests",
       "tests": "1",
       "failures": "0",
       "errors": "0",
-      "skipped": "1",
-      "time": "0.0"
+      "skipped": "0",
+      "time": "1.393"
     },
     {
       "name": "com.cdwy.permission.AdminAccessIntegrationTests",
@@ -20,7 +20,15 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "1.865"
+      "time": "1.968"
+    },
+    {
+      "name": "com.cdwy.permission.ApplicationWorkflowIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "6.05"
     },
     {
       "name": "com.cdwy.permission.AuthenticationHttpIntegrationTests",
@@ -28,7 +36,15 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "8.374"
+      "time": "8.481"
+    },
+    {
+      "name": "com.cdwy.permission.CompanyHttpWorkflowIntegrationTests",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.531"
     },
     {
       "name": "com.cdwy.permission.CompanyImportIntegrationTests",
@@ -36,7 +52,15 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "1.222"
+      "time": "0.728"
+    },
+    {
+      "name": "com.cdwy.permission.HrApprovalWorkflowIntegrationTests",
+      "tests": "18",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "5.171"
     },
     {
       "name": "com.cdwy.permission.NifiedPermissionSystemApplicationTests",
@@ -47,12 +71,44 @@
       "time": "0.003"
     },
     {
+      "name": "com.cdwy.permission.OidcAuthorizationWorkflowIntegrationTests",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.796"
+    },
+    {
+      "name": "com.cdwy.permission.OrganizationAuditWorkflowIntegrationTests",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "6.004"
+    },
+    {
       "name": "com.cdwy.permission.PhaseOneIntegrationTests",
       "tests": "18",
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "10.536"
+      "time": "10.273"
+    },
+    {
+      "name": "com.cdwy.permission.PlatformManagementWorkflowIntegrationTests",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.96"
+    },
+    {
+      "name": "com.cdwy.permission.RbacLifecycleWorkflowIntegrationTests",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.934"
     },
     {
       "name": "com.cdwy.permission.RbacServiceIntegrationTests",
@@ -60,39 +116,79 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "0.37"
+      "time": "0.681"
+    },
+    {
+      "name": "com.cdwy.permission.RepresentationSecurityTests",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.018"
+    },
+    {
+      "name": "com.cdwy.permission.SsoValidationTests",
+      "tests": "22",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.459"
+    },
+    {
+      "name": "com.cdwy.permission.XlsxBoundaryTests",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.02"
+    },
+    {
+      "name": "com.cdwy.permission.platform.AuditRetentionWorkflowIntegrationTests",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.58"
+    },
+    {
+      "name": "com.cdwy.permission.platform.OidcConfigurationTests",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.386"
     }
   ],
   "coverage": {
     "INSTRUCTION": {
-      "covered": 8825,
-      "missed": 6692,
-      "percentage": 56.87
+      "covered": 14760,
+      "missed": 757,
+      "percentage": 95.12
     },
     "BRANCH": {
-      "covered": 472,
-      "missed": 774,
-      "percentage": 37.88
+      "covered": 1065,
+      "missed": 181,
+      "percentage": 85.47
     },
     "LINE": {
-      "covered": 1195,
-      "missed": 441,
-      "percentage": 73.04
+      "covered": 1534,
+      "missed": 102,
+      "percentage": 93.77
     },
     "COMPLEXITY": {
-      "covered": 586,
-      "missed": 669,
-      "percentage": 46.69
+      "covered": 1019,
+      "missed": 236,
+      "percentage": 81.2
     },
     "METHOD": {
-      "covered": 450,
-      "missed": 178,
-      "percentage": 71.66
+      "covered": 568,
+      "missed": 60,
+      "percentage": 90.45
     },
     "CLASS": {
-      "covered": 111,
-      "missed": 24,
-      "percentage": 82.22
+      "covered": 127,
+      "missed": 8,
+      "percentage": 94.07
     }
   },
   "sourceSha256": {
@@ -204,16 +300,34 @@
     "src/main/resources/static/ui/index.html": "9b93e89c097b946b897649f39cc4c34eba1f7b6387db042d4587f393d082e3ae",
     "src/test/java/com/cdwy/permission/ActualWorkbookImportTests.java": "1f087b77f7dcda433d2aeaacd55a4306de46c96630f5e2266862183c51ec401c",
     "src/test/java/com/cdwy/permission/AdminAccessIntegrationTests.java": "63ef489a2b0ca967679d880acbc5e3ee39853a50c4cb628c14c82a616f425019",
+    "src/test/java/com/cdwy/permission/ApplicationWorkflowIntegrationTests.java": "016695c4d3d7bed2027d8719d4014071ccde0819991ada0b81e03ebf4d229fec",
     "src/test/java/com/cdwy/permission/AuthenticationHttpIntegrationTests.java": "3f6721718b7532107fabefcacbf01e6cd8e19954d67d3c47a532d6689a1b1c21",
+    "src/test/java/com/cdwy/permission/CompanyHttpWorkflowIntegrationTests.java": "c1106111c484a1e82acc77490947be41884a601ff69d9b49f7019d4e6b9ab1e7",
     "src/test/java/com/cdwy/permission/CompanyImportIntegrationTests.java": "0a4c23a9cef7d3be6799465ca44d4efe693c5f13e14c3943c1ef5a53c9f6eea5",
+    "src/test/java/com/cdwy/permission/HrApprovalWorkflowIntegrationTests.java": "e2d5ff86176502a2dfbad135a13877082d33de3721b682f3ba8e85505e8806b0",
     "src/test/java/com/cdwy/permission/NifiedPermissionSystemApplicationTests.java": "5a8087d843a5ca464d0bafda8d6acd30d5002714fc1bcea316f14755d3e1b4c3",
+    "src/test/java/com/cdwy/permission/OidcAuthorizationWorkflowIntegrationTests.java": "9c06db0005859844d0bc13c6c106cba5fe59fd04f5b86360d8f8bc052bade321",
+    "src/test/java/com/cdwy/permission/OrganizationAuditWorkflowIntegrationTests.java": "ae92d81850fc6111848293c2fb9d9864f14b124b3c1e3785efee6a8425acd371",
     "src/test/java/com/cdwy/permission/PhaseOneIntegrationTests.java": "3b163c710d1f7134d2c4a4825b400278a8a8e64dc1b705abe8ccd34c45a56639",
+    "src/test/java/com/cdwy/permission/PlatformManagementWorkflowIntegrationTests.java": "153b456a087c2916f039101bf6fd155a083862fb8dd0d0edbe08770554532048",
+    "src/test/java/com/cdwy/permission/RbacLifecycleWorkflowIntegrationTests.java": "3351c853487293cb2d5e06cc281c557ee32b2cce03d23a7f31ce46d8c0006a98",
     "src/test/java/com/cdwy/permission/RbacServiceIntegrationTests.java": "165b3a67706c7aa41ea17bed0bdd33cea14b52cfd4bc3a3c24a8869a9ff5d756",
+    "src/test/java/com/cdwy/permission/RepresentationSecurityTests.java": "de487f35321faeb9d8394d26314d9c90fd2cadcf9f2dfa160fd0f644890f481e",
+    "src/test/java/com/cdwy/permission/SsoValidationTests.java": "ccab6ef8ef3f2d2cf9bb9aefd297d74ecb88a8721edc357ec125d8bee4e13753",
+    "src/test/java/com/cdwy/permission/WorkflowTestSupport.java": "1add4a4825df9234c2b4aba23a8b2b866bb35b752d32f973bede239dd03f0907",
+    "src/test/java/com/cdwy/permission/XlsxBoundaryTests.java": "50fc353981fa188578ea48550c002aac24c109dd22a90d3e28447d7e731bdbda",
+    "src/test/java/com/cdwy/permission/platform/AuditRetentionWorkflowIntegrationTests.java": "dfcf53e28aba7a0e83f961e30019ba725ab60b812da5c1f40e2d27b492de2c6b",
+    "src/test/java/com/cdwy/permission/platform/OidcConfigurationTests.java": "182834ec4b9018de762accde89d566cb9a36e163a97e0a138805a6e42805824f",
     "third-party/clonefactory/pom.xml": "d528dba36b890de0727150498000339b25f4694b3e4c46d52267af25f4731ad1",
     "third-party/clonefactory/src/main/java/cn/edu/xmu/clonefactory/CopyFrom.java": "ff7fb05f31a9122124ef0b298864ac3d2d497961f15a9f5684c5994632bc2284",
     "third-party/clonefactory/src/main/java/cn/edu/xmu/clonefactory/CopyNotNullFrom.java": "96354e72c76d9475e39f651365f2da410aab6260092e349f46010cf61631f13a",
     "third-party/clonefactory/src/main/java/cn/edu/xmu/clonefactory/CopyNotNullTo.java": "1f5a363623d3d60584a844a54c9ad7baa6dea804fd681926c3e18491ccdc4cda",
     "third-party/clonefactory/src/main/java/cn/edu/xmu/clonefactory/CopyProcessor.java": "b99de31022edc73434a899dff814b86b80140b5e93b8b0d8a695fe95eb6df84e",
     "third-party/clonefactory/src/main/java/cn/edu/xmu/clonefactory/CopyTo.java": "0020ae9f3df0a3e9d1c532a7ccf920ea95b01c9b2d1e449754843d41f7de1526"
+  },
+  "externalWorkbooksSha256": {
+    "市政公司部门信息表.xlsx": "555ae8cb1a1569dda43cf53c47ee37f4ba4e8964f334ec8f2e1ef73699686c40",
+    "市政公司员工信息表.xlsx": "66657800a5e2e252c9d1dedfee2dbd54b694e3a5912166c2bac79c8703b20516",
+    "市政公司应用软件功能权限清单(1).xlsx": "13c18de30710cc2867588aa99843c6c388c0a8ee85029f3420f7b4c4c9fad655"
   }
 }

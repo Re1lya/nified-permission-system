@@ -37,7 +37,7 @@ public class PlatformStore {
     // 既检查操作者身份，也检查目标员工范围，防止部门管理员替换 URL 中的 id 越权管理。
     public void requireUser(long actor,long target){
 <span class="fc bfc" id="L39" title="All 2 branches covered.">        if(superAdmin(actor))return;</span>
-<span class="pc bpc" id="L40" title="2 of 4 branches missed.">        if(superAdmin(target)||departmentAdmin(target))throw new ForbiddenException(&quot;部门管理员不能维护管理员账号&quot;);</span>
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">        if(superAdmin(target)||departmentAdmin(target))throw new ForbiddenException(&quot;部门管理员不能维护管理员账号&quot;);</span>
 <span class="fc bfc" id="L41" title="All 2 branches covered.">        if(count(&quot;select count(*) from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=? and e.user_id=?&quot;,actor,target)==0)throw new ForbiddenException(&quot;只能管理绑定部门的员工&quot;);</span>
 <span class="fc" id="L42">    }</span>
 <span class="fc" id="L43">    public void audit(Long actor,String kind,String target,String result){audit(actor,kind,target,result,null);}</span>
@@ -54,7 +54,7 @@ public class PlatformStore {
 <span class="fc" id="L54">    }</span>
 <span class="fc bfc" id="L55" title="All 2 branches covered.">    private Long departmentOf(Long user){return user==null?null:rows(&quot;select department_id from employee_profile where user_id=?&quot;,user).stream().map(r-&gt;((Number)r.get(&quot;department_id&quot;)).longValue()).findFirst().orElse(null);}</span>
     /** SQL condition limiting rows whose user_id column belongs to the actor's bound departments; empty for super admins. */
-<span class="pc bpc" id="L57" title="1 of 2 branches missed.">    public String managedUsers(long actor,String column){return superAdmin(actor)?&quot;&quot;:&quot; and &quot;+column+&quot; in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=&quot;+actor+&quot;)&quot;;}</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">    public String managedUsers(long actor,String column){return superAdmin(actor)?&quot;&quot;:&quot; and &quot;+column+&quot; in(select e.user_id from employee_profile e join admin_department a on a.department_id=e.department_id where a.user_id=&quot;+actor+&quot;)&quot;;}</span>
 <span class="fc" id="L58">    public long version(long user){return rows(&quot;select version from account_policy where user_id=?&quot;,user).stream().mapToLong(r-&gt;((Number)r.get(&quot;version&quot;)).longValue()).findFirst().orElse(0);}</span>
     // A plain count + insert: H2 reuses the result of a repeated INSERT ... SELECT ... WHERE NOT EXISTS within one transaction.
 <span class="fc bfc" id="L60" title="All 2 branches covered.">    @Transactional public void ensurePolicy(long user){if(count(&quot;select count(*) from account_policy where user_id=?&quot;,user)==0)db.update(&quot;insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',false,0,false,false)&quot;,user);}</span>

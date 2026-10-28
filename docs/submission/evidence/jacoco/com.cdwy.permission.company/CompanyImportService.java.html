@@ -59,7 +59,7 @@ public class CompanyImportService {
 <span class="fc" id="L59">        }</span>
 <span class="fc bfc" id="L60" title="All 2 branches covered.">        for(var r:es.subList(1,es.size())) {</span>
 <span class="fc" id="L61">            String dep=r.get(&quot;D&quot;);</span>
-<span class="pc bpc" id="L62" title="3 of 4 branches missed.">            if(!r.get(&quot;C&quot;).equals(&quot;总公司&quot;)&amp;&amp;!dep.equals(r.get(&quot;C&quot;))) dep=r.get(&quot;C&quot;)+&quot;-&quot;+dep;</span>
+<span class="fc bfc" id="L62" title="All 4 branches covered.">            if(!r.get(&quot;C&quot;).equals(&quot;总公司&quot;)&amp;&amp;!dep.equals(r.get(&quot;C&quot;))) dep=r.get(&quot;C&quot;)+&quot;-&quot;+dep;</span>
 <span class="fc bfc" id="L63" title="All 2 branches covered.">            if(!names.contains(dep)) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;分公司与部门不能匹配组织表&quot;));</span>
 <span class="pc bpc" id="L64" title="2 of 4 branches missed.">            if(!r.get(&quot;B&quot;).matches(&quot;[A-Za-z0-9_-]{1,64}&quot;)||!usernames.add(r.get(&quot;B&quot;))) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;用户名不合法或重复&quot;));</span>
 <span class="pc bpc" id="L65" title="1 of 2 branches missed.">            if(!r.get(&quot;F&quot;).matches(&quot;[0-9+ -]{6,32}&quot;)) errors.add(new Issue(&quot;员工&quot;,r.number(),&quot;电话号码格式不合法&quot;));</span>
@@ -69,19 +69,19 @@ public class CompanyImportService {
 <span class="fc" id="L69">        }</span>
 <span class="fc" id="L70">        String system=&quot;&quot;,module=&quot;&quot;; var featureKeys=new HashSet&lt;String&gt;();</span>
 <span class="fc bfc" id="L71" title="All 2 branches covered.">        for(var r:fs.subList(2,fs.size())) {</span>
-<span class="pc bpc" id="L72" title="1 of 2 branches missed.">            if(!r.get(&quot;A&quot;).isEmpty()){system=r.get(&quot;A&quot;);module=&quot;&quot;;}</span>
-<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if(!r.get(&quot;B&quot;).isEmpty()) module=r.get(&quot;B&quot;);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if(!r.get(&quot;A&quot;).isEmpty()){system=r.get(&quot;A&quot;);module=&quot;&quot;;}</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if(!r.get(&quot;B&quot;).isEmpty()) module=r.get(&quot;B&quot;);</span>
 <span class="pc bpc" id="L74" title="4 of 8 branches missed.">            if(system.isEmpty()||module.isEmpty()||r.get(&quot;C&quot;).isEmpty()||!featureKeys.add(system+&quot;/&quot;+module+&quot;/&quot;+r.get(&quot;C&quot;))) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;系统、模块或功能缺失，或功能重复&quot;));</span>
 <span class="pc bpc" id="L75" title="3 of 6 branches missed.">            if(system.length()&gt;128||module.length()&gt;128||r.get(&quot;C&quot;).length()&gt;100) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;系统或功能名称过长&quot;));</span>
 <span class="fc" id="L76">            Map&lt;String,Set&lt;String&gt;&gt; grants=new LinkedHashMap&lt;&gt;(); Set&lt;String&gt; all=new TreeSet&lt;&gt;();</span>
 <span class="fc bfc" id="L77" title="All 2 branches covered.">            for(int i=0;i&lt;5;i++) {</span>
 <span class="fc" id="L78">                String cell=r.get(String.valueOf((char)('E'+i)));</span>
 <span class="fc" id="L79">                var set=new TreeSet&lt;String&gt;(); grants.put(TEMPLATES.get(i),set);</span>
-<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                if(cell.isEmpty()) {warnings.add(new Issue(&quot;权限&quot;,r.number(),TEMPLATES.get(i)+&quot; 权限为空，保留为未确认，不授予&quot;));continue;}</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if(cell.isEmpty()) {warnings.add(new Issue(&quot;权限&quot;,r.number(),TEMPLATES.get(i)+&quot; 权限为空，保留为未确认，不授予&quot;));continue;}</span>
 <span class="fc bfc" id="L81" title="All 2 branches covered.">                if(cell.equals(&quot;无&quot;)) continue;</span>
 <span class="fc bfc" id="L82" title="All 2 branches covered.">                if(cell.equals(&quot;全部&quot;)){set.add(&quot;*&quot;);continue;}</span>
 <span class="fc bfc" id="L83" title="All 2 branches covered.">                for(String action:cell.split(&quot;/&quot;)) {</span>
-<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                    if(action.equals(&quot;view&quot;)){action=&quot;查看&quot;;warnings.add(new Issue(&quot;权限&quot;,r.number(),&quot;view 规范化为查看&quot;));}</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                    if(action.equals(&quot;view&quot;)){action=&quot;查看&quot;;warnings.add(new Issue(&quot;权限&quot;,r.number(),&quot;view 规范化为查看&quot;));}</span>
 <span class="fc" id="L85">                    String code=ACTIONS.get(action);</span>
 <span class="pc bpc" id="L86" title="1 of 2 branches missed.">                    if(code==null) errors.add(new Issue(&quot;权限&quot;,r.number(),&quot;不识别的操作: &quot;+action));</span>
 <span class="fc" id="L87">                    else {set.add(code);all.add(code);}</span>
@@ -152,7 +152,7 @@ public class CompanyImportService {
 <span class="fc" id="L152">            em.detach(user);</span>
 <span class="fc" id="L153">            jdbc.update(&quot;insert into hr_identity(kind,external_id,local_id) values('EMPLOYEE',?,?)&quot;,e.username(),user.getId());</span>
 <span class="fc" id="L154">            jdbc.update(&quot;insert into account_policy(user_id,person_type,must_change_password,version,deleted,initial_password_issued) values(?,'EMPLOYEE',true,0,false,false)&quot;,user.getId());</span>
-<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if(generated.manualReview())jdbc.update(&quot;insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,'ACCOUNT_NAME_REVIEW',?,?)&quot;,deps.get(e.department()).id,user.getId(),&quot;账号存在重名或多音字，请人工核对：&quot;+generated.username(),Instant.now());</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if(generated.manualReview())jdbc.update(&quot;insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,'ACCOUNT_NAME_REVIEW',?,?)&quot;,deps.get(e.department()).id,user.getId(),&quot;账号存在重名或多音字，请人工核对：&quot;+generated.username(),Instant.now());</span>
 <span class="fc" id="L156">            users.put(e.username(),user.getId());createdUsernames.add(e.username());</span>
         }
 <span class="fc" id="L158">        Set&lt;Long&gt; existingProfiles=new HashSet&lt;&gt;(jdbc.queryForList(&quot;select user_id from employee_profile&quot;,Long.class));</span>
@@ -170,7 +170,7 @@ public class CompanyImportService {
 <span class="fc" id="L170">        jdbc.batchUpdate(&quot;insert into employee_profile(user_id,department_id,post_id,phone,company) values (?,?,?,?,?)&quot;,newProfiles);</span>
 <span class="fc" id="L171">        int unresolvedManagers=0;</span>
 <span class="fc bfc" id="L172" title="All 2 branches covered.">        for(var d:p.departments()) {</span>
-<span class="pc bpc" id="L173" title="1 of 4 branches missed.">            var candidates=p.employees().stream().filter(e-&gt;e.name().equals(d.manager())&amp;&amp;e.department().equals(d.name())).toList();</span>
+<span class="fc bfc" id="L173" title="All 4 branches covered.">            var candidates=p.employees().stream().filter(e-&gt;e.name().equals(d.manager())&amp;&amp;e.department().equals(d.name())).toList();</span>
 <span class="pc bpc" id="L174" title="1 of 4 branches missed.">            if(candidates.size()==1 &amp;&amp; deps.get(d.name()).manager==null) deps.get(d.name()).manager=em.getReference(UserAccount.class,users.get(candidates.getFirst().username()));</span>
 <span class="pc bpc" id="L175" title="1 of 2 branches missed.">            else if(candidates.size()!=1) unresolvedManagers++;</span>
 <span class="fc" id="L176">        }</span>
@@ -185,9 +185,9 @@ public class CompanyImportService {
 <span class="fc bfc" id="L185" title="All 2 branches covered.">        for(var f:p.features()) {</span>
 <span class="fc" id="L186">            String sc=&quot;app&quot;+key(f.system());</span>
 <span class="fc" id="L187">            var system=systems.get(sc);</span>
-<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            if(system==null){system=new BusinessSystem(sc,f.system(),null);em.persist(system);systems.put(sc,system);}</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if(system==null){system=new BusinessSystem(sc,f.system(),null);em.persist(system);systems.put(sc,system);}</span>
 <span class="fc" id="L189">            String mk=sc+&quot;/&quot;+f.module(); var module=modules.get(mk);</span>
-<span class="pc bpc" id="L190" title="1 of 2 branches missed.">            if(module==null){module=new CompanyData.Module();module.system=system;module.name=f.module();em.persist(module);modules.put(mk,module);}</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if(module==null){module=new CompanyData.Module();module.system=system;module.name=f.module();em.persist(module);modules.put(mk,module);}</span>
 <span class="fc" id="L191">            String fk=mk+&quot;/&quot;+f.name();var function=functions.get(fk);</span>
 <span class="pc bpc" id="L192" title="1 of 2 branches missed.">            if(function!=null) continue; // Existing grants and definitions are never overwritten by re-import.</span>
 <span class="fc" id="L193">            function=new CompanyData.Function();function.module=module;function.name=f.name();function.description=f.description();em.persist(function);functions.put(fk,function);</span>

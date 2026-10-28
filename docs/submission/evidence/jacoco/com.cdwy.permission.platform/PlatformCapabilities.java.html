@@ -11,7 +11,7 @@ public final class PlatformCapabilities {
     private PlatformCapabilities(){}
     public static Set&lt;String&gt; forUser(PlatformStore s,long actor){
 <span class="fc" id="L13">        var result=new LinkedHashSet&lt;String&gt;(List.of(&quot;platform:self:read&quot;,&quot;platform:self:write&quot;));</span>
-<span class="pc bpc" id="L14" title="2 of 4 branches missed.">        if(s.superAdmin(actor)||s.departmentAdmin(actor))result.addAll(List.of(&quot;platform:users:read&quot;,&quot;platform:users:write&quot;,&quot;platform:roles:read&quot;,&quot;platform:roles:write&quot;,&quot;platform:audit:read&quot;,&quot;platform:reviews:write&quot;,&quot;platform:organization:read&quot;));</span>
+<span class="pc bpc" id="L14" title="1 of 4 branches missed.">        if(s.superAdmin(actor)||s.departmentAdmin(actor))result.addAll(List.of(&quot;platform:users:read&quot;,&quot;platform:users:write&quot;,&quot;platform:roles:read&quot;,&quot;platform:roles:write&quot;,&quot;platform:audit:read&quot;,&quot;platform:reviews:write&quot;,&quot;platform:organization:read&quot;));</span>
 <span class="pc bpc" id="L15" title="1 of 2 branches missed.">        if(s.superAdmin(actor))result.addAll(List.of(&quot;platform:catalog:write&quot;,&quot;platform:integration:write&quot;,&quot;platform:administrators:write&quot;));</span>
 <span class="fc" id="L16">        return result;</span>
     }

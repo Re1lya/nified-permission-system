@@ -10,8 +10,8 @@ public interface ApplicationProtocol {
     boolean singleSignOn();
     boolean requiresCallback();
     static ApplicationProtocol of(String value){
-<span class="nc bnc" id="L13" title="All 3 branches missed.">        return switch(value){case &quot;OIDC&quot;-&gt;new Capability(&quot;OIDC&quot;,true,true);case &quot;LEGACY&quot;-&gt;new Capability(&quot;LEGACY&quot;,false,false);default-&gt;throw new IllegalArgumentException(&quot;一期仅实现 OIDC；其他协议须通过适配器扩展&quot;);};</span>
+<span class="pc bpc" id="L13" title="1 of 3 branches missed.">        return switch(value){case &quot;OIDC&quot;-&gt;new Capability(&quot;OIDC&quot;,true,true);case &quot;LEGACY&quot;-&gt;new Capability(&quot;LEGACY&quot;,false,false);default-&gt;throw new IllegalArgumentException(&quot;一期仅实现 OIDC；其他协议须通过适配器扩展&quot;);};</span>
     }
-<span class="nc" id="L15">    record Capability(String code,boolean singleSignOn,boolean requiresCallback) implements ApplicationProtocol{}</span>
+<span class="fc" id="L15">    record Capability(String code,boolean singleSignOn,boolean requiresCallback) implements ApplicationProtocol{}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -91,7 +91,7 @@ public class RbacService {
     }
 
     public List&lt;UserResponse&gt; listUsers() {
-<span class="nc bnc" id="L94" title="All 2 branches missed.">        return userRepository.findAll().stream().filter(u -&gt; platform.count(&quot;select count(*) from account_policy where user_id=? and deleted=true&quot;,u.getId())==0).map(this::toUserResponse).toList();</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        return userRepository.findAll().stream().filter(u -&gt; platform.count(&quot;select count(*) from account_policy where user_id=? and deleted=true&quot;,u.getId())==0).map(this::toUserResponse).toList();</span>
     }
 
     @Transactional
@@ -162,8 +162,8 @@ public class RbacService {
 
     @Transactional
     public RoleResponse createRole(CreateRoleRequest request) {
-<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (roleRepository.existsByCode(request.code())) {</span>
-<span class="nc" id="L166">            throw new ConflictException(&quot;角色编码已存在: &quot; + request.code());</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (roleRepository.existsByCode(request.code())) {</span>
+<span class="fc" id="L166">            throw new ConflictException(&quot;角色编码已存在: &quot; + request.code());</span>
         }
     // 岗位与角色一一对应；先 flush 让后续 JDBC INSERT 能引用已写入的角色。flush 不等于提交。
 <span class="fc" id="L169">        Role role = roleRepository.saveAndFlush(new Role(request.code(), request.name(), request.description()));</span>
@@ -172,7 +172,7 @@ public class RbacService {
     }
 
     public List&lt;RoleResponse&gt; listRoles() {
-<span class="nc" id="L175">        return roleRepository.findAll().stream().map(this::toRoleResponse).toList();</span>
+<span class="fc" id="L175">        return roleRepository.findAll().stream().map(this::toRoleResponse).toList();</span>
     }
 
     @Transactional
@@ -200,8 +200,8 @@ public class RbacService {
 
     @Transactional
     public SystemResponse createSystem(CreateSystemRequest request) {
-<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (systemRepository.existsByCode(request.code())) {</span>
-<span class="nc" id="L204">            throw new ConflictException(&quot;业务系统编码已存在: &quot; + request.code());</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (systemRepository.existsByCode(request.code())) {</span>
+<span class="fc" id="L204">            throw new ConflictException(&quot;业务系统编码已存在: &quot; + request.code());</span>
         }
 <span class="fc" id="L206">        BusinessSystem system = systemRepository.save(</span>
 <span class="fc" id="L207">                new BusinessSystem(request.code(), request.name(), request.baseUrl()));</span>
@@ -209,7 +209,7 @@ public class RbacService {
     }
 
     public List&lt;SystemResponse&gt; listSystems() {
-<span class="nc" id="L212">        return systemRepository.findAll().stream().map(this::toSystemResponse).toList();</span>
+<span class="fc" id="L212">        return systemRepository.findAll().stream().map(this::toSystemResponse).toList();</span>
     }
 
     @Transactional
@@ -226,11 +226,11 @@ public class RbacService {
     public void deleteSystem(Long systemId) {
 <span class="fc" id="L227">        getSystem(systemId);</span>
 <span class="fc" id="L228">        List&lt;Permission&gt; permissions = permissionRepository.findAllBySystem_Id(systemId);</span>
-<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        if (permissions.stream().anyMatch(Permission::isActive)) {</span>
-<span class="nc" id="L230">            throw new ConflictException(&quot;业务系统仍有有效权限点，请先标记失效&quot;);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (permissions.stream().anyMatch(Permission::isActive)) {</span>
+<span class="fc" id="L230">            throw new ConflictException(&quot;业务系统仍有有效权限点，请先标记失效&quot;);</span>
         }
-<span class="pc bpc" id="L232" title="1 of 2 branches missed.">        if (platform.count(&quot;select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.system_id=?&quot;, systemId) &gt; 0) {</span>
-<span class="nc" id="L233">            throw new ConflictException(&quot;失效权限点仍被角色引用，请先回收授权&quot;);</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        if (platform.count(&quot;select count(*) from sys_role_permission rp join sys_permission p on p.id=rp.permission_id where p.system_id=?&quot;, systemId) &gt; 0) {</span>
+<span class="fc" id="L233">            throw new ConflictException(&quot;失效权限点仍被角色引用，请先回收授权&quot;);</span>
         }
 <span class="fc" id="L235">        var system=getSystem(systemId);system.setEnabled(false);system.setDeleted(true);</span>
 <span class="fc" id="L236">        system.setCode(&quot;deleted_system_&quot;+systemId);systemRepository.save(system);</span>
@@ -240,11 +240,11 @@ public class RbacService {
 
     @Transactional
     public PermissionResponse createPermission(CreatePermissionRequest request) {
-<span class="pc bpc" id="L243" title="2 of 4 branches missed.">        if (request.code() == null || !request.code().matches(CreatePermissionRequest.CODE)) {</span>
-<span class="nc" id="L244">            throw new IllegalArgumentException(&quot;权限编码格式为 应用:模块:操作，小写字母、数字、下划线或连字符，最多三段&quot;);</span>
+<span class="fc bfc" id="L243" title="All 4 branches covered.">        if (request.code() == null || !request.code().matches(CreatePermissionRequest.CODE)) {</span>
+<span class="fc" id="L244">            throw new IllegalArgumentException(&quot;权限编码格式为 应用:模块:操作，小写字母、数字、下划线或连字符，最多三段&quot;);</span>
         }
-<span class="pc bpc" id="L246" title="1 of 2 branches missed.">        if (permissionRepository.existsByCode(request.code())) {</span>
-<span class="nc" id="L247">            throw new ConflictException(&quot;权限编码已存在: &quot; + request.code());</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (permissionRepository.existsByCode(request.code())) {</span>
+<span class="fc" id="L247">            throw new ConflictException(&quot;权限编码已存在: &quot; + request.code());</span>
         }
 <span class="fc" id="L249">        BusinessSystem system = systemRepository.findById(request.systemId())</span>
 <span class="pc" id="L250">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;业务系统不存在: &quot; + request.systemId()));</span>
@@ -264,8 +264,8 @@ public class RbacService {
 <span class="fc" id="L264">        Permission permission = getPermission(permissionId);</span>
 <span class="fc" id="L265">        permission.setName(request.name());</span>
 <span class="fc" id="L266">        permission.setMenuPath(request.menuPath());</span>
-<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        if (request.type() != null) {</span>
-<span class="nc" id="L268">            permission.setType(request.type());</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (request.type() != null) {</span>
+<span class="fc" id="L268">            permission.setType(request.type());</span>
         }
 <span class="pc bpc" id="L270" title="1 of 4 branches missed.">        if (request.active() != null &amp;&amp; request.active() != permission.isActive()) {</span>
 <span class="fc" id="L271">            permission.setActive(request.active());</span>
@@ -319,7 +319,7 @@ public class RbacService {
         }
 <span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (!rolePermissionRepository.existsByRole_IdAndPermission_Id(roleId, permissionId)) {</span>
 <span class="fc" id="L321">            rolePermissionRepository.save(new RolePermission(role, permission));</span>
-<span class="pc" id="L322">            userRoleRepository.findAllByRole_Id(roleId).forEach(link-&gt;platform.changed(link.getUser().getId()));</span>
+<span class="fc" id="L322">            userRoleRepository.findAllByRole_Id(roleId).forEach(link-&gt;platform.changed(link.getUser().getId()));</span>
         }
 <span class="fc" id="L324">    }</span>
 
@@ -332,11 +332,11 @@ public class RbacService {
 <span class="fc" id="L332">    }</span>
 
     public List&lt;RoleResponse&gt; listUserRoles(Long userId) {
-<span class="nc" id="L335">        getUser(userId);</span>
-<span class="nc" id="L336">        return userRoleRepository.findAllByUser_Id(userId).stream()</span>
-<span class="nc" id="L337">                .map(UserRole::getRole)</span>
-<span class="nc" id="L338">                .map(this::toRoleResponse)</span>
-<span class="nc" id="L339">                .toList();</span>
+<span class="fc" id="L335">        getUser(userId);</span>
+<span class="fc" id="L336">        return userRoleRepository.findAllByUser_Id(userId).stream()</span>
+<span class="fc" id="L337">                .map(UserRole::getRole)</span>
+<span class="fc" id="L338">                .map(this::toRoleResponse)</span>
+<span class="fc" id="L339">                .toList();</span>
     }
 
     public List&lt;PermissionResponse&gt; listRolePermissions(Long roleId) {
@@ -352,8 +352,8 @@ public class RbacService {
     // 当前是逐角色查询关联，并非单条聚合 SQL；角色多时存在多次数据库往返。
     public List&lt;PermissionResponse&gt; effectivePermissions(Long userId) {
 <span class="fc" id="L354">        UserAccount user = getUser(userId);</span>
-<span class="pc bpc" id="L355" title="1 of 2 branches missed.">        if (!user.isEnabled()) {</span>
-<span class="nc" id="L356">            return List.of();</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        if (!user.isEnabled()) {</span>
+<span class="fc" id="L356">            return List.of();</span>
         }
 
 <span class="fc" id="L359">        Map&lt;String, PermissionResponse&gt; permissionsByCode = new LinkedHashMap&lt;&gt;();</span>

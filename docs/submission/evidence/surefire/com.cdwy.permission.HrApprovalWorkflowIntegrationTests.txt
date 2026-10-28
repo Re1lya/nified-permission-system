@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.cdwy.permission.HrApprovalWorkflowIntegrationTests
+-------------------------------------------------------------------------------
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.171 s -- in com.cdwy.permission.HrApprovalWorkflowIntegrationTests

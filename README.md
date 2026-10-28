@@ -51,13 +51,13 @@
 
 ## 测试结果
 
-2026-10-28 在 Java 21、Maven 3.9.16、H2 环境执行 `mvn -B clean verify`，结果如下。
+2026-10-28 在 Java 21、Maven 3.9.16、H2 隔离构建环境执行 `mvn -B clean verify`，并通过 `COMPANY_WORKBOOK_DIR` 启用真实三表测试，结果如下。
 
 | 测试总数 | 通过 | 跳过 | 失败 | 错误 | 行覆盖率 | 分支覆盖率 |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 45 | 44 | 1 | 0 | 0 | 73.04% | 37.88% |
+| 189 | 189 | 0 | 0 | 0 | 93.77% | 85.47% |
 
-跳过项为依赖外部 Excel 文件的 `ActualWorkbookImportTests`；合成工作簿导入测试已执行，包括一万员工、无密码待发放、幂等及事务回滚。覆盖率统计范围及源码摘要见[测试汇总](docs/submission/evidence/test-summary.json)。
+本次启用真实三表测试，无跳过项；真实 Excel 验证了 10000 名员工、111 个部门、359 项功能。合成工作簿、权限边界、事务回滚、HR/OA 幂等及 OIDC 协议链路测试均已执行。覆盖率统计范围及源码摘要见[测试汇总](docs/submission/evidence/test-summary.json)。
 
 JaCoCo 提供 [HTML](docs/submission/evidence/jacoco/index.html)、[XML](docs/submission/evidence/jacoco/jacoco.xml) 和 [CSV](docs/submission/evidence/jacoco/jacoco.csv) 文件。完整交互报告可在下载或克隆仓库后，通过浏览器打开 `docs/submission/evidence/jacoco/index.html` 查看。
 

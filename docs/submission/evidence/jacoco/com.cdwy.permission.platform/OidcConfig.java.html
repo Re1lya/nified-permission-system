@@ -38,27 +38,27 @@ import org.springframework.http.MediaType;
 <span class="fc" id="L38">            http.securityMatcher(server.getEndpointsMatcher());</span>
             // UC-B08: userinfo carries the subject's current permission codes and the version they belong to.
 <span class="fc" id="L40">            server.oidc(oidc-&gt;oidc.userInfoEndpoint(info-&gt;info.userInfoMapper(context-&gt;{</span>
-<span class="nc" id="L41">                var authorization=context.getAuthorization();long user=Long.parseLong(authorization.getPrincipalName());</span>
+<span class="fc" id="L41">                var authorization=context.getAuthorization();long user=Long.parseLong(authorization.getPrincipalName());</span>
                 try {
-<span class="nc" id="L43">                    store.validAccount(user);</span>
-<span class="nc" id="L44">                    Number version=(Number)authorization.getAccessToken().getClaims().get(&quot;permission_version&quot;);</span>
-<span class="nc bnc" id="L45" title="All 6 branches missed.">                    if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1||version==null||version.longValue()!=store.version(user))throw new IllegalArgumentException();</span>
-<span class="nc" id="L46">                }catch(RuntimeException invalid){throw new OAuth2AuthenticationException(new OAuth2Error(&quot;invalid_token&quot;,&quot;账号或权限版本已失效&quot;,null));}</span>
-<span class="nc" id="L47">                var idToken=authorization.getToken(org.springframework.security.oauth2.core.oidc.OidcIdToken.class);</span>
-<span class="nc bnc" id="L48" title="All 2 branches missed.">                Map&lt;String,Object&gt; claims=new LinkedHashMap&lt;&gt;(idToken==null?Map.of(&quot;sub&quot;,Long.toString(user)):idToken.getToken().getClaims());</span>
-<span class="nc" id="L49">                claims.put(&quot;permissions&quot;,rbac.effectivePermissions(user).stream().map(permission-&gt;permission.code()).toList());</span>
-<span class="nc" id="L50">                claims.put(&quot;permission_version&quot;,store.version(user));</span>
-<span class="nc" id="L51">                return new org.springframework.security.oauth2.core.oidc.OidcUserInfo(claims);</span>
+<span class="fc" id="L43">                    store.validAccount(user);</span>
+<span class="fc" id="L44">                    Number version=(Number)authorization.getAccessToken().getClaims().get(&quot;permission_version&quot;);</span>
+<span class="pc bpc" id="L45" title="2 of 6 branches missed.">                    if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1||version==null||version.longValue()!=store.version(user))throw new IllegalArgumentException();</span>
+<span class="fc" id="L46">                }catch(RuntimeException invalid){throw new OAuth2AuthenticationException(new OAuth2Error(&quot;invalid_token&quot;,&quot;账号或权限版本已失效&quot;,null));}</span>
+<span class="fc" id="L47">                var idToken=authorization.getToken(org.springframework.security.oauth2.core.oidc.OidcIdToken.class);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                Map&lt;String,Object&gt; claims=new LinkedHashMap&lt;&gt;(idToken==null?Map.of(&quot;sub&quot;,Long.toString(user)):idToken.getToken().getClaims());</span>
+<span class="fc" id="L49">                claims.put(&quot;permissions&quot;,rbac.effectivePermissions(user).stream().map(permission-&gt;permission.code()).toList());</span>
+<span class="fc" id="L50">                claims.put(&quot;permission_version&quot;,store.version(user));</span>
+<span class="fc" id="L51">                return new org.springframework.security.oauth2.core.oidc.OidcUserInfo(claims);</span>
             })));
 <span class="fc" id="L53">            server.authorizationEndpoint(endpoint-&gt;endpoint.consentPage(&quot;/consent&quot;));</span>
 <span class="fc" id="L54">        }).authorizeHttpRequests(a-&gt;a.anyRequest().authenticated())</span>
 <span class="fc" id="L55">          .exceptionHandling(e-&gt;e.defaultAuthenticationEntryPointFor(new LoginUrlAuthenticationEntryPoint(&quot;/login&quot;),new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));</span>
 <span class="fc" id="L56">        http.addFilterBefore(new org.springframework.web.filter.OncePerRequestFilter(){</span>
             protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest req,jakarta.servlet.http.HttpServletResponse res,jakarta.servlet.FilterChain chain) throws java.io.IOException,jakarta.servlet.ServletException {
-<span class="nc" id="L58">                var context=org.springframework.security.core.context.SecurityContextHolder.getContext();var auth=context.getAuthentication();</span>
-<span class="nc bnc" id="L59" title="All 6 branches missed.">                if(auth!=null&amp;&amp;auth.getDetails() instanceof String bearer){try{tokens.requireUserId(bearer);}catch(com.cdwy.permission.exception.AuthenticationFailedException e){context.setAuthentication(null);if(req.getSession(false)!=null)req.getSession(false).invalidate();}}</span>
-<span class="nc" id="L60">                chain.doFilter(req,res);</span>
-<span class="nc" id="L61">            }</span>
+<span class="fc" id="L58">                var context=org.springframework.security.core.context.SecurityContextHolder.getContext();var auth=context.getAuthentication();</span>
+<span class="pc bpc" id="L59" title="2 of 6 branches missed.">                if(auth!=null&amp;&amp;auth.getDetails() instanceof String bearer){try{tokens.requireUserId(bearer);}catch(com.cdwy.permission.exception.AuthenticationFailedException e){context.setAuthentication(null);if(req.getSession(false)!=null)req.getSession(false).invalidate();}}</span>
+<span class="fc" id="L60">                chain.doFilter(req,res);</span>
+<span class="fc" id="L61">            }</span>
         },org.springframework.security.web.access.intercept.AuthorizationFilter.class);
 <span class="fc" id="L63">        return http.build();</span>
     }
@@ -77,13 +77,13 @@ import org.springframework.http.MediaType;
 <span class="fc" id="L77">        return new AuthenticationProvider() {</span>
             public Authentication authenticate(Authentication auth) {
                 try {
-<span class="nc" id="L80">                    var login=service.login(new LoginRequest(auth.getName(),String.valueOf(auth.getCredentials())));</span>
-<span class="nc bnc" id="L81" title="All 2 branches missed.">                    if(store.mustChange(login.userId()))throw new BadCredentialsException(&quot;请先在管理门户修改初始密码&quot;);</span>
-<span class="nc" id="L82">                    var authentication=UsernamePasswordAuthenticationToken.authenticated(login.userId().toString(),null,List.of(org.springframework.security.core.authority.FactorGrantedAuthority.fromFactor(&quot;PASSWORD&quot;)));</span>
-<span class="nc" id="L83">                    authentication.setDetails(&quot;Bearer &quot;+login.accessToken());return authentication;</span>
-<span class="nc" id="L84">                } catch(com.cdwy.permission.exception.AuthenticationFailedException e){throw new BadCredentialsException(&quot;账号、密码或账号状态不正确&quot;);}</span>
+<span class="fc" id="L80">                    var login=service.login(new LoginRequest(auth.getName(),String.valueOf(auth.getCredentials())));</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                    if(store.mustChange(login.userId()))throw new BadCredentialsException(&quot;请先在管理门户修改初始密码&quot;);</span>
+<span class="fc" id="L82">                    var authentication=UsernamePasswordAuthenticationToken.authenticated(login.userId().toString(),null,List.of(org.springframework.security.core.authority.FactorGrantedAuthority.fromFactor(&quot;PASSWORD&quot;)));</span>
+<span class="fc" id="L83">                    authentication.setDetails(&quot;Bearer &quot;+login.accessToken());return authentication;</span>
+<span class="fc" id="L84">                } catch(com.cdwy.permission.exception.AuthenticationFailedException e){throw new BadCredentialsException(&quot;账号、密码或账号状态不正确&quot;);}</span>
             }
-<span class="nc" id="L86">            public boolean supports(Class&lt;?&gt; type){return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);}</span>
+<span class="fc" id="L86">            public boolean supports(Class&lt;?&gt; type){return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);}</span>
         };
     }
     /**
@@ -100,31 +100,31 @@ import org.springframework.http.MediaType;
 <span class="fc" id="L100">                new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(new org.springframework.core.io.ClassPathResource(&quot;oidc-schema.sql&quot;),new org.springframework.core.io.ClassPathResource(&quot;session-schema-h2.sql&quot;)).execute(dataSource);</span>
         }
 <span class="fc" id="L102">        var repository=new JdbcRegisteredClientRepository(db);</span>
-<span class="pc bpc" id="L103" title="3 of 4 branches missed.">        if(demos) for(String name:List.of(&quot;oa-demo&quot;,&quot;hr-demo&quot;)) {</span>
-<span class="nc bnc" id="L104" title="All 2 branches missed.">            if(repository.findByClientId(name)!=null)continue;</span>
-<span class="nc" id="L105">            var client=RegisteredClient.withId(name).clientId(name).clientName(name)</span>
-<span class="nc" id="L106">                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)</span>
-<span class="nc" id="L107">                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)</span>
-<span class="nc bnc" id="L108" title="All 2 branches missed.">                .redirectUri(&quot;http://127.0.0.1:&quot;+(name.equals(&quot;oa-demo&quot;)?18101:18102)+&quot;/callback&quot;)</span>
-<span class="nc" id="L109">                .scope(&quot;openid&quot;).scope(&quot;profile&quot;)</span>
-<span class="nc" id="L110">                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build());</span>
-<span class="nc bnc" id="L111" title="All 2 branches missed.">            if(!secret.isEmpty()) {</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">                if(secret.length()&lt;32)throw new IllegalArgumentException(&quot;客户端密钥至少 32 字符&quot;);</span>
-<span class="nc" id="L113">                client.clientSecret(passwords.encode(secret)).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)</span>
-<span class="nc" id="L114">                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);</span>
+<span class="fc bfc" id="L103" title="All 4 branches covered.">        if(demos) for(String name:List.of(&quot;oa-demo&quot;,&quot;hr-demo&quot;)) {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if(repository.findByClientId(name)!=null)continue;</span>
+<span class="fc" id="L105">            var client=RegisteredClient.withId(name).clientId(name).clientName(name)</span>
+<span class="fc" id="L106">                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)</span>
+<span class="fc" id="L107">                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                .redirectUri(&quot;http://127.0.0.1:&quot;+(name.equals(&quot;oa-demo&quot;)?18101:18102)+&quot;/callback&quot;)</span>
+<span class="fc" id="L109">                .scope(&quot;openid&quot;).scope(&quot;profile&quot;)</span>
+<span class="fc" id="L110">                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build());</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if(!secret.isEmpty()) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                if(secret.length()&lt;32)throw new IllegalArgumentException(&quot;客户端密钥至少 32 字符&quot;);</span>
+<span class="fc" id="L113">                client.clientSecret(passwords.encode(secret)).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)</span>
+<span class="fc" id="L114">                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);</span>
             }
-<span class="nc" id="L116">            repository.save(client.build());</span>
-<span class="nc" id="L117">        }</span>
+<span class="fc" id="L116">            repository.save(client.build());</span>
+<span class="fc" id="L117">        }</span>
 <span class="fc" id="L118">        return new RegisteredClientRepository() {</span>
-<span class="nc" id="L119">            public void save(RegisteredClient client){repository.save(client);}</span>
+<span class="fc" id="L119">            public void save(RegisteredClient client){repository.save(client);}</span>
             private RegisteredClient enabled(RegisteredClient client){
-<span class="nc bnc" id="L121" title="All 2 branches missed.">                if(client==null)return null;</span>
-<span class="nc" id="L122">                var entries=db.queryForList(&quot;select b.enabled,a.status from application_access a join biz_system b on b.id=a.system_id where a.client_id=?&quot;,client.getClientId());</span>
-<span class="nc bnc" id="L123" title="All 6 branches missed.">                if(entries.isEmpty())return demos&amp;&amp;Set.of(&quot;oa-demo&quot;,&quot;hr-demo&quot;).contains(client.getClientId())?client:null;</span>
-<span class="nc bnc" id="L124" title="All 4 branches missed.">                return Boolean.TRUE.equals(entries.getFirst().get(&quot;enabled&quot;))&amp;&amp;&quot;ACTIVE&quot;.equals(entries.getFirst().get(&quot;status&quot;))?client:null;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                if(client==null)return null;</span>
+<span class="fc" id="L122">                var entries=db.queryForList(&quot;select b.enabled,a.status from application_access a join biz_system b on b.id=a.system_id where a.client_id=?&quot;,client.getClientId());</span>
+<span class="pc bpc" id="L123" title="1 of 6 branches missed.">                if(entries.isEmpty())return demos&amp;&amp;Set.of(&quot;oa-demo&quot;,&quot;hr-demo&quot;).contains(client.getClientId())?client:null;</span>
+<span class="fc bfc" id="L124" title="All 4 branches covered.">                return Boolean.TRUE.equals(entries.getFirst().get(&quot;enabled&quot;))&amp;&amp;&quot;ACTIVE&quot;.equals(entries.getFirst().get(&quot;status&quot;))?client:null;</span>
             }
-<span class="nc" id="L126">            public RegisteredClient findById(String id){return enabled(repository.findById(id));}</span>
-<span class="nc" id="L127">            public RegisteredClient findByClientId(String id){return enabled(repository.findByClientId(id));}</span>
+<span class="fc" id="L126">            public RegisteredClient findById(String id){return enabled(repository.findById(id));}</span>
+<span class="fc" id="L127">            public RegisteredClient findByClientId(String id){return enabled(repository.findByClientId(id));}</span>
         };
     }
     @Bean OAuth2AuthorizationService authorizations(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){
@@ -140,11 +140,11 @@ import org.springframework.http.MediaType;
     }
 <span class="fc" id="L141">    @Bean OAuth2AuthorizationConsentService consents(org.springframework.jdbc.core.JdbcTemplate db,RegisteredClientRepository clients){return new JdbcOAuth2AuthorizationConsentService(db,clients);}</span>
     @Bean AuthorizationServerSettings authorizationSettings(@org.springframework.beans.factory.annotation.Value(&quot;${permission.oidc.issuer:}&quot;) String issuer){
-<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        var settings=AuthorizationServerSettings.builder();if(!issuer.isBlank())settings.issuer(issuer);return settings.build();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        var settings=AuthorizationServerSettings.builder();if(!issuer.isBlank())settings.issuer(issuer);return settings.build();</span>
     }
     @Bean @DependsOn(&quot;entityManagerFactory&quot;) JWKSource&lt;SecurityContext&gt; jwks(org.springframework.jdbc.core.JdbcTemplate db) throws Exception {
 <span class="fc" id="L146">        var saved=db.queryForList(&quot;select jwk from platform_signing_key where id='active'&quot;,String.class);</span>
-<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if(saved.isEmpty()) {</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if(saved.isEmpty()) {</span>
 <span class="fc" id="L148">            var generator=KeyPairGenerator.getInstance(&quot;RSA&quot;);generator.initialize(3072);var pair=generator.generateKeyPair();</span>
 <span class="fc" id="L149">            var key=new com.nimbusds.jose.jwk.RSAKey.Builder((RSAPublicKey)pair.getPublic()).privateKey((RSAPrivateKey)pair.getPrivate()).keyID(UUID.randomUUID().toString()).build();</span>
 <span class="fc" id="L150">            try{db.update(&quot;insert into platform_signing_key(id,jwk) values('active',?)&quot;,key.toJSONString());}</span>
@@ -155,19 +155,19 @@ import org.springframework.http.MediaType;
 <span class="fc" id="L155">    @Bean JwtDecoder oidcDecoder(JWKSource&lt;SecurityContext&gt; keys){return OAuth2AuthorizationServerConfiguration.jwtDecoder(keys);}</span>
     @Bean org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer&lt;org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext&gt; tokenClaims(PlatformStore store,com.cdwy.permission.service.JwtTokenService tokens){
 <span class="fc" id="L157">        return context-&gt;{</span>
-<span class="nc" id="L158">            var principal=context.getPrincipal();</span>
-<span class="nc bnc" id="L159" title="All 2 branches missed.">            if(AuthorizationGrantType.REFRESH_TOKEN.equals(context.getAuthorizationGrantType())){</span>
+<span class="fc" id="L158">            var principal=context.getPrincipal();</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if(AuthorizationGrantType.REFRESH_TOKEN.equals(context.getAuthorizationGrantType())){</span>
                 // The platform session behind the original login may have rotated; re-check the account itself.
-<span class="nc" id="L161">                long user=Long.parseLong(principal.getName());</span>
-<span class="nc" id="L162">                try{store.validAccount(user);}catch(com.cdwy.permission.exception.AuthenticationFailedException e){throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,&quot;账号已停用或过期&quot;,null));}</span>
-<span class="nc bnc" id="L163" title="All 2 branches missed.">                if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1)throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,&quot;账号已停用&quot;,null));</span>
-<span class="nc" id="L164">                context.getClaims().claim(&quot;permission_version&quot;,store.version(user));</span>
-<span class="nc" id="L165">            }</span>
-<span class="nc bnc" id="L166" title="All 2 branches missed.">            else if(principal.getDetails() instanceof String bearer){</span>
-<span class="nc" id="L167">                long user=tokens.requireUserId(bearer);</span>
-<span class="nc" id="L168">                context.getClaims().claim(&quot;permission_version&quot;,store.version(user)).claim(&quot;sid&quot;,tokens.sessionId(bearer));</span>
+<span class="fc" id="L161">                long user=Long.parseLong(principal.getName());</span>
+<span class="fc" id="L162">                try{store.validAccount(user);}catch(com.cdwy.permission.exception.AuthenticationFailedException e){throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,&quot;账号已停用或过期&quot;,null));}</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1)throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,&quot;账号已停用&quot;,null));</span>
+<span class="fc" id="L164">                context.getClaims().claim(&quot;permission_version&quot;,store.version(user));</span>
+<span class="fc" id="L165">            }</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            else if(principal.getDetails() instanceof String bearer){</span>
+<span class="fc" id="L167">                long user=tokens.requireUserId(bearer);</span>
+<span class="fc" id="L168">                context.getClaims().claim(&quot;permission_version&quot;,store.version(user)).claim(&quot;sid&quot;,tokens.sessionId(bearer));</span>
             }
-<span class="nc" id="L170">        };</span>
+<span class="fc" id="L170">        };</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

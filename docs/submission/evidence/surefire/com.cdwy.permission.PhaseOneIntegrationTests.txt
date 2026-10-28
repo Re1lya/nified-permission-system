@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.cdwy.permission.PhaseOneIntegrationTests
 -------------------------------------------------------------------------------
-Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.54 s -- in com.cdwy.permission.PhaseOneIntegrationTests
+Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.27 s -- in com.cdwy.permission.PhaseOneIntegrationTests

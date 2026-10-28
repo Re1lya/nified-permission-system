@@ -160,8 +160,8 @@ public class JwtTokenService {
 <span class="fc bfc" id="L160" title="All 2 branches covered.">        return activity.isEmpty() ? issuedAt : activity.getFirst();</span>
     }
 
-<span class="nc" id="L163">    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}</span>
-<span class="nc" id="L164">    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}</span>
+<span class="fc" id="L163">    public String sessionId(String authorizationHeader){return parse(extractToken(authorizationHeader)).getId();}</span>
+<span class="fc" id="L164">    public Instant issuedAt(String authorizationHeader){return parse(extractToken(authorizationHeader)).getIssuedAt().toInstant();}</span>
 
     private Claims parse(String token) {
 <span class="fc" id="L167">        return parse(token, 0);</span>

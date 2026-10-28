@@ -21,57 +21,57 @@ class HrSynchronization {
     private final PlatformStore s;private final EntityManager em;private final RbacService rbac;private final AccountNaming naming;private final PasswordEncoder passwords;
 <span class="fc" id="L22">    HrSynchronization(PlatformStore s,EntityManager em,RbacService rbac,AccountNaming naming,PasswordEncoder passwords){this.s=s;this.em=em;this.rbac=rbac;this.naming=naming;this.passwords=passwords;}</span>
     IntegrationService.Event resolve(IntegrationService.Event e){
-<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if(e==null)throw new IllegalArgumentException(&quot;同步记录不能为null&quot;);</span>
-<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        Long department=e.departmentExternalId()==null?e.departmentId():lookup(&quot;DEPARTMENT&quot;,e.departmentExternalId());</span>
-<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        Long post=e.postExternalId()==null?e.postId():lookup(&quot;POST&quot;,e.postExternalId());</span>
-<span class="pc bpc" id="L27" title="6 of 8 branches missed.">        if(e.departmentExternalId()!=null&amp;&amp;department==null||e.postExternalId()!=null&amp;&amp;post==null)throw new IllegalArgumentException(&quot;关联部门或岗位尚未同步&quot;);</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if(e==null)throw new IllegalArgumentException(&quot;同步记录不能为null&quot;);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        Long department=e.departmentExternalId()==null?e.departmentId():lookup(&quot;DEPARTMENT&quot;,e.departmentExternalId());</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        Long post=e.postExternalId()==null?e.postId():lookup(&quot;POST&quot;,e.postExternalId());</span>
+<span class="pc bpc" id="L27" title="1 of 8 branches missed.">        if(e.departmentExternalId()!=null&amp;&amp;department==null||e.postExternalId()!=null&amp;&amp;post==null)throw new IllegalArgumentException(&quot;关联部门或岗位尚未同步&quot;);</span>
 <span class="fc" id="L28">        return new IntegrationService.Event(e.action(),e.username(),e.displayName(),e.userId(),department,post,e.phone(),e.company(),e.roleIds(),e.approvalId(),e.decision(),e.externalId(),e.name(),e.parentExternalId(),e.records(),e.mode(),e.requestId(),e.departmentExternalId(),e.postExternalId());</span>
     }
-<span class="nc bnc" id="L30" title="All 8 branches missed.">    Long lookup(String kind,String external){if(external==null||external.isBlank()||external.length()&gt;128)throw new IllegalArgumentException(&quot;需要稳定的外部编号&quot;);var rows=s.rows(&quot;select local_id from hr_identity where kind=? and external_id=?&quot;,kind,external);return rows.isEmpty()?null:((Number)rows.getFirst().get(&quot;local_id&quot;)).longValue();}</span>
-<span class="nc" id="L31">    void bind(String kind,String external,long id){s.db().update(&quot;insert into hr_identity(kind,external_id,local_id) values(?,?,?)&quot;,kind,external,id);}</span>
+<span class="pc bpc" id="L30" title="2 of 8 branches missed.">    Long lookup(String kind,String external){if(external==null||external.isBlank()||external.length()&gt;128)throw new IllegalArgumentException(&quot;需要稳定的外部编号&quot;);var rows=s.rows(&quot;select local_id from hr_identity where kind=? and external_id=?&quot;,kind,external);return rows.isEmpty()?null:((Number)rows.getFirst().get(&quot;local_id&quot;)).longValue();}</span>
+<span class="fc" id="L31">    void bind(String kind,String external,long id){s.db().update(&quot;insert into hr_identity(kind,external_id,local_id) values(?,?,?)&quot;,kind,external,id);}</span>
     long department(IntegrationService.Event e){
-<span class="nc bnc" id="L33" title="All 6 branches missed.">        String external=e.externalId();Long existing=lookup(&quot;DEPARTMENT&quot;,external);if(e.name()==null||e.name().isBlank()||e.name().length()&gt;128)throw new IllegalArgumentException(&quot;部门名称不合法&quot;);</span>
-<span class="nc bnc" id="L34" title="All 6 branches missed.">        Long parent=e.parentExternalId()==null?null:lookup(&quot;DEPARTMENT&quot;,e.parentExternalId());if(e.parentExternalId()!=null&amp;&amp;parent==null)throw new IllegalArgumentException(&quot;请先同步父部门&quot;);</span>
-<span class="nc bnc" id="L35" title="All 4 branches missed.">        if(existing==null){var matching=s.rows(&quot;select id from sys_department where name=? and deleted=false&quot;,e.name());if(!matching.isEmpty()){existing=((Number)matching.getFirst().get(&quot;id&quot;)).longValue();bind(&quot;DEPARTMENT&quot;,external,existing);}}</span>
-<span class="nc bnc" id="L36" title="All 2 branches missed.">        var entity=existing==null?new CompanyData.Department():em.find(CompanyData.Department.class,existing);</span>
-<span class="nc bnc" id="L37" title="All 2 branches missed.">        if(entity==null)throw new ConflictException(&quot;该 HR 部门已在平台删除，请人工核对外部编号&quot;);</span>
-<span class="nc bnc" id="L38" title="All 2 branches missed.">        entity.name=e.name();var parentEntity=parent==null?null:em.find(CompanyData.Department.class,parent);</span>
-<span class="nc bnc" id="L39" title="All 4 branches missed.">        if(parent!=null&amp;&amp;parentEntity==null)throw new ConflictException(&quot;上级部门已删除，请先修正 HR 组织关联&quot;);</span>
-<span class="nc bnc" id="L40" title="All 4 branches missed.">        for(var p=parentEntity;p!=null;p=p.parent)if(Objects.equals(p.id,entity.id))throw new IllegalArgumentException(&quot;部门不能形成循环&quot;);</span>
-<span class="nc bnc" id="L41" title="All 2 branches missed.">        entity.parent=parentEntity;if(existing==null){em.persist(entity);em.flush();bind(&quot;DEPARTMENT&quot;,external,entity.id);}return entity.id;</span>
+<span class="pc bpc" id="L33" title="3 of 6 branches missed.">        String external=e.externalId();Long existing=lookup(&quot;DEPARTMENT&quot;,external);if(e.name()==null||e.name().isBlank()||e.name().length()&gt;128)throw new IllegalArgumentException(&quot;部门名称不合法&quot;);</span>
+<span class="fc bfc" id="L34" title="All 6 branches covered.">        Long parent=e.parentExternalId()==null?null:lookup(&quot;DEPARTMENT&quot;,e.parentExternalId());if(e.parentExternalId()!=null&amp;&amp;parent==null)throw new IllegalArgumentException(&quot;请先同步父部门&quot;);</span>
+<span class="fc bfc" id="L35" title="All 4 branches covered.">        if(existing==null){var matching=s.rows(&quot;select id from sys_department where name=? and deleted=false&quot;,e.name());if(!matching.isEmpty()){existing=((Number)matching.getFirst().get(&quot;id&quot;)).longValue();bind(&quot;DEPARTMENT&quot;,external,existing);}}</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        var entity=existing==null?new CompanyData.Department():em.find(CompanyData.Department.class,existing);</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if(entity==null)throw new ConflictException(&quot;该 HR 部门已在平台删除，请人工核对外部编号&quot;);</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        entity.name=e.name();var parentEntity=parent==null?null:em.find(CompanyData.Department.class,parent);</span>
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        if(parent!=null&amp;&amp;parentEntity==null)throw new ConflictException(&quot;上级部门已删除，请先修正 HR 组织关联&quot;);</span>
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">        for(var p=parentEntity;p!=null;p=p.parent)if(Objects.equals(p.id,entity.id))throw new IllegalArgumentException(&quot;部门不能形成循环&quot;);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        entity.parent=parentEntity;if(existing==null){em.persist(entity);em.flush();bind(&quot;DEPARTMENT&quot;,external,entity.id);}return entity.id;</span>
     }
     long post(IntegrationService.Event e){
-<span class="nc bnc" id="L44" title="All 6 branches missed.">        Long existing=lookup(&quot;POST&quot;,e.externalId());if(e.name()==null||e.name().isBlank()||e.name().length()&gt;128)throw new IllegalArgumentException(&quot;岗位名称不合法&quot;);</span>
-<span class="nc bnc" id="L45" title="All 4 branches missed.">        if(existing==null){var matching=s.rows(&quot;select id from sys_post where name=? and deleted=false&quot;,e.name());if(!matching.isEmpty()){existing=((Number)matching.getFirst().get(&quot;id&quot;)).longValue();bind(&quot;POST&quot;,e.externalId(),existing);}}</span>
-<span class="nc bnc" id="L46" title="All 4 branches missed.">        if(existing!=null){var p=em.find(CompanyData.Post.class,existing);if(p==null)throw new ConflictException(&quot;该 HR 岗位已在平台删除，请人工核对外部编号&quot;);p.name=e.name();p.role.setName(e.name());return p.id;}</span>
-<span class="nc" id="L47">        var r=rbac.createRole(new CreateRoleRequest(&quot;hr_&quot;+UUID.randomUUID().toString().replace(&quot;-&quot;,&quot;&quot;),e.name(),&quot;HR 岗位&quot;));</span>
-<span class="nc" id="L48">        var p=em.createQuery(&quot;from CompanyData$Post where role.id=:role&quot;,CompanyData.Post.class).setParameter(&quot;role&quot;,r.id()).getSingleResult();bind(&quot;POST&quot;,e.externalId(),p.id);return p.id;</span>
+<span class="pc bpc" id="L44" title="2 of 6 branches missed.">        Long existing=lookup(&quot;POST&quot;,e.externalId());if(e.name()==null||e.name().isBlank()||e.name().length()&gt;128)throw new IllegalArgumentException(&quot;岗位名称不合法&quot;);</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">        if(existing==null){var matching=s.rows(&quot;select id from sys_post where name=? and deleted=false&quot;,e.name());if(!matching.isEmpty()){existing=((Number)matching.getFirst().get(&quot;id&quot;)).longValue();bind(&quot;POST&quot;,e.externalId(),existing);}}</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">        if(existing!=null){var p=em.find(CompanyData.Post.class,existing);if(p==null)throw new ConflictException(&quot;该 HR 岗位已在平台删除，请人工核对外部编号&quot;);p.name=e.name();p.role.setName(e.name());return p.id;}</span>
+<span class="fc" id="L47">        var r=rbac.createRole(new CreateRoleRequest(&quot;hr_&quot;+UUID.randomUUID().toString().replace(&quot;-&quot;,&quot;&quot;),e.name(),&quot;HR 岗位&quot;));</span>
+<span class="fc" id="L48">        var p=em.createQuery(&quot;from CompanyData$Post where role.id=:role&quot;,CompanyData.Post.class).setParameter(&quot;role&quot;,r.id()).getSingleResult();bind(&quot;POST&quot;,e.externalId(),p.id);return p.id;</span>
     }
     long join(IntegrationService.Event e){
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        String external=e.externalId()==null?e.username():e.externalId();Long existing=lookup(&quot;EMPLOYEE&quot;,external);</span>
-<span class="nc bnc" id="L52" title="All 2 branches missed.">        if(existing!=null){</span>
-<span class="nc bnc" id="L53" title="All 6 branches missed.">            if(e.displayName()==null||e.displayName().isBlank()||e.displayName().length()&gt;128)throw new IllegalArgumentException(&quot;员工姓名不合法&quot;);</span>
-<span class="nc bnc" id="L54" title="All 4 branches missed.">            if(s.superAdmin(existing)||s.departmentAdmin(existing))throw new ForbiddenException(&quot;HR 不能修改管理员&quot;);s.validAccount(existing);</span>
-<span class="nc" id="L55">            var profile=s.rows(&quot;select department_id,post_id from employee_profile where user_id=?&quot;,existing).getFirst();</span>
-<span class="nc bnc" id="L56" title="All 4 branches missed.">            if(((Number)profile.get(&quot;department_id&quot;)).longValue()!=e.departmentId()||((Number)profile.get(&quot;post_id&quot;)).longValue()!=e.postId())throw new ConflictException(&quot;已有员工组织变化，请发送 TRANSFER&quot;);</span>
-<span class="nc" id="L57">            s.db().update(&quot;update sys_user set display_name=? where id=?&quot;,e.displayName(),existing);</span>
-<span class="nc" id="L58">            s.db().update(&quot;update employee_profile set phone=?,company=? where user_id=?&quot;,e.phone(),e.company(),existing);return existing;</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        String external=e.externalId()==null?e.username():e.externalId();Long existing=lookup(&quot;EMPLOYEE&quot;,external);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if(existing!=null){</span>
+<span class="pc bpc" id="L53" title="3 of 6 branches missed.">            if(e.displayName()==null||e.displayName().isBlank()||e.displayName().length()&gt;128)throw new IllegalArgumentException(&quot;员工姓名不合法&quot;);</span>
+<span class="pc bpc" id="L54" title="2 of 4 branches missed.">            if(s.superAdmin(existing)||s.departmentAdmin(existing))throw new ForbiddenException(&quot;HR 不能修改管理员&quot;);s.validAccount(existing);</span>
+<span class="fc" id="L55">            var profile=s.rows(&quot;select department_id,post_id from employee_profile where user_id=?&quot;,existing).getFirst();</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">            if(((Number)profile.get(&quot;department_id&quot;)).longValue()!=e.departmentId()||((Number)profile.get(&quot;post_id&quot;)).longValue()!=e.postId())throw new ConflictException(&quot;已有员工组织变化，请发送 TRANSFER&quot;);</span>
+<span class="fc" id="L57">            s.db().update(&quot;update sys_user set display_name=? where id=?&quot;,e.displayName(),existing);</span>
+<span class="fc" id="L58">            s.db().update(&quot;update employee_profile set phone=?,company=? where user_id=?&quot;,e.phone(),e.company(),existing);return existing;</span>
         }
-<span class="nc" id="L60">        var name=naming.generate(e.displayName(),e.phone());</span>
-<span class="nc" id="L61">        long id=rbac.createUser(new CreateUserRequest(name.username(),e.displayName())).id();</span>
-<span class="nc" id="L62">        s.db().update(&quot;insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)&quot;,id,e.departmentId(),e.postId(),e.phone(),e.company());</span>
-<span class="nc" id="L63">        s.ensurePolicy(id);rbac.setPassword(id,new SetPasswordRequest(&quot;Aa1!&quot;+UUID.randomUUID()));</span>
-<span class="nc" id="L64">        s.db().update(&quot;update account_policy set must_change_password=true,initial_password_issued=false where user_id=?&quot;,id);bind(&quot;EMPLOYEE&quot;,external,id);</span>
-<span class="nc bnc" id="L65" title="All 2 branches missed.">        if(name.manualReview())notice(e.departmentId(),id,&quot;ACCOUNT_NAME_REVIEW&quot;,&quot;账号重名或含多音字，请核对：&quot;+name.username());</span>
-<span class="nc" id="L66">        return id;</span>
+<span class="fc" id="L60">        var name=naming.generate(e.displayName(),e.phone());</span>
+<span class="fc" id="L61">        long id=rbac.createUser(new CreateUserRequest(name.username(),e.displayName())).id();</span>
+<span class="fc" id="L62">        s.db().update(&quot;insert into employee_profile(user_id,department_id,post_id,phone,company) values(?,?,?,?,?)&quot;,id,e.departmentId(),e.postId(),e.phone(),e.company());</span>
+<span class="fc" id="L63">        s.ensurePolicy(id);rbac.setPassword(id,new SetPasswordRequest(&quot;Aa1!&quot;+UUID.randomUUID()));</span>
+<span class="fc" id="L64">        s.db().update(&quot;update account_policy set must_change_password=true,initial_password_issued=false where user_id=?&quot;,id);bind(&quot;EMPLOYEE&quot;,external,id);</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if(name.manualReview())notice(e.departmentId(),id,&quot;ACCOUNT_NAME_REVIEW&quot;,&quot;账号重名或含多音字，请核对：&quot;+name.username());</span>
+<span class="fc" id="L66">        return id;</span>
     }
-<span class="nc" id="L68">    void notice(long department,long user,String kind,String message){s.db().update(&quot;insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,?,?,?)&quot;,department,user,kind,message,Instant.now());}</span>
+<span class="fc" id="L68">    void notice(long department,long user,String kind,String message){s.db().update(&quot;insert into platform_notification(department_id,user_id,kind,message,created_at) values(?,?,?,?,?)&quot;,department,user,kind,message,Instant.now());}</span>
     Map&lt;String,Object&gt; reconcile(List&lt;IntegrationService.Event&gt; records){
-<span class="nc bnc" id="L70" title="All 4 branches missed.">        if(records==null||records.size()&gt;20000)throw new IllegalArgumentException(&quot;对账清单最多20000条&quot;);</span>
-<span class="nc bnc" id="L71" title="All 12 branches missed.">        Set&lt;String&gt; expected=new HashSet&lt;&gt;();for(var e:records){if(e==null||e.externalId()==null||e.externalId().isBlank()||e.externalId().length()&gt;128||!expected.add(e.externalId()))throw new IllegalArgumentException(&quot;对账编号为空、过长或重复&quot;);}</span>
-<span class="nc" id="L72">        var actual=new HashSet&lt;&gt;(s.db().queryForList(&quot;select external_id from hr_identity where kind='EMPLOYEE'&quot;,String.class));</span>
-<span class="nc" id="L73">        var missing=new TreeSet&lt;&gt;(expected);missing.removeAll(actual);var extra=new TreeSet&lt;&gt;(actual);extra.removeAll(expected);</span>
-<span class="nc" id="L74">        return Map.of(&quot;missing&quot;,missing,&quot;extra&quot;,extra,&quot;matched&quot;,expected.size()-missing.size(),&quot;note&quot;,&quot;仅对账，不因清单缺失自动删除或停用账号&quot;);</span>
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        if(records==null||records.size()&gt;20000)throw new IllegalArgumentException(&quot;对账清单最多20000条&quot;);</span>
+<span class="pc bpc" id="L71" title="4 of 12 branches missed.">        Set&lt;String&gt; expected=new HashSet&lt;&gt;();for(var e:records){if(e==null||e.externalId()==null||e.externalId().isBlank()||e.externalId().length()&gt;128||!expected.add(e.externalId()))throw new IllegalArgumentException(&quot;对账编号为空、过长或重复&quot;);}</span>
+<span class="fc" id="L72">        var actual=new HashSet&lt;&gt;(s.db().queryForList(&quot;select external_id from hr_identity where kind='EMPLOYEE'&quot;,String.class));</span>
+<span class="fc" id="L73">        var missing=new TreeSet&lt;&gt;(expected);missing.removeAll(actual);var extra=new TreeSet&lt;&gt;(actual);extra.removeAll(expected);</span>
+<span class="fc" id="L74">        return Map.of(&quot;missing&quot;,missing,&quot;extra&quot;,extra,&quot;matched&quot;,expected.size()-missing.size(),&quot;note&quot;,&quot;仅对账，不因清单缺失自动删除或停用账号&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

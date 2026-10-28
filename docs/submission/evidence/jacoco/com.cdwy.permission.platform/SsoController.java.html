@@ -22,47 +22,47 @@ public class SsoController {
     private final org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository clients;
 <span class="fc" id="L23">    public SsoController(JwtTokenService tokens,PlatformStore store,RbacService rbac,JwtDecoder decoder,org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizations,org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository clients){this.clients=clients;this.tokens=tokens;this.store=store;this.rbac=rbac;this.decoder=decoder;this.authorizations=authorizations;}</span>
     @PostMapping(&quot;/api/platform/self/sso&quot;) public Map&lt;String,String&gt; bridge(@RequestHeader(&quot;Authorization&quot;)String bearer,HttpServletRequest request,HttpServletResponse response){
-<span class="nc bnc" id="L25" title="All 2 branches missed.">        long id=tokens.requireUserId(bearer);if(store.mustChange(id))throw new ForbiddenException(&quot;请先修改初始密码&quot;);</span>
-<span class="nc bnc" id="L26" title="All 2 branches missed.">        if(request.getSession(false)!=null)request.changeSessionId();</span>
-<span class="nc" id="L27">        var auth=UsernamePasswordAuthenticationToken.authenticated(Long.toString(id),null,List.of(org.springframework.security.core.authority.FactorGrantedAuthority.withFactor(&quot;PASSWORD&quot;).issuedAt(tokens.issuedAt(bearer)).build()));auth.setDetails(bearer);</span>
-<span class="nc" id="L28">        var context=SecurityContextHolder.createEmptyContext();context.setAuthentication(auth);new HttpSessionSecurityContextRepository().saveContext(context,request,response);</span>
-<span class="nc" id="L29">        return Map.of(&quot;message&quot;,&quot;单点登录会话已建立&quot;);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        long id=tokens.requireUserId(bearer);if(store.mustChange(id))throw new ForbiddenException(&quot;请先修改初始密码&quot;);</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if(request.getSession(false)!=null)request.changeSessionId();</span>
+<span class="fc" id="L27">        var auth=UsernamePasswordAuthenticationToken.authenticated(Long.toString(id),null,List.of(org.springframework.security.core.authority.FactorGrantedAuthority.withFactor(&quot;PASSWORD&quot;).issuedAt(tokens.issuedAt(bearer)).build()));auth.setDetails(bearer);</span>
+<span class="fc" id="L28">        var context=SecurityContextHolder.createEmptyContext();context.setAuthentication(auth);new HttpSessionSecurityContextRepository().saveContext(context,request,response);</span>
+<span class="fc" id="L29">        return Map.of(&quot;message&quot;,&quot;单点登录会话已建立&quot;);</span>
     }
     /** Validate an OIDC access token issued to clientId and return its subject; shared by every client-facing API. */
     private long verify(String bearer,String clientId){
-<span class="nc bnc" id="L33" title="All 2 branches missed.">        if(clients.findByClientId(clientId)==null)throw new IllegalArgumentException(&quot;未知或未启用的客户端&quot;);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if(clients.findByClientId(clientId)==null)throw new IllegalArgumentException(&quot;未知或未启用的客户端&quot;);</span>
         try{
-<span class="nc bnc" id="L35" title="All 4 branches missed.">            if(bearer==null||!bearer.startsWith(&quot;Bearer &quot;))throw new AuthenticationFailedException();</span>
-<span class="nc bnc" id="L36" title="All 2 branches missed.">            var jwt=decoder.decode(bearer.substring(7));if(!jwt.getAudience().contains(clientId))throw new AuthenticationFailedException();</span>
-<span class="nc" id="L37">            var authorization=authorizations.findByToken(jwt.getTokenValue(),org.springframework.security.oauth2.server.authorization.OAuth2TokenType.ACCESS_TOKEN);</span>
-<span class="nc bnc" id="L38" title="All 6 branches missed.">            if(authorization==null||authorization.getAccessToken()==null||!authorization.getAccessToken().isActive())throw new AuthenticationFailedException();</span>
-<span class="nc" id="L39">            long user=Long.parseLong(jwt.getSubject());store.validAccount(user);</span>
+<span class="fc bfc" id="L35" title="All 4 branches covered.">            if(bearer==null||!bearer.startsWith(&quot;Bearer &quot;))throw new AuthenticationFailedException();</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            var jwt=decoder.decode(bearer.substring(7));if(!jwt.getAudience().contains(clientId))throw new AuthenticationFailedException();</span>
+<span class="fc" id="L37">            var authorization=authorizations.findByToken(jwt.getTokenValue(),org.springframework.security.oauth2.server.authorization.OAuth2TokenType.ACCESS_TOKEN);</span>
+<span class="fc bfc" id="L38" title="All 6 branches covered.">            if(authorization==null||authorization.getAccessToken()==null||!authorization.getAccessToken().isActive())throw new AuthenticationFailedException();</span>
+<span class="fc" id="L39">            long user=Long.parseLong(jwt.getSubject());store.validAccount(user);</span>
             // Forced offline, disable, leave and password change all bump the version, so the version alone decides validity.
-<span class="nc bnc" id="L41" title="All 2 branches missed.">            if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1)throw new AuthenticationFailedException();</span>
-<span class="nc bnc" id="L42" title="All 4 branches missed.">            Number version=jwt.getClaim(&quot;permission_version&quot;);if(version==null||version.longValue()!=store.version(user))throw new AuthenticationFailedException(&quot;权限版本已改变，请刷新或重新获取令牌&quot;);</span>
-<span class="nc" id="L43">            return user;</span>
-<span class="nc" id="L44">        }catch(AuthenticationFailedException e){throw e;}catch(Exception e){throw new AuthenticationFailedException();}</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if(store.count(&quot;select count(*) from sys_user where id=? and enabled=true&quot;,user)!=1)throw new AuthenticationFailedException();</span>
+<span class="fc bfc" id="L42" title="All 4 branches covered.">            Number version=jwt.getClaim(&quot;permission_version&quot;);if(version==null||version.longValue()!=store.version(user))throw new AuthenticationFailedException(&quot;权限版本已改变，请刷新或重新获取令牌&quot;);</span>
+<span class="fc" id="L43">            return user;</span>
+<span class="fc" id="L44">        }catch(AuthenticationFailedException e){throw e;}catch(Exception e){throw new AuthenticationFailedException();}</span>
     }
     @GetMapping(&quot;/api/oidc/permissions/check&quot;) public Map&lt;String,Object&gt; check(@RequestHeader(value=&quot;Authorization&quot;,required=false)String bearer,@RequestParam String code,@RequestParam String clientId){
-<span class="nc" id="L47">        long user=verify(bearer,clientId);</span>
-<span class="nc" id="L48">        rbac.assertPermission(user,code);return Map.of(&quot;allowed&quot;,true,&quot;userId&quot;,user,&quot;code&quot;,code,&quot;grantedBy&quot;,rbac.grantingRoles(user,code),&quot;permissionVersion&quot;,store.version(user));</span>
+<span class="fc" id="L47">        long user=verify(bearer,clientId);</span>
+<span class="fc" id="L48">        rbac.assertPermission(user,code);return Map.of(&quot;allowed&quot;,true,&quot;userId&quot;,user,&quot;code&quot;,code,&quot;grantedBy&quot;,rbac.grantingRoles(user,code),&quot;permissionVersion&quot;,store.version(user));</span>
     }
     /** UC-B08: the caller's current permission set, with the version an application can cache it under. */
     @GetMapping(&quot;/api/oidc/permissions&quot;) public Map&lt;String,Object&gt; permissions(@RequestHeader(value=&quot;Authorization&quot;,required=false)String bearer,@RequestParam String clientId){
-<span class="nc" id="L52">        long user=verify(bearer,clientId);</span>
-<span class="nc" id="L53">        return Map.of(&quot;userId&quot;,user,&quot;permissionVersion&quot;,store.version(user),&quot;permissions&quot;,rbac.effectivePermissions(user).stream().map(p-&gt;p.code()).toList());</span>
+<span class="fc" id="L52">        long user=verify(bearer,clientId);</span>
+<span class="pc" id="L53">        return Map.of(&quot;userId&quot;,user,&quot;permissionVersion&quot;,store.version(user),&quot;permissions&quot;,rbac.effectivePermissions(user).stream().map(p-&gt;p.code()).toList());</span>
     }
     /** UC-D02: organisation data for integrated applications; contact details are not part of the directory. */
     @GetMapping(&quot;/api/oidc/directory/departments&quot;) public List&lt;Map&lt;String,Object&gt;&gt; departments(@RequestHeader(value=&quot;Authorization&quot;,required=false)String bearer,@RequestParam String clientId){
-<span class="nc" id="L57">        verify(bearer,clientId);</span>
-<span class="nc" id="L58">        return store.rows(&quot;select id,name,parent_id from sys_department where deleted=false order by id&quot;);</span>
+<span class="fc" id="L57">        verify(bearer,clientId);</span>
+<span class="fc" id="L58">        return store.rows(&quot;select id,name,parent_id from sys_department where deleted=false order by id&quot;);</span>
     }
     @GetMapping(&quot;/api/oidc/directory/users&quot;) public Map&lt;String,Object&gt; users(@RequestHeader(value=&quot;Authorization&quot;,required=false)String bearer,@RequestParam String clientId,@RequestParam(required=false) Long departmentId,@RequestParam(defaultValue=&quot;0&quot;) int page,@RequestParam(defaultValue=&quot;100&quot;) int size){
-<span class="nc" id="L61">        verify(bearer,clientId);</span>
-<span class="nc bnc" id="L62" title="All 6 branches missed.">        if(page&lt;0||size&lt;1||size&gt;500)throw new IllegalArgumentException(&quot;分页参数错误&quot;);</span>
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        String where=&quot; from sys_user u join sys_account ac on ac.user_id=u.id join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where (p.deleted is null or p.deleted=false)&quot;+(departmentId==null?&quot;&quot;:&quot; and e.department_id=&quot;+departmentId);</span>
-<span class="nc" id="L64">        return Map.of(&quot;total&quot;,store.count(&quot;select count(*)&quot;+where),&quot;page&quot;,page,&quot;size&quot;,size,</span>
-<span class="nc" id="L65">            &quot;items&quot;,store.rows(&quot;select u.id,ac.username,u.display_name,u.enabled,e.department_id,e.post_id,coalesce(p.person_type,'EMPLOYEE') person_type&quot;+where+&quot; order by u.id limit ? offset ?&quot;,size,(long)page*size));</span>
+<span class="fc" id="L61">        verify(bearer,clientId);</span>
+<span class="fc bfc" id="L62" title="All 6 branches covered.">        if(page&lt;0||size&lt;1||size&gt;500)throw new IllegalArgumentException(&quot;分页参数错误&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        String where=&quot; from sys_user u join sys_account ac on ac.user_id=u.id join employee_profile e on e.user_id=u.id left join account_policy p on p.user_id=u.id where (p.deleted is null or p.deleted=false)&quot;+(departmentId==null?&quot;&quot;:&quot; and e.department_id=&quot;+departmentId);</span>
+<span class="fc" id="L64">        return Map.of(&quot;total&quot;,store.count(&quot;select count(*)&quot;+where),&quot;page&quot;,page,&quot;size&quot;,size,</span>
+<span class="fc" id="L65">            &quot;items&quot;,store.rows(&quot;select u.id,ac.username,u.display_name,u.enabled,e.department_id,e.post_id,coalesce(p.person_type,'EMPLOYEE') person_type&quot;+where+&quot; order by u.id limit ? offset ?&quot;,size,(long)page*size));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

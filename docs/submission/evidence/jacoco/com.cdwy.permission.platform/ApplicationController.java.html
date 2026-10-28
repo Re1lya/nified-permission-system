@@ -24,58 +24,58 @@ public class ApplicationController {
     public ApplicationController(PlatformStore s,JwtTokenService tokens,PasswordEncoder passwords,JdbcTemplate db,
 <span class="fc" id="L25">        @org.springframework.beans.factory.annotation.Value(&quot;${permission.application.http-demo-origin:}&quot;) String httpDemoOrigin){</span>
 <span class="fc" id="L26">        this.s=s;this.tokens=tokens;this.passwords=passwords;this.registry=new JdbcRegisteredClientRepository(db);</span>
-<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        this.httpDemoOrigin=httpDemoOrigin.isBlank()?null:URI.create(httpDemoOrigin);</span>
-<span class="pc bpc" id="L28" title="13 of 14 branches missed.">        if(this.httpDemoOrigin!=null&amp;&amp;(!&quot;http&quot;.equals(this.httpDemoOrigin.getScheme())||this.httpDemoOrigin.getHost()==null||this.httpDemoOrigin.getUserInfo()!=null||this.httpDemoOrigin.getQuery()!=null||this.httpDemoOrigin.getFragment()!=null||!Set.of(&quot;&quot;,&quot;/&quot;).contains(this.httpDemoOrigin.getPath())))</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        this.httpDemoOrigin=httpDemoOrigin.isBlank()?null:URI.create(httpDemoOrigin);</span>
+<span class="pc bpc" id="L28" title="6 of 14 branches missed.">        if(this.httpDemoOrigin!=null&amp;&amp;(!&quot;http&quot;.equals(this.httpDemoOrigin.getScheme())||this.httpDemoOrigin.getHost()==null||this.httpDemoOrigin.getUserInfo()!=null||this.httpDemoOrigin.getQuery()!=null||this.httpDemoOrigin.getFragment()!=null||!Set.of(&quot;&quot;,&quot;/&quot;).contains(this.httpDemoOrigin.getPath())))</span>
 <span class="nc" id="L29">            throw new IllegalArgumentException(&quot;HTTP 演示来源必须是 http://主机[:端口]，不能包含路径、凭证、查询或片段&quot;);</span>
 <span class="fc" id="L30">    }</span>
-<span class="nc" id="L31">    public record Configuration(@NotBlank @Pattern(regexp=&quot;[A-Za-z0-9_.-]{1,100}&quot;)String clientId,</span>
+<span class="fc" id="L31">    public record Configuration(@NotBlank @Pattern(regexp=&quot;[A-Za-z0-9_.-]{1,100}&quot;)String clientId,</span>
         @NotBlank @Size(max=2048)String entryUrl,@NotBlank @Pattern(regexp=&quot;OIDC|LEGACY&quot;)String protocol,
         @Size(max=20)List&lt;String&gt; redirectUris,@Size(max=256)String clientSecret,@Size(max=2000)String compatibilityPlan){}
     private void url(String text){
         try{
-<span class="nc" id="L36">            var u=URI.create(text);</span>
-<span class="nc" id="L37">            boolean loopback=Set.of(&quot;127.0.0.1&quot;,&quot;localhost&quot;,&quot;[::1]&quot;).contains(Objects.toString(u.getHost(),&quot;&quot;));</span>
-<span class="nc bnc" id="L38" title="All 4 branches missed.">            boolean demo=httpDemoOrigin!=null&amp;&amp;Objects.equals(u.getHost(),httpDemoOrigin.getHost())</span>
-<span class="nc bnc" id="L39" title="All 6 branches missed.">                &amp;&amp;(u.getPort()==-1?80:u.getPort())==(httpDemoOrigin.getPort()==-1?80:httpDemoOrigin.getPort());</span>
-<span class="nc bnc" id="L40" title="All 14 branches missed.">            if(u.getHost()==null||u.getUserInfo()!=null||u.getFragment()!=null||!(&quot;https&quot;.equals(u.getScheme())||&quot;http&quot;.equals(u.getScheme())&amp;&amp;(loopback||demo)))throw new IllegalArgumentException();</span>
-<span class="nc" id="L41">        }catch(Exception e){throw new IllegalArgumentException(&quot;地址必须使用 HTTPS；HTTP 仅允许本地回环或已配置的演示来源，不能包含凭证或片段&quot;);}</span>
-<span class="nc" id="L42">    }</span>
-<span class="nc" id="L43">    @GetMapping(&quot;/applications&quot;) public List&lt;Map&lt;String,Object&gt;&gt; list(@RequestHeader(&quot;Authorization&quot;)String auth){s.requireSuper(tokens.requireUserId(auth));return s.rows(&quot;select a.*,b.name from application_access a join biz_system b on b.id=a.system_id order by a.system_id&quot;);}</span>
-<span class="nc bnc" id="L44" title="All 8 branches missed.">    @GetMapping(&quot;/applications/{id}/config&quot;) public Map&lt;String,Object&gt; config(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id){s.requireSuper(tokens.requireUserId(auth));var rows=s.rows(&quot;select * from application_access where system_id=?&quot;,id);if(rows.isEmpty())throw new ResourceNotFoundException(&quot;应用未配置&quot;);var out=new LinkedHashMap&lt;&gt;(rows.getFirst());var c=registry.findByClientId((String)out.get(&quot;client_id&quot;));out.put(&quot;redirectUris&quot;,c==null?List.of():c.getRedirectUris());out.put(&quot;confidential&quot;,c!=null&amp;&amp;c.getClientSecret()!=null);return out;}</span>
+<span class="fc" id="L36">            var u=URI.create(text);</span>
+<span class="fc" id="L37">            boolean loopback=Set.of(&quot;127.0.0.1&quot;,&quot;localhost&quot;,&quot;[::1]&quot;).contains(Objects.toString(u.getHost(),&quot;&quot;));</span>
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">            boolean demo=httpDemoOrigin!=null&amp;&amp;Objects.equals(u.getHost(),httpDemoOrigin.getHost())</span>
+<span class="pc bpc" id="L39" title="2 of 6 branches missed.">                &amp;&amp;(u.getPort()==-1?80:u.getPort())==(httpDemoOrigin.getPort()==-1?80:httpDemoOrigin.getPort());</span>
+<span class="pc bpc" id="L40" title="1 of 14 branches missed.">            if(u.getHost()==null||u.getUserInfo()!=null||u.getFragment()!=null||!(&quot;https&quot;.equals(u.getScheme())||&quot;http&quot;.equals(u.getScheme())&amp;&amp;(loopback||demo)))throw new IllegalArgumentException();</span>
+<span class="fc" id="L41">        }catch(Exception e){throw new IllegalArgumentException(&quot;地址必须使用 HTTPS；HTTP 仅允许本地回环或已配置的演示来源，不能包含凭证或片段&quot;);}</span>
+<span class="fc" id="L42">    }</span>
+<span class="fc" id="L43">    @GetMapping(&quot;/applications&quot;) public List&lt;Map&lt;String,Object&gt;&gt; list(@RequestHeader(&quot;Authorization&quot;)String auth){s.requireSuper(tokens.requireUserId(auth));return s.rows(&quot;select a.*,b.name from application_access a join biz_system b on b.id=a.system_id order by a.system_id&quot;);}</span>
+<span class="pc bpc" id="L44" title="1 of 8 branches missed.">    @GetMapping(&quot;/applications/{id}/config&quot;) public Map&lt;String,Object&gt; config(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id){s.requireSuper(tokens.requireUserId(auth));var rows=s.rows(&quot;select * from application_access where system_id=?&quot;,id);if(rows.isEmpty())throw new ResourceNotFoundException(&quot;应用未配置&quot;);var out=new LinkedHashMap&lt;&gt;(rows.getFirst());var c=registry.findByClientId((String)out.get(&quot;client_id&quot;));out.put(&quot;redirectUris&quot;,c==null?List.of():c.getRedirectUris());out.put(&quot;confidential&quot;,c!=null&amp;&amp;c.getClientSecret()!=null);return out;}</span>
     @PutMapping(&quot;/applications/{id}/config&quot;) @Transactional public void configure(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id,@Valid @RequestBody Configuration c){
-<span class="nc" id="L46">        long actor=tokens.requireUserId(auth);s.requireSuper(actor);s.db().queryForObject(&quot;select id from biz_system where id=? and deleted=false for update&quot;,Long.class,id);url(c.entryUrl());</span>
-<span class="nc" id="L47">        var rows=s.rows(&quot;select client_id from application_access where system_id=?&quot;,id);</span>
-<span class="nc bnc" id="L48" title="All 4 branches missed.">        if(!rows.isEmpty()&amp;&amp;!c.clientId().equals(rows.getFirst().get(&quot;client_id&quot;)))throw new ConflictException(&quot;客户端编号不可变更，请新建应用&quot;);</span>
-<span class="nc bnc" id="L49" title="All 4 branches missed.">        var old=registry.findByClientId(c.clientId());if(old!=null&amp;&amp;!old.getId().equals(&quot;system-&quot;+id))throw new ConflictException(&quot;客户端编号已被占用&quot;);</span>
-<span class="nc bnc" id="L50" title="All 2 branches missed.">        if(ApplicationProtocol.of(c.protocol()).singleSignOn()){</span>
-<span class="nc bnc" id="L51" title="All 4 branches missed.">            if(c.redirectUris()==null||c.redirectUris().isEmpty())throw new IllegalArgumentException(&quot;至少配置一个精确回调地址&quot;);c.redirectUris().forEach(this::url);</span>
-<span class="nc bnc" id="L52" title="All 6 branches missed.">            String secret=c.clientSecret();if(secret!=null&amp;&amp;!secret.isEmpty()&amp;&amp;secret.length()&lt;32)throw new IllegalArgumentException(&quot;客户端密钥至少 32 字符&quot;);</span>
-<span class="nc" id="L53">            var builder=RegisteredClient.withId(&quot;system-&quot;+id).clientId(c.clientId()).clientName(c.clientId())</span>
-<span class="nc" id="L54">                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE).scope(&quot;openid&quot;).scope(&quot;profile&quot;)</span>
-<span class="nc" id="L55">                .redirectUris(uris-&gt;uris.addAll(c.redirectUris()))</span>
-<span class="nc" id="L56">                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())</span>
-<span class="nc" id="L57">                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(5)).refreshTokenTimeToLive(Duration.ofHours(8)).reuseRefreshTokens(false).build());</span>
-<span class="nc bnc" id="L58" title="All 6 branches missed.">            String encoded=secret!=null&amp;&amp;!secret.isEmpty()?passwords.encode(secret):old==null?null:old.getClientSecret();</span>
-<span class="nc bnc" id="L59" title="All 2 branches missed.">            if(encoded==null)builder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);</span>
-<span class="nc" id="L60">            else builder.clientSecret(encoded).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);</span>
-<span class="nc" id="L61">            registry.save(builder.build());</span>
-<span class="nc bnc" id="L62" title="All 4 branches missed.">        } else if(c.compatibilityPlan()==null||c.compatibilityPlan().isBlank())throw new IllegalArgumentException(&quot;不能改造的系统必须填写隔离和兼容处理方案，不能声明已实现免登&quot;);</span>
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        if(rows.isEmpty())s.db().update(&quot;insert into application_access(system_id,client_id,entry_url,protocol,status,compatibility_plan) values(?,?,?,?,'DRAFT',?)&quot;,id,c.clientId(),c.entryUrl(),c.protocol(),c.compatibilityPlan());</span>
-<span class="nc" id="L64">        else s.db().update(&quot;update application_access set entry_url=?,protocol=?,status='DRAFT',compatibility_plan=?,acceptance=null where system_id=?&quot;,c.entryUrl(),c.protocol(),c.compatibilityPlan(),id);</span>
-<span class="nc" id="L65">        s.db().update(&quot;delete from oauth2_authorization where registered_client_id=?&quot;,&quot;system-&quot;+id);</span>
-<span class="nc" id="L66">        s.audit(actor,&quot;APPLICATION_CONFIG&quot;,Long.toString(id),&quot;SUCCESS&quot;);</span>
-<span class="nc" id="L67">    }</span>
-<span class="nc" id="L68">    public record Acceptance(boolean login,boolean callback,boolean permission,boolean revocation,boolean isolation,@NotBlank @Size(max=1500)String evidence){}</span>
+<span class="fc" id="L46">        long actor=tokens.requireUserId(auth);s.requireSuper(actor);s.db().queryForObject(&quot;select id from biz_system where id=? and deleted=false for update&quot;,Long.class,id);url(c.entryUrl());</span>
+<span class="fc" id="L47">        var rows=s.rows(&quot;select client_id from application_access where system_id=?&quot;,id);</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        if(!rows.isEmpty()&amp;&amp;!c.clientId().equals(rows.getFirst().get(&quot;client_id&quot;)))throw new ConflictException(&quot;客户端编号不可变更，请新建应用&quot;);</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        var old=registry.findByClientId(c.clientId());if(old!=null&amp;&amp;!old.getId().equals(&quot;system-&quot;+id))throw new ConflictException(&quot;客户端编号已被占用&quot;);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if(ApplicationProtocol.of(c.protocol()).singleSignOn()){</span>
+<span class="fc bfc" id="L51" title="All 4 branches covered.">            if(c.redirectUris()==null||c.redirectUris().isEmpty())throw new IllegalArgumentException(&quot;至少配置一个精确回调地址&quot;);c.redirectUris().forEach(this::url);</span>
+<span class="pc bpc" id="L52" title="1 of 6 branches missed.">            String secret=c.clientSecret();if(secret!=null&amp;&amp;!secret.isEmpty()&amp;&amp;secret.length()&lt;32)throw new IllegalArgumentException(&quot;客户端密钥至少 32 字符&quot;);</span>
+<span class="fc" id="L53">            var builder=RegisteredClient.withId(&quot;system-&quot;+id).clientId(c.clientId()).clientName(c.clientId())</span>
+<span class="fc" id="L54">                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE).scope(&quot;openid&quot;).scope(&quot;profile&quot;)</span>
+<span class="fc" id="L55">                .redirectUris(uris-&gt;uris.addAll(c.redirectUris()))</span>
+<span class="fc" id="L56">                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())</span>
+<span class="fc" id="L57">                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(5)).refreshTokenTimeToLive(Duration.ofHours(8)).reuseRefreshTokens(false).build());</span>
+<span class="pc bpc" id="L58" title="1 of 6 branches missed.">            String encoded=secret!=null&amp;&amp;!secret.isEmpty()?passwords.encode(secret):old==null?null:old.getClientSecret();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if(encoded==null)builder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);</span>
+<span class="fc" id="L60">            else builder.clientSecret(encoded).clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC).authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN);</span>
+<span class="fc" id="L61">            registry.save(builder.build());</span>
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">        } else if(c.compatibilityPlan()==null||c.compatibilityPlan().isBlank())throw new IllegalArgumentException(&quot;不能改造的系统必须填写隔离和兼容处理方案，不能声明已实现免登&quot;);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if(rows.isEmpty())s.db().update(&quot;insert into application_access(system_id,client_id,entry_url,protocol,status,compatibility_plan) values(?,?,?,?,'DRAFT',?)&quot;,id,c.clientId(),c.entryUrl(),c.protocol(),c.compatibilityPlan());</span>
+<span class="fc" id="L64">        else s.db().update(&quot;update application_access set entry_url=?,protocol=?,status='DRAFT',compatibility_plan=?,acceptance=null where system_id=?&quot;,c.entryUrl(),c.protocol(),c.compatibilityPlan(),id);</span>
+<span class="fc" id="L65">        s.db().update(&quot;delete from oauth2_authorization where registered_client_id=?&quot;,&quot;system-&quot;+id);</span>
+<span class="fc" id="L66">        s.audit(actor,&quot;APPLICATION_CONFIG&quot;,Long.toString(id),&quot;SUCCESS&quot;);</span>
+<span class="fc" id="L67">    }</span>
+<span class="fc" id="L68">    public record Acceptance(boolean login,boolean callback,boolean permission,boolean revocation,boolean isolation,@NotBlank @Size(max=1500)String evidence){}</span>
     @PostMapping(&quot;/applications/{id}/acceptance&quot;) @Transactional public void accept(@RequestHeader(&quot;Authorization&quot;)String auth,@PathVariable long id,@Valid @RequestBody Acceptance a){
-<span class="nc" id="L70">        long actor=tokens.requireUserId(auth);s.requireSuper(actor);</span>
-<span class="nc bnc" id="L71" title="All 2 branches missed.">        var rows=s.rows(&quot;select protocol from application_access where system_id=? for update&quot;,id);if(rows.isEmpty())throw new ResourceNotFoundException(&quot;应用未配置&quot;);</span>
-<span class="nc" id="L72">        boolean oidc=rows.getFirst().get(&quot;protocol&quot;).equals(&quot;OIDC&quot;);</span>
-<span class="nc bnc" id="L73" title="All 12 branches missed.">        if(!a.isolation()||oidc&amp;&amp;!(a.login()&amp;&amp;a.callback()&amp;&amp;a.permission()&amp;&amp;a.revocation()))throw new IllegalArgumentException(&quot;接入验收项尚未全部通过&quot;);</span>
-<span class="nc bnc" id="L74" title="All 2 branches missed.">        s.db().update(&quot;update application_access set status=?,acceptance=? where system_id=?&quot;,oidc?&quot;ACTIVE&quot;:&quot;ISOLATED&quot;,a.evidence(),id);s.audit(actor,&quot;APPLICATION_ACCEPTANCE&quot;,Long.toString(id),&quot;SUCCESS&quot;);</span>
-<span class="nc" id="L75">    }</span>
+<span class="fc" id="L70">        long actor=tokens.requireUserId(auth);s.requireSuper(actor);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        var rows=s.rows(&quot;select protocol from application_access where system_id=? for update&quot;,id);if(rows.isEmpty())throw new ResourceNotFoundException(&quot;应用未配置&quot;);</span>
+<span class="fc" id="L72">        boolean oidc=rows.getFirst().get(&quot;protocol&quot;).equals(&quot;OIDC&quot;);</span>
+<span class="fc bfc" id="L73" title="All 12 branches covered.">        if(!a.isolation()||oidc&amp;&amp;!(a.login()&amp;&amp;a.callback()&amp;&amp;a.permission()&amp;&amp;a.revocation()))throw new IllegalArgumentException(&quot;接入验收项尚未全部通过&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        s.db().update(&quot;update application_access set status=?,acceptance=? where system_id=?&quot;,oidc?&quot;ACTIVE&quot;:&quot;ISOLATED&quot;,a.evidence(),id);s.audit(actor,&quot;APPLICATION_ACCEPTANCE&quot;,Long.toString(id),&quot;SUCCESS&quot;);</span>
+<span class="fc" id="L75">    }</span>
     @GetMapping(&quot;/self/portal&quot;) public List&lt;Map&lt;String,Object&gt;&gt; portal(@RequestHeader(&quot;Authorization&quot;)String auth){
-<span class="nc" id="L77">        long actor=tokens.requireUserId(auth);</span>
-<span class="nc bnc" id="L78" title="All 2 branches missed.">        return s.rows(&quot;select a.system_id,b.code,b.name,a.entry_url,a.protocol,a.status from application_access a join biz_system b on b.id=a.system_id where b.enabled=true and a.status in('ACTIVE','ISOLATED')&quot;+(s.superAdmin(actor)?&quot;&quot;:&quot; and b.id in(select p.system_id from sys_permission p join sys_role_permission rp on rp.permission_id=p.id join sys_role r on r.id=rp.role_id join sys_user_role ur on ur.role_id=r.id where ur.user_id=&quot;+actor+&quot; and r.enabled=true and p.active=true)&quot;)+&quot; order by b.name&quot;);</span>
+<span class="fc" id="L77">        long actor=tokens.requireUserId(auth);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        return s.rows(&quot;select a.system_id,b.code,b.name,a.entry_url,a.protocol,a.status from application_access a join biz_system b on b.id=a.system_id where b.enabled=true and a.status in('ACTIVE','ISOLATED')&quot;+(s.superAdmin(actor)?&quot;&quot;:&quot; and b.id in(select p.system_id from sys_permission p join sys_role_permission rp on rp.permission_id=p.id join sys_role r on r.id=rp.role_id join sys_user_role ur on ur.role_id=r.id where ur.user_id=&quot;+actor+&quot; and r.enabled=true and p.active=true)&quot;)+&quot; order by b.name&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -328,13 +328,16 @@ image::../phase-one/images/design-audit-current.png[审计设计示意,width=100
 
 suite_rows='\n'.join('|'+s['name'].split('.')[-1]+' |'+' |'.join(str(s[k]) for k in ('tests','failures','errors','skipped')) for s in summary['suites'])
 cov_rows='\n'.join('|'+key+' |'+str(cov[key]['covered'])+' |'+str(cov[key]['missed'])+' |'+str(cov[key]['percentage'])+'%' for key in ('LINE','BRANCH','INSTRUCTION','METHOD','CLASS'))
+actual_workbooks_passed = any(s['name'].endswith('.ActualWorkbookImportTests') and int(s['tests']) == 1 and int(s['skipped']) == 0 for s in summary['suites'])
+workbook_note = ('本次配置了 `COMPANY_WORKBOOK_DIR`，真实三表测试已通过：10000 名员工、111 个部门、359 项功能；未自动授予角色或管理员身份。输入文件的 SHA-256 见测试汇总，员工原始数据不随报告发布。'
+                 if actual_workbooks_passed else '本次未配置 `COMPANY_WORKBOOK_DIR`，真实三表测试条件性跳过，不计入通过项。')
 write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 == 自动测试结果（{test_date}）
 
 运行环境：Java 21、Maven 3.9.16、Spring Boot 4.0.8、H2 内存数据库；JaCoCo 0.8.14。
 测试以检出基线 `{summary['baseCommit']}` 加本次修复工作区为输入；该基线号不是最终提交号。
 测试文件版本以 link:evidence/test-summary.json[源码 SHA-256 清单] 为准，清单覆盖生产代码、测试、前端源码及静态资源。
-完整命令为 `mvn -B clean verify`。
+完整命令为 `{summary['command']}`；`<external-workbooks>` 代表本机保存原始三份 Excel 的目录。
 总计 {counts['tests']} 项，{passed} 项通过，失败 {counts['failures']}、错误 {counts['errors']}、跳过 {counts['skipped']}。
 报告导出时间：{summary['exportedAt']}。
 
@@ -344,8 +347,8 @@ write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 {suite_rows}
 |===
 
-`ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。该次运行未配置此变量，1 项条件测试跳过。
-公司导入的合成工作簿集成测试已执行，包括一万员工、无密码待发放状态、引用关系、幂等和失败回滚。真实 Excel 测试的断言已按当前分表和初始改密策略更新，该条件测试不计入通过项。
+`ActualWorkbookImportTests` 依赖 `COMPANY_WORKBOOK_DIR` 指向外部三份 Excel。{workbook_note}
+公司导入的合成工作簿集成测试也已执行，包括一万员工、无密码待发放状态、引用关系、幂等、文件边界和失败回滚。
 
 == 覆盖率
 
@@ -358,6 +361,10 @@ write('06-jacoco.adoc','统一权限管理系统：JaCoCo 与测试说明',f'''
 覆盖率由 `jacoco.xml` 根节点计数计算，统计范围包含报告中的全部生产类；未配置覆盖率排除项。
 行覆盖率表示已执行代码行的比例，分支覆盖率表示已执行条件分支的比例。需求验收和负载测试分别记录。
 当前仍存在未覆盖路径，各模块明细可在 HTML 报告中查看。历史版本的覆盖率按其对应源码范围统计。
+
+未达 100% 的部分包括 DTO 兼容构造器与访问方法、未使用的实体构造/访问路径、应用启动入口，以及少量配置失败、极端边界和异常分支。
+业务类达到 100% 行覆盖率仍不代表所有条件组合均已验证；分支覆盖率应同时查看。
+本次未修改生产逻辑、删除代码或增加 JaCoCo 排除项来提高比例。
 
 == 报告文件与查看方式
 
@@ -377,6 +384,17 @@ python3 scripts/export-evidence.py
 python3 scripts/build-submission-docs.py
 ----
 
+包含真实三表的复现方式（将目录替换为本机位置）：
+
+[source,bash]
+----
+COMPANY_WORKBOOK_DIR=/path/to/workbooks mvn -B clean verify
+python3 scripts/export-evidence.py --workbook-directory /path/to/workbooks
+----
+
+本次使用相同源码的独立构建副本，避免覆盖部署任务使用的 `target`。导出时通过
+`--build-directory ../jacoco-workflow-build/target` 读取报告，脚本逐文件核对源码一致性。
+
 Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 根项目执行 `clean verify` 时不添加跳过测试参数。网页操作与 JMeter 测试的结果单独记录。
 测试使用隔离 H2，不需要修改云端数据库，也不使用线上管理员凭证。
@@ -388,6 +406,17 @@ Windows 安装的 Python 若命令名为 `python`，相应替换最后两行。
 * 部门管理范围、初始密码一次发放、外部人员期限、锁定、空闲会话、权限点失效。
 * HR 签名、离职和请求幂等；OA 登记、驳回及冲突；审计范围；导入幂等、回滚和 XML 外部实体拒绝。
 * OIDC discovery 与静态页面可达；这不代表完整 OIDC 授权码流程均被自动测试覆盖。
+
+本次新增的测试包括：
+
+* 应用接入配置、URL 与回调校验、机密/公开客户端、验收状态、门户授权及撤销。
+* 部门循环、岗位引用保护、管理员变更、权限复核、审计查询与归档失败整批回滚。
+* HR 批次同步、外部编号映射、调岗原子换权、失败重试、对账；OA 审批终态及幂等。
+* 三表 multipart 导入、分页与搜索转义、模板幂等授权、XLSX 共享字符串与非法输入。
+* OIDC 授权码 + PKCE、令牌交换、userinfo、目录脱敏、权限版本失效；实际 Spring 安全链和 JDBC 会话参与协议链路测试。
+* SSO 令牌验证与配置单元测试、页面转义、密码策略及版本化响应体。
+
+OIDC 协议链路使用 MockMvc、H2 和受控客户端，预先允许 consent；浏览器交互及外部 OA/HR 产品接入仍需单独验收。
 
 测试按当前账号分表、权限版本刷新和逻辑删除规则设置断言，覆盖越权、会话撤销、事务回滚和并发场景。
 相关修复包括 CLOB JSON 读取兼容性，以及已删除应用的历史权限在列表查询中的过滤。
